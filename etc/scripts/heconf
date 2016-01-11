@@ -1,0 +1,296 @@
+#!/bin/ksh
+# @(#)24	1.3  src/htx/usr/lpp/htx/etc/scripts/heconf, htxconf, htxubuntu 12/10/08 04:40:59
+#########################################################################
+
+[ "$HTXLPP" ] || { echo "you must be logged in as htx to execute this command" && exit
+}
+
+########
+# usage -- show command usage
+usage () {
+    [ -n "$1" ] && echo "*** $X: $1"	# display error message if present
+    echo "Usage:  heconf [device] [exerciser] [rulesfile] [-l] [-h] [-d] [-c] [-?]"
+    echo ""
+    echo "where:  [device] = HTX device name (see the HTX Activate/Halt Devices screen)"
+    echo "        [exerciser] = exerciser and rules file"
+    echo "        [rulesfile] = rules file for device"
+    echo "            (see ${HTXRULES}{reg,emc}/DEV/* for available rules files)"
+    echo "flags:  -l  list configuration database"
+    echo "        -h  start device in halted state"
+    echo "        -d  delete device from mdt.all"
+    echo "        -c  clear heconf data base"
+    echo "        -?  show usage"
+#                 -x  change database but do not make mdt.all (hidden flag)
+    echo "examples:"
+    echo "    heconf tty*                       # restore defaults for all ttys"
+    echo "    heconf tty[2-9] hxeamod loop_loc  # set exerciser/rules for ttys 2-9"
+    echo "    heconf tty0 hxeap plotter         # set exerciser/rules for tty0"
+    echo "    heconf lp0 plot -h                # set rules for lp0 and start halted"
+    echo "    heconf tty* -d                    # delete all ttys from mdt.all"
+    echo "    heconf -l                         # list configuration database"
+    echo "    heconf -c                         # clear configuration database"
+    exit 1
+}
+
+########
+# error -- error exit
+error() {
+    echo "*** $X: $1"
+    exit 1
+}
+
+########
+# hedev -- convert system device name to htx device name
+#
+# Converts system (ODM) device names to HTX device names.  HTX device names
+# may differ from system (ODM) device names as reported by the lsdev command.
+# Some HTX devices have "r" prepended to the device name so the raw device
+# will be used for testing.  Other HTX devices have "/D" appended so the
+# device will be opened in diagnostic mode.  Memory, floating point and the
+# salmon keyboard, tablet and mouse are handled specially.  Skyway adapters
+# are also a special case.
+#
+# Any modifications to the device names created by the htxconf.awk script
+# must have corresponding changes made here.  This is at best a kludge.
+hedev () {
+    awk 'BEGIN {
+        # determine if machine is a salmon
+        if (snarf("lsdev -CFtype -l ioplanar0 2>/dev/null") == "ioplanar_2") {
+            salmon="y";
+            # get salmon mouse type
+            smdev="sal_mous";
+            if (snarf("lsdev -CFtype -l mous0 2>/dev/null") == "mse_3b")
+                smdev="mous0";
+        }
+    }
+    # raw devices
+    /^lv[0-9]*hd[0-9]*$/ {printf("r%s\n",$1); next;}
+    /^fd[0-9]*$/         {printf("r%s\n",$1); next;}
+    /^hdisk[0-9]*$/      {printf("r%s\n",$1); next;}
+    /^cd[0-9]*$/         {printf("r%s\n",$1); next;}
+    # devices to be opened in diagnostic mode
+    #/^x25s[0-9]*$/       {printf("%s/D\n",$1); next;}
+    #/^ent[0-9]*$/        {printf("%s/D\n",$1); next;}
+    #/^tok[0-9]*$/        {printf("%s/D\n",$1); next;}
+    #/^fddi[0-9]*$/       {printf("%s/D\n",$1); next;}
+    #/^3270c[0-9]*$/      {printf("%s/D\n",$1); next;}
+    #/^mpq[0-9]*$/        {printf("%s/D\n",$1); next;}
+    # memory and floating point
+    /^mem0$/             {print("mem"); next;}
+    /^fpa0$/             {print("fp0"); next;}
+    # salmon planar, keyboard, tablet, mouse
+    /^sio0$/             {if (salmon) print("sal_plan"); next;}
+    /^kbd0$/             {if (salmon) print("sal_kbd");}
+    /^tab0$/             {if (salmon) print("sal_tab");}
+    /^mous0$/            {if (salmon) print(smdev);}
+    # skyway mono and color
+    /^gda[0-9]*$/        {
+        cmd=sprintf("lsdev -CFtype -l %s 2>/dev/null",$1)
+        if (snarf(cmd) == "colorgda") printf("skyc%s\n",substr($1,4));
+        else printf("skym%s\n",substr($1,4));
+    }
+    # output other devices without modification
+    {print $1}
+
+    function snarf(cmd) {
+        cmd | getline snarf_input; close(cmd); return snarf_input;
+    }
+'
+}
+
+########
+# isdev -- check device name parameter and expand wildcards/REs
+#  returns:  0 (DEV = device names matching wildcard or regular expression)
+#            1 if invalid device name
+#
+# wildcards (* and ?) are translated to ".*" and ".", respectively,
+# to simulate shell filename substitution with the grep command.
+# Regular expressions are also handled by grep.
+isdev() {
+    # handle * and ? wildcards
+    dev=`echo "$1"|sed -e 's/\*/.*/' -e 's/\?/./'`
+    # get device list, convert to HTX names and grep for desired device(s)
+    DEV=`lsdev -CFname | hedev | grep "^$dev\$"`
+    [ -n "$DEV" ] || return 1
+}
+
+########
+# isexer -- check exerciser name parameter
+isexer() {
+    [ -f /usr/lpp/htx/bin/$1 ] || return 1
+    EXER=$1
+}
+
+########
+# isrule -- check rules file name parameter
+isrule() {
+    if [ -n "$EXER" ]; then {		# exerciser was defined
+	# for 3.2, rules file directory is exerciser name minus "hxe"
+        RFDIR="${EXER#hxe}"
+        # for 4.1, rules file directory is same as exerciser name
+        [ "`cat ${HTXLPP}.htx_cmvc_rel`" = "htx410" ] && RFDIR="$EXER"
+        # check for valid rules file for this exerciser
+        [ -f ${HTXREGRULES}$RFDIR/$1 ] ||
+        [ -f ${HTXEMCRULES}$RFDIR/$1 ] || return 1
+    }
+    # exerciser undefined; see if rules file exists anywhere in rules tree
+    else {
+        [ -z "`find ${HTXRULES} -name "$1" -print`" ] &&
+            error "Unknown rules file: \"$1\""
+        # rules file was found - may or may not be valid for this device
+    }
+    fi
+    RULE=$1
+}
+
+########
+# listdb -- list configuration data base
+#
+# The heconf.db database consists of one line for each device containing
+# two or three fields separated by colons.  Field one is the HTX device
+# name, field two contains exerciser/rules file names and field three
+# (optional) contains any applicable flags (-h or -d).  The second field
+# may contain a rules file name or an exerciser and rules file separated
+# by the "|" character.  This configuration is less than optimum, but was
+# retained for compatibility with previous versions of heconf.
+listdb() {
+    [ -s ${HTXOBJREPOS}heconf.db ] || {
+        echo "(configuration database is empty)"
+        return 0
+    }
+    cat ${HTXOBJREPOS}heconf.db | awk -F: '
+    BEGIN {print("DEVICE      EXERCISER   RULESFILE   STATUS")}
+    {
+        # assume only rules file is listed
+        exer=""
+        rule=$2;
+        flag=""
+        # check if exerciser is listed also
+        if (split($2,exrf,"|") == 2) {
+            # grab exerciser and rules file
+            exer=exrf[1];
+            rule=exrf[2];
+        }
+        # process flag parameter
+        if ($3 == "-h") flag="(start halted)";
+        if ($3 == "-d") flag="(deleted)";
+        printf("%-12s%-12s%-12s%s\n",$1,exer,rule,flag);
+    }'
+}
+
+########
+# cleardb -- clear configuration data base
+cleardb() {
+    rm -f ${HTXOBJREPOS}heconf.db
+}
+
+########
+# merge -- merge new device entries with old data base
+#
+# input:   ${HTXOBJREPOS}heconf.db-: current data base entries
+#          stdin: new data base entries
+# output:  stdout: merged data base entries
+merge() {
+cat ${HTXOBJREPOS}heconf.db-
+    awk -F':' '
+        # process old heconf.db, save parameters by device name
+        BEGIN {
+            while (getline < "${HTXOBJREPOS}heconf.db-" > 0) {
+                config[$1] = $2;
+                if ($3) config[$1] = $2 ":" $3;
+            }
+        }
+        {
+            # add new device(s) to data base
+            config[$1] = $2;
+            if ($3) config[$1] = $2 ":" $3;
+        }
+        END {
+            for (i in config)
+                if (config[i])
+                    printf("%s:%s\n",i,config[i]);
+        } '
+}
+
+###############################################################################
+#DEBUG=1	# uncomment for debugging output to errout
+set -f		# disable shell filename substitution
+X=`basename $0`	# save invocation name
+
+# make sure db file exists
+[ -d ${HTXOBJREPOS} ] || mkdir ${HTXOBJREPOS}
+[ -f ${HTXOBJREPOS}heconf.db ] || touch ${HTXOBJREPOS}heconf.db
+
+# show usage if no parameters
+[ $# -eq 0 ] && usage
+
+# parse parameters
+while [ -n "$1" ]; do
+    case "$1" in
+        -l) listdb; exit 0;;
+        -x) XFLAG=1; shift; continue;;
+        -h) HALTED='-h'; shift; continue;;
+        -d) DELETE='-d'; shift; continue;;
+        -c) CFLAG=1; cleardb; break;;
+        -\?) usage;;
+        -*) usage "Unknown flag: \"$1\"";;
+        *)  # first parameter must be device name
+            if [ -z "$DEV" ]; then {
+                isdev "$1" || error "Unknown HTX device: \"$1\""
+            }
+            # second parameter may be exerciser or rules file
+            elif [ -z "$P2" ]; then P2="$1"	# save second parameter
+            # third parameter must be rules file
+            elif [ -z "$P3" ]; then P3="$1"	# save third parameter
+            else usage "Invalid parameter: \"$1\""
+            fi
+            shift;;
+    esac
+done
+
+# must have device name except for -c flag
+[ -z "$DEV" -a -z "$CFLAG" ] && usage "Missing device name"
+
+# check 2nd & 3rd parameters for exerciser or rules file
+[ -n "$P2" ] && {
+    if [ -n "$P3" ]; then {	# 2nd and 3rd parameters are set
+        # 2nd parameter must be valid exerciser
+        isexer "$P2" || error "Unknown exerciser: \"$P2\""
+        # 3rd parameter must be valid rules file
+        isrule "$P3" || error "Unknown rules file: \"$P3\""
+    }
+    else isrule "$P2"	# must assume 2nd parameter is a rule file
+    fi
+}
+
+# choose delete or halted flag
+FLAG="${DELETE:-$HALTED}"	# delete has priority over halted
+
+[ -n "$DEBUG" ] && {
+    echo "DEV: $DEV"
+    echo "EXER: $EXER  RULE: $RULE"
+    echo "XFLAG: $XFLAG  HALTED: $HALTED  DELETE: $DELETE"
+} >&2
+
+# generate new device entries
+touch ${HTXOBJREPOS}heconf.db-  # make sure db- file exists
+touch ${HTXOBJREPOS}heconf.db	# make sure db file exists
+mv ${HTXOBJREPOS}heconf.db ${HTXOBJREPOS}heconf.db-
+for D in $DEV; do
+    # make db entry - device:exerciser|rules:flag
+    echo "$D:$EXER${EXER:+|}$RULE${FLAG:+:}$FLAG"
+done |
+
+# merge new device entries into new database file
+merge | sort > ${HTXOBJREPOS}heconf.db
+
+# list modified data base
+listdb
+
+# don't create mdt.all if -x flag is present
+[ "$XFLAG" ] && exit 0
+
+echo "Creating mdt.all  Please wait a moment."
+cat /dev/null | ./htxconf.awk > ${HTXMDT}mdt.all
+
+exit 0

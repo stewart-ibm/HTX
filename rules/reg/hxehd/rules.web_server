@@ -1,0 +1,64 @@
+* hxehd rules file for creating customer like load environment.
+* Webserver workload
+* Requirements:
+*
+*  Very little IO
+*  sequential write - small
+*  random write - small
+*
+*
+*******************************************************************************
+*---------------------------------------------------------------------------*
+*- STANZA 1: Sequentially write the entire disk on every 6th iteration of  -*
+*-           the rules file. This stanza will run in the background while  -*
+*-           other stanza in the rules file are running.                   -*
+*---------------------------------------------------------------------------*
+rule_id = SEQBWRC1
+pattern_id = #003
+addr_type = seq
+num_oper = 0
+oper = bwrc
+type_length = fixed
+num_blks = 512
+starting_block = 0
+direction = up
+no_mallocs = 1
+turn_attention_on = no
+increment = 0
+skip = -6
+
+*---------------------------------------------------------------------------*
+*- STANZA 2: Sleep for 2 minutes on every 6th iteration of the rules file. -*
+*-           This lets the background thread (STANZA 1) initialize an area -*
+*-           of the disk before the other rule stanzas start.              -*
+*---------------------------------------------------------------------------*
+rule_id = SLEEP2
+oper = s
+sleep = 120000000
+skip = -6
+
+*---------------------------------------------------------------------------*
+*- STANZA 3: Do seq write 500 times. - Thread 1               			   -*
+*---------------------------------------------------------------------------*
+rule_id = RULE3
+pattern_id = #003
+addr_type = seq 
+num_oper = 500
+oper = w 
+type_length = fixed 
+num_blks = 128
+no_mallocs = 4
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 4: Do random write 500 times. - Thread 2                         -*
+*---------------------------------------------------------------------------*
+rule_id = READCMP4
+pattern_id = #003
+addr_type = random
+num_oper = 500
+oper = w 
+type_length = random
+num_blks = 256
+no_mallocs = 4
+start_stanza = yes 

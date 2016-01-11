@@ -1,0 +1,173 @@
+# @(#)01        1.7     src/htx/usr/lpp/htx/bin/hxecom/hxecom.runcleanup, exer_com, htxjr2421 6/8/04 06:59:58
+# @(#)01  1.12  src/htx/usr/lpp/htx/bin/hxecom/hxecom.runcleanup, exer_com, htxubuntu 3/15/07 04:35:41
+# COMPONENT_NAME: exer_com
+#
+# FUNCTIONS: none
+
+
+#get rid of any hxecom processes left over
+linux= 
+linux=`uname -s`
+# echo $linux
+#if [ $linux == Linux ]; then
+#    echo it is linux
+#else
+#    echo it is not linux
+#fi
+
+if [ -f /etc/redhat-release ];
+then
+  echo "this is a redhat release"
+  RedHat="1";
+else
+  echo "this is SUSE release"
+fi
+
+data=`ps -ef | grep hxecom | grep -v grep | grep -v cleanup | awk '{print $2}'`
+for item in $data
+do
+    echo "Removing process " $item
+    kill -9 $item  > /dev/null 2>&1
+done
+
+# These are well known ipc resource ids of hxecom.
+for i in 0 1 2 3
+do 
+	echo bbb000$i >> /tmp/hxecom_sids 
+done
+
+#clean up the shared memory keys and semaphores
+data1=`ipcs | grep bbb | awk '{print $2}' 2>/dev/null`
+for item1 in $data1
+do
+#	echo $item
+	item2=`grep $item1 /tmp/hxecom_sids`
+	if [ "$item2" ]
+	then 
+#	    echo "Removing hxecom key " $item1
+		ipcrm sem  $item1 > /dev/null 2>&1
+		ipcrm shm $item1 > /dev/null 2>&1
+	fi 
+done
+
+#get rid of tty semaphores..
+data1=`ipcs | grep eea | awk '{print $2}' 2>/dev/null`
+for item1 in $data1
+do
+#	    echo "Removing tty key " $item1
+		ipcrm sem $item1 > /dev/null 2>&1
+done
+
+
+if [ -f /usr/lpp/htx/.build_net_ran ];
+then
+	echo "build_net_ran flag set"
+
+	if [ -f /etc/hosts.hxecom ];
+	then
+       	    mv /etc/hosts.hxecom /etc/hosts
+	fi
+
+        if [ -f /usr/lpp/htx/etc/scripts/mdt.all.hxecom ];
+        then
+            mv /usr/lpp/htx/etc/scripts/mdt.all.hxecom /usr/lpp/htx/mdt/mdt.all
+        fi
+        if [ -f /etc/sysconfig/network/routes.bak ];
+        then
+            mv /etc/sysconfig/network/routes.bak /etc/sysconfig/network/routes
+            if [ -f /usr/lpp/htx/gateip ];
+            then
+              gateip=$(cat /usr/lpp/htx/gateip | awk '{print $1 }')
+              route add default gw $gateip 2>/dev/null
+              rm /usr/lpp/htx/gateip
+            fi
+        fi
+        echo "Removing ip_crossover module..."
+	for  modul in $(lsmod | grep ip_crossover | awk '{print $1}')
+	do
+		rmmod $modul
+	done
+        /sbin/rmmod ip_crossover 2>/dev/null
+        echo "Restoring the oritinal network setup...."
+		if [ -f /usr/lpp/htx/.bond_config ] ;
+		then
+			res=$(lsmod | grep bonding );
+			if [ -n "$res" ];   
+			then
+				lines=`ifconfig -a | awk '{ print \$1}' | grep bond`;
+				count=0
+				for i in  $lines 
+				do
+					ifdown $i >/dev/null 2>&1
+					rmmod "bonding$count"
+					echo "bringing down $i"
+					count=`expr $count + 1`
+				done
+				echo "removed bonding"
+			fi
+			rm /usr/lpp/htx/.bond_config
+		fi
+		if [ -f "/etc/ifcfg_bak/chngd_eths" ];
+		then 
+		   cat /etc/ifcfg_bak/chngd_eths
+		   echo "$interface"
+       	   interface=`cat /etc/ifcfg_bak/chngd_eths`
+           for i in $interface
+           do
+		      echo "$i"
+			          # remove the existing hxecom setup file
+                      if [ -n "$RedHat" ];
+                      then
+                        file1="/etc/sysconfig/network-scripts/ifcfg-$i"
+                      else
+		                file1="/etc/sysconfig/network/ifcfg-$i"
+                      fi
+		      if [ -f "$file1" ];
+		      then
+				 echo "bringing down $i"
+		         ifdown $i
+		         rm $file1 2>/dev/null 
+		      fi
+		      file="/etc/ifcfg_bak/ifcfg-$i"
+		      if [ -f "$file" ];
+		      then
+			            # put back the previous setup file if exists
+                        if [ -n "$RedHat" ];
+                        then
+                           mv $file /etc/sysconfig/network-scripts/
+                        else
+		                   mv $file /etc/sysconfig/network/
+                        fi
+                        ifdown $i
+                        ifup $i
+                      fi
+			  mac=$(ifconfig $ifname | grep eth 2>/dev/null | awk '{print $5}')
+			  file1=$(cd /etc/ifcfg_bak/ 1>/dev/null 2>&1; ls ifcfg-eth* 2>/dev/null | grep -i $mac 2>/dev/null | awk '{ print $1}')
+		      if [ -n "$file1" ];
+		      then
+		        file="/etc/ifcfg_bak/$file1"
+				        # check if we have mac address based setup, if so, restore
+                        if [ -n "$RedHat" ];
+                        then
+                           mv $file /etc/sysconfig/network-scripts/
+                        else
+		                   mv $file /etc/sysconfig/network/
+                        fi
+                       echo "restarting interface: $i"
+                ifdown $i
+                ifup $i
+              fi
+            done
+			rm /etc/ifcfg_bak/chngd_eths
+		fi
+#	    /etc/init.d/network restart
+        if [ -f /etc/sysctl.conf.hxecom ];
+        then
+           mv /etc/sysctl.conf.hxecom /etc/sysctl.conf
+        fi
+        rm /tmp/net_config >/dev/null 2>&1
+	rm /usr/lpp/htx/.build_net_ran
+else
+	echo "build_net_ran flag not set"
+fi
+

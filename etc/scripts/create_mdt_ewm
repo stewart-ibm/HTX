@@ -1,0 +1,239 @@
+#!/bin/bash
+
+# @(#)27	1.1  src/htx/usr/lpp/htx/etc/scripts/create_mdt_ewm, htxconf, htxubuntu 1/4/16 05:45:19
+
+# Determine SMT threads per processor
+lcpus=`grep processor /proc/cpuinfo | wc -l`;
+pcpus=`ls -l /proc/device-tree/cpus | grep ^d | awk '(\$NF ~ /POWER/)' | wc -l`
+smt_threads=`expr $lcpus / $pcpus`
+if [ $smt_threads == 0 ]
+then
+    smt_threads = 1
+fi
+
+proc_ver=`grep Version /tmp/htx_syscfg | awk -F: '{print $2}'`
+proc_ver_dec=`printf %d $proc_ver`
+
+mk_stanza()
+{
+   echo                                                                                      >> $3
+   echo "$1:"                                                                                >> $3
+   echo "    HE_name = \"hxeewm\"                * Hardware Exerciser name, 14 char"         >> $3
+   echo "    adapt_desc = \"Energy workload\"    * adapter description, 11 char max."        >> $3
+   echo "    device_desc = \"Energy workload\"   * device description, 15 char max."         >> $3
+   echo "    cont_on_err = \"NO\"                * continue on error (YES/NO)"               >> $3
+   echo "    reg_rules = \"hxeewm/$2\"     * reg"                                      >> $3
+}
+
+create_mdt_entries()
+{
+    thread_start_num=$4
+    num_threads=$5
+    thread_limit=`expr $thread_start_num + $num_threads`
+    rule_name=$2
+    mdt_name=$3
+        #    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > $mdt_name
+    k=0
+    j=0
+    while [ $j -lt $lcpus ]
+    do
+        i=$thread_start_num
+        k=`expr $j + $thread_start_num`
+        while (( i < thread_limit ))
+        do
+            if [ $i -ge $smt_threads ]
+            then
+                break
+            fi
+            dev_name=$1$k
+            mk_stanza $dev_name $rule_name $mdt_name
+            k=`expr $k + 1`
+            i=`expr $i + 1`
+        done
+        j=`expr $j + $smt_threads`
+    done
+}
+
+# mdts specific to P8
+#--------------------
+
+if [ $proc_ver_dec -ge 75 ];
+then
+    #Create all RDP test mdts
+    #------------------------
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_p8_rdp_smt1
+    create_mdt_entries rdp rule.rdp ${HTXMDT}mdt.ewm_p8_rdp_smt1 0 1
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_p8_rdp_smt4
+    create_mdt_entries rdp rule.rdp ${HTXMDT}mdt.ewm_p8_rdp_smt4 0 4
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_p8_rdp_smt8
+    create_mdt_entries rdp rule.rdp ${HTXMDT}mdt.ewm_p8_rdp_smt8 0 8
+
+    #Create all TDP test mdts
+    #------------------------
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_p8_tdp_smt1
+    create_mdt_entries tdp rule.tdp ${HTXMDT}mdt.ewm_p8_tdp_smt1 0 1
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_p8_tdp_smt4
+    create_mdt_entries tdp rule.tdp ${HTXMDT}mdt.ewm_p8_tdp_smt4 0 4
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_p8_tdp_smt8
+    create_mdt_entries tdp rule.tdp ${HTXMDT}mdt.ewm_p8_tdp_smt8 0 8
+
+    #Create CMP mdt
+    #--------------
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_p8_cmp
+    create_mdt_entries fdaxpy rule.fdaxpy ${HTXMDT}mdt.ewm_p8_cmp 0 8
+
+
+    #create p8_5fd_3md mdt
+    #---------------------
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_p8_5fd_3md
+    create_mdt_entries fdaxpy rule.fdaxpy ${HTXMDT}mdt.ewm_p8_5fd_3md 0 5
+    create_mdt_entries mdaxpy rule.mdaxpy_1G ${HTXMDT}mdt.ewm_p8_5fd_3md 5 3
+
+    #create p8_6fd_2md mdt
+    #---------------------
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_p8_6fd_2md
+    create_mdt_entries fdaxpy rule.fdaxpy ${HTXMDT}mdt.ewm_p8_6fd_2md 0 6
+    create_mdt_entries mdaxpy rule.mdaxpy_1G ${HTXMDT}mdt.ewm_p8_6fd_2md 6 2
+
+    #create p8_7fd_1md mdt
+    #---------------------
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_p8_7fd_1md
+    create_mdt_entries fdaxpy rule.fdaxpy ${HTXMDT}mdt.ewm_p8_7fd_1md 0 7
+    create_mdt_entries mdaxpy rule.mdaxpy_200M ${HTXMDT}mdt.ewm_p8_7fd_1md 7 1
+
+    #creat p8_8fd
+    #------------
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_p8_8fd
+    create_mdt_entries fdaxpy rule.fdaxpy ${HTXMDT}mdt.ewm_p8_8fd 0 8
+
+    # Below mdts for naples on htxubuntu build only
+    if [[ $CMVC_RELEASE == "htxubuntu" ]];
+    then
+        # create daxpy_1024G 
+        #-------------------
+        cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_naples_daxpy_1024G
+        create_mdt_entries mdaxpy rule.mdaxpy_10G ${HTXMDT}mdt.ewm_naples_daxpy_1024G 0 8
+        
+        # create daxpy_512G
+        #------------------
+        cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_naples_daxpy_512G
+        create_mdt_entries mdaxpy rule.mdaxpy_2G ${HTXMDT}mdt.ewm_naples_daxpy_512G 0 1
+        create_mdt_entries mdaxpy rule.mdaxpy_3G ${HTXMDT}mdt.ewm_naples_daxpy_512G 1 6
+        create_mdt_entries mdaxpy rule.mdaxpy_1G ${HTXMDT}mdt.ewm_naples_daxpy_512G 7 1
+        
+        # create daxpy_256G
+        #------------------
+        cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_naples_daxpy_256G
+        create_mdt_entries mdaxpy rule.mdaxpy_2G ${HTXMDT}mdt.ewm_naples_daxpy_256G 0 1
+        create_mdt_entries mdaxpy rule.mdaxpy_3G ${HTXMDT}mdt.ewm_naples_daxpy_256G 1 6
+        create_mdt_entries mdaxpy rule.mdaxpy_1G ${HTXMDT}mdt.ewm_naples_daxpy_256G 7 1
+        
+        # create daxpy_128G
+        #------------------
+        cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_naples_daxpy_128G
+        create_mdt_entries mdaxpy rule.mdaxpy_2G ${HTXMDT}mdt.ewm_naples_daxpy_128G 0 1
+        create_mdt_entries mdaxpy rule.mdaxpy_1G ${HTXMDT}mdt.ewm_naples_daxpy_128G 1 6
+        create_mdt_entries mdaxpy rule.mdaxpy_2G ${HTXMDT}mdt.ewm_naples_daxpy_128G 7 1
+        
+        # create daxpy_64G
+        #------------------
+        cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_naples_daxpy_64G
+        create_mdt_entries mdaxpy rule.mdaxpy_1G ${HTXMDT}mdt.ewm_naples_daxpy_64G 0 1
+        create_mdt_entries mdaxpy rule.mdaxpy_500M ${HTXMDT}mdt.ewm_naples_daxpy_64G 1 6
+        create_mdt_entries mdaxpy rule.mdaxpy_1G ${HTXMDT}mdt.ewm_naples_daxpy_64G 7 1
+        
+        # create ddot_1024G 
+        #-------------------
+        cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_naples_ddot_1024G
+        create_mdt_entries mdaxpy rule.mdaxpy_10G ${HTXMDT}mdt.ewm_naples_ddot_1024G 0 8
+        
+        # create ddot_512G
+        #------------------
+        cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_naples_ddot_512G
+        create_mdt_entries mdaxpy rule.mdaxpy_2G ${HTXMDT}mdt.ewm_naples_ddot_512G 0 1
+        create_mdt_entries mdaxpy rule.mdaxpy_3G ${HTXMDT}mdt.ewm_naples_ddot_512G 1 6
+        create_mdt_entries mdaxpy rule.mdaxpy_1G ${HTXMDT}mdt.ewm_naples_ddot_512G 7 1
+        
+        # create ddot_256G
+        #------------------
+        cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_naples_ddot_256G
+        create_mdt_entries mdaxpy rule.mdaxpy_2G ${HTXMDT}mdt.ewm_naples_ddot_256G 0 1
+        create_mdt_entries mdaxpy rule.mdaxpy_3G ${HTXMDT}mdt.ewm_naples_ddot_256G 1 6
+        create_mdt_entries mdaxpy rule.mdaxpy_1G ${HTXMDT}mdt.ewm_naples_ddot_256G 7 1
+        
+        # create ddot_128G
+        #------------------
+        cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_naples_ddot_128G
+        create_mdt_entries mdaxpy rule.mdaxpy_2G ${HTXMDT}mdt.ewm_naples_ddot_128G 0 1
+        create_mdt_entries mdaxpy rule.mdaxpy_1G ${HTXMDT}mdt.ewm_naples_ddot_128G 1 6
+        create_mdt_entries mdaxpy rule.mdaxpy_2G ${HTXMDT}mdt.ewm_naples_ddot_128G 7 1
+        
+        # create ddot_64G
+        #------------------
+        cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_naples_ddot_64G
+        create_mdt_entries mdaxpy rule.mdaxpy_1G ${HTXMDT}mdt.ewm_naples_ddot_64G 0 1
+        create_mdt_entries mdaxpy rule.mdaxpy_500M ${HTXMDT}mdt.ewm_naples_ddot_64G 1 6
+        create_mdt_entries mdaxpy rule.mdaxpy_1G ${HTXMDT}mdt.ewm_naples_ddot_64G 7 1       
+    fi
+fi
+
+# mdts for P7 and above
+if [ $proc_ver_dec -ge 63  ];
+then
+    #create Powervirus mdts
+    #----------------------
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_1pv
+    create_mdt_entries pv rule.pv ${HTXMDT}mdt.ewm_1pv 0 1
+
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_2pv
+    create_mdt_entries pv rule.pv ${HTXMDT}mdt.ewm_2pv 0 2
+
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_3pv
+    create_mdt_entries pv rule.pv ${HTXMDT}mdt.ewm_3pv 0 3
+
+    #create firebird MSRP
+    #---------------------
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_msrp_firebird
+    create_mdt_entries pv rule.pv ${HTXMDT}mdt.ewm_msrp_firebird 0 1
+    create_mdt_entries ddot rule.ddot_200M ${HTXMDT}mdt.ewm_msrp_firebird 1 1
+
+    #create Titan MSRP
+    #-----------------
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_msrp_titan
+    create_mdt_entries pv rule.pv ${HTXMDT}mdt.ewm_msrp_titan 0 1
+    create_mdt_entries ddot rule.ddot_200M ${HTXMDT}mdt.ewm_msrp_titan 1 3
+    
+    #create Atlas MSRP
+    #----------------
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_msrp_atlas
+    create_mdt_entries pv rule.pv ${HTXMDT}mdt.ewm_msrp_atlas 0 3
+    create_mdt_entries ddot rule.ddot_200M ${HTXMDT}mdt.ewm_msrp_atlas 3 1
+    
+    #create Saturn MSRP
+    #------------------
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_msrp_saturn
+    create_mdt_entries pv rule.pv ${HTXMDT}mdt.ewm_msrp_saturn 0 2
+    create_mdt_entries ddot rule.ddot_200M ${HTXMDT}mdt.ewm_msrp_saturn 2 2
+    
+    #creat MSRP config
+    #-----------------
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_msrp_config
+    create_mdt_entries pv rule.pv ${HTXMDT}mdt.ewm_msrp_config 0 1
+    create_mdt_entries ddot rule.ddot ${HTXMDT}mdt.ewm_msrp_config 1 1
+    create_mdt_entries pv rule.pv ${HTXMDT}mdt.ewm_msrp_config 2 2
+    
+    #create Divds mdt
+    #----------------
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_divds
+    create_mdt_entries divds rule.divds ${HTXMDT}mdt.ewm_divds 0 8
+
+    #create Adds mdt
+    #---------------
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_adds
+    create_mdt_entries adds rule.adds ${HTXMDT}mdt.ewm_adds 0 8
+
+    #create cmp mdt
+    #--------------
+    cat /usr/lpp/htx/mdt/mdt.bu | /usr/lpp/htx/etc/scripts/create_mdt_with_devices.awk  > ${HTXMDT}mdt.ewm_cmp
+    create_mdt_entries pv rule.pv ${HTXMDT}mdt.ewm_cmp 0 1
+fi

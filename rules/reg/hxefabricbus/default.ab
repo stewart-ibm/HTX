@@ -1,0 +1,174 @@
+* Rule file for hxefabricbus Internode test 
+*
+* Following is an explaination of supported keywords and default values.
+*
+* keyword - 	rule_id: 
+* Description - Its stanza name and should be a char string of 20 or less bytes.
+* Default - 	NULL string
+*
+* keyword - 	compare
+* Description -	Whether to do data integrity checks or not. 0 - No, i.e. only
+*				cache writes. 1 - Yes, i.e. read/compare the results against 
+*				what was written. 0 can also be refered as stress mode.
+* Default - 	1
+*
+* Keyword -	crash_on_misc
+* Description -	Whether to crash to kernel debugger incase of miscompare.
+*				0 - No, 1 - Yes. Following will be the contents of registers
+*				while dropping to kernel debugger:
+*				r3 - 0xBEEFDEAD
+*				r4 - EA of miscompare location
+*				r5 - pointer to 8 byte pattern
+*				r6 - thread id (i.e. logical cpu no)
+*				r7 - length of operation (i.e. data_width) 
+* Default -		1
+*
+* Keyword -	memory_allocation
+* Description -	0 means memory is allocated local to node.
+*				1 means memory is allocated on Remote node.
+*				2 means memory is allocated on all possible Remote nodes.
+*				3 same as 2 but all threads on node will try to allocate memory 
+*					on all possible remote nodes in round robin fashion.
+*					threads_per_node is ignored here.
+*				
+*
+* Keyword - memory_configure
+* Description - 1 then use user defined memory mapping from file 
+*				/tmp/ablink_mem_config_*(memory_allocation). 
+*				0 Use memory mapping alogorithms based on 
+*				memory_allocation parameter.
+* Default     - 0
+* 
+* Keyword     - wrc_iterations
+* Description - Number of times the Write-Read-Compare algorithm is run
+*               WRC algorithm: Each thread Writes to every byte in its
+*               corresponding 64MB region using double word load/store
+*               instructions, Reads back the entire region and compares each
+*               byte. This repeats for 9 different programable data patterns.
+* Default     - 32
+*
+* Keyword     - wrc_data_pattern_iterations
+* Description - Number of iterations of the WRC algorithm, for which the data
+*               pattern remains constant.
+* Default     - 32
+*
+* Keyword     - copy_iterations
+* Description - Number of times the Copy algorithm is run
+*               Copy algorithm: Each thread splits its 64MB region in half, runs
+*               a copy algorithm on the first 8 bytes of the cache lines (of
+*               both split regions) using double word load/store instructions.
+*               128 byte strides are used due to the size of the cache lines.
+* Default     - 32
+*
+* Keyword     - add_iterations
+* Description - Similar to copy algorithm, but runs for all bytes of cache line.
+* Default     - 32
+*
+* Keyword     - daxpy_iterations
+* Description - Similar to add algorithm. Runs a[j] = a[j]+daxpy_scalar*b[j]
+* Default     - 32
+*
+* Keyword     - daxpy_scalar
+* Description - constant to be used for the daxpy algorithm.
+* Default     - 2
+*
+* Keyword -	num_oper	
+* Description - positive integer value that indicates number of operations to
+*		run before updating rule file count	
+* Default -	1000	
+*
+* Keyword -	threads_per_node	
+* Description - positive integer value that indicates number of threads to
+*		create per node for write/read/compare operation. 
+* Default -	8	
+*
+* Keyword -	random_pattern 
+* Description - If 1,then 8 byte randomly generated patterns are used.
+* Default - 	0
+* Note : Either pattern_id or random_pattern should be used one at a time in a rules file stanza.
+*
+* Keyword -	seed
+* Description - Used to run with a particular seed . [ mostly in case of debug ]
+*		0 - Normal run 
+*		<seed_value> 
+* Default - 	0  
+*
+* Keyword     - pattern_id
+* Description -  Specifies the bit pattern to be used to be used memory buffers or a 
+*		 value "ADDRESS" .
+*		 (ADDRESS key word specifies to use ADDRESS test case and 
+* Possible pattern_id Inputs:
+*           1) Pattern file name along with the size of the pattern to be used.
+*           2) ADDRESS keywords,
+*           3) direct hexadecimal pattern of minimum 8 bytes and maximum of 32 bytes.
+*           4) Multiple patterns specified using any of the above (1) , (2) and (3).
+* Note:    The pattern size specified should be a power of 2.
+*            Only these values can be used:
+*          	8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096.
+* Syntax: Examples
+*         pattern_id = HEX55(8)  .... single pattern: file pattern with size.
+*         pattern_id = ADDRESS   .... single pattern: ADDRESS
+*         pattern_id = 0x1010101010101010 ... single pattern: direct hexadecimal 8 byte pattern.
+*         pattern_id = HEX55(4096) HEXAA(32) ADDRESS 0xA1A2A3A4A5A6A7A8B1B2B3B4B5B6B7B8
+*                  .. the above line is a multiple pattern specification.
+* Default : By default 9 different 8 bytes patterns are used
+*	 If Power 6 machine :
+*		0xFFFFFFFFFFFFFFFF
+*               0x0000000000000000
+*               0xAAAA5555AAAA5555
+*               0x5555AAAA5555AAAA
+*               0xCCCCCCCCCCCCCCCC
+*               0x3333333333333333
+*               0x0F0F0F0F0F0F0F0F
+*               0x3C3C3C3C3C3C3C3C
+*               0x5A5A5A5A5A5A5A5A
+*	 If Power 7 machine & others:
+* 		0x0000000000000000
+*               0xFFFFFFFFFFFFFFFF
+*               0x5555555555555555
+*               0xAAAAAAAAAAAAAAAA
+*               0xCCCCCCCCCCCCCCCC
+*               0x3333333333333333
+*               0x0F0F0F0F0F0F0F0F
+*               0x3C3C3C3C3C3C3C3C
+*               0x5A5A5A5A5A5A5A5A
+*
+*
+*
+* Keyword - cec_nodes
+* Description - user defined maximum number of cec nodes in system
+* Default - 0 
+*
+* Keyword - chips_per_node 
+* Description - User defined number of chips per nodes configured in system 
+* Default - 0
+*
+* Keyword - cores_per_chip 
+* Description - User defined number of logical processors per chip
+* default - 0 
+*
+* Following is a sample stanza
+* rule_id		1
+* compare		1
+* memory_allocation	3
+*
+* Important Note: 
+* Its mandatory to have one blank line between two stanzas.
+* It acts as stanza delimiter. If you have only one stanza 
+* in the rule file than you should have newline(enter key)
+* after the last line in stanza.
+*
+*
+* Parameters cec_nodes, cores_per_chip and chips_per_node are automatically 
+* detected through NUMA RAD calls unless user defines it in rule file . 
+* If defined they should be consistent with the system configuration. 
+
+rule_id	= 1	
+compare	= 1
+num_oper = 1000
+memory_allocation = 3
+seed = 0
+wrc_iterations = 128
+copy_iterations = 0
+add_iterations = 0
+daxpy_iterations = 0

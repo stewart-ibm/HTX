@@ -1,0 +1,35 @@
+* IBM_PROLOG_BEGIN_TAG 
+* This is an automatically generated prolog. 
+*  
+* htxltsbml src/htx/usr/lpp/htx/rules/reg/hxecpu/rules.branch 1.1 
+*  
+* Licensed Materials - Property of IBM 
+*  
+* COPYRIGHT International Business Machines Corp. 2012 
+* All Rights Reserved 
+*  
+* US Government Users Restricted Rights - Use, duplication or 
+* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. 
+*  
+* IBM_PROLOG_END_TAG 
+
+* 50% branch instructions and 50% other instructions
+rule_id						branch_mixed_r1
+num_oper					15000 
+num_threads					0
+seed						[0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]
+stream_depth				2000
+test_method					1
+unaligned_loads_stores_%	[0,0,0,0,0,0,0,0]
+INS_BIAS_MASK               [(0x0500000000000400,50)(0x0500000000003bff,50):(0x0500000000000400,50)(0x0500000000003bff,50):(0x0500000000000400,50)(0x0500000000003bff,50):(0x0500000000000400,50)(0x0500000000003bff,50):(0x0500000000000400,50)(0x0500000000003bff,50):(0x0500000000000400,50)(0x0500000000003bff,50):(0x0500000000000400,50)(0x0500000000003bff,50):(0x0500000000000400,50)(0x0500000000003bff,50)]
+
+
+* 30% bc $+8, 30% other branch instructions and 40% rest instructions
+rule_id						branch_mixed_r2
+num_oper					15000 
+num_threads					0
+seed						[0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]
+stream_depth				2000
+test_method					1
+unaligned_loads_stores_%	[0,0,0,0,0,0,0,0]
+INS_BIAS_MASK               [(0x0600000000000004,30)(0x0500000000000400,30)(0x0500000000003bff,40):(0x0600000000000004,30)(0x0500000000000400,30)(0x0500000000003bff,40):(0x0600000000000004,30)(0x0500000000000400,30)(0x0500000000003bff,40):(0x0600000000000004,30)(0x0500000000000400,30)(0x0500000000003bff,40):(0x0600000000000004,30)(0x0500000000000400,30)(0x0500000000003bff,40):(0x0600000000000004,30)(0x0500000000000400,30)(0x0500000000003bff,40):(0x0600000000000004,30)(0x0500000000000400,30)(0x0500000000003bff,40):(0x0600000000000004,30)(0x0500000000000400,30)(0x0500000000003bff,40)]

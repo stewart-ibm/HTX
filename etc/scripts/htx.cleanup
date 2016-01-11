@@ -1,0 +1,41 @@
+#!/bin/sh
+# @(#)26        1.14.4.3     src/htx/usr/lpp/htx/etc/scripts/htx.cleanup, htxconf, htxubuntu 12/18/13 07:08:18
+
+#[ -f ${HTXLPP}.run_save.default ] && ${HTXLPP}etc/scripts/save.default
+
+# Exerciser cleanup after running runsup only
+for file in `/bin/ls $HTXRUNCLEANUP/[a-zA-Z]*.runcleanup 2>/dev/null| sort`
+do
+    aa=`basename $file`
+    ab=${aa%.runcleanup}
+    if [ $ab != "hxecom" ]
+    then
+      echo "Cleaning ${aa%.runcleanup} ...." 2>&1 | tee -a $HTXNoise
+      . $file 2>&1 | tee -a $HTXNoise
+    else
+     if [ -e "/usr/lpp/htx/.build_net_ran" ]
+     then
+      echo "Cleaning ${aa%.runcleanup} ...." 2>&1 | tee -a $HTXNoise
+      . $file 2>&1 | tee -a $HTXNoise
+    fi
+  fi
+done
+
+# If not killed yet, send SIGKILL to all remaining processes
+ps -aef|grep -v grep|grep -e hxs |grep -v hxssup | awk '{print $2}'|xargs kill -s SIGKILL  >/dev/null 2>&1
+#hxs.kill &
+
+# cleanup shared memory
+ipcrm -M 0x00002969 1>/dev/null 2>&1
+ipcrm -M 0x00002905 1>/dev/null 2>&1
+ipcrm -M 0x0000283d 1>/dev/null 2>&1
+ipcrm -M 0x000032cf 1>/dev/null 2>&1
+
+# cleanup semaphore
+ipcrm -S 0x000027d9 1>/dev/null 2>&1
+
+# cleanup message queue 
+ipcrm -Q 0x00002775 1>/dev/null 2>&1
+
+unalias exit >/dev/null 2>&1
+exit

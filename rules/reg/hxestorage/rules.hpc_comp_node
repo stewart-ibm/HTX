@@ -1,0 +1,25 @@
+* Customer workload env rules for hpc compute node
+* Not much IO other than logging
+* few threads, more sleep stanzas, sequential opers,
+* read/write - more writes, block size - random 
+
+*---------------------------------------------------------------------------*
+*- STANZA 1: Creates 2 threads each doing 64 num_oper with following       -*
+*-           testcase:                                                     -*
+*-           Thread 1: doing SEQ. WRC oper. of size between 512-32K        -*
+*-           thread 2: doing SEQ W oper of size between 512-32K            -*
+*---------------------------------------------------------------------------*
+rule_id = rule_1
+pattern_id = #003
+num_threads = 2
+num_oper = 64
+oper = wrc w
+transfer_size = [512-32K,-1]
+seek_breakup_prcnt = 0
+
+*---------------------------------------------------------------------------*
+*- STANZA 2: Sleep for 3 minutes                                           -*
+*---------------------------------------------------------------------------*
+rule_id = SLEEP2
+oper = s
+sleep = 180000000

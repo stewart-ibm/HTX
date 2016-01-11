@@ -1,0 +1,32 @@
+# @(#)54    1.3  src/htx/usr/lpp/htx/bin/hxecom/hxecom.runsetup.sh, exer_com, htxgrsle9 1/24/05 04:51:28
+
+#get rid of any 802 sems left around.. If they exist hxecom will hang
+#on start.. To see issue command ipcs and look for a line like this :
+#s    393222 0x00000802 --ra-ra-ra-     root   system
+# this code is supposed to clean this up..
+
+data1=`ipcs | grep 00000802 | awk '{print $2}'`
+for item1 in $data1
+do
+#           echo "Removing hxecom key " $item1
+                ipcrm -s $item1 > /dev/null 2>&1
+done
+
+if [  -f ${HTXLPP}.autostart ]
+    then
+    /etc/set_onesys > /dev/null 2>&1
+
+    # Move local rule if no one else has already done it.. 
+    rc=($(ip rule show | awk ' /local/ ' | cut -d : -f 1))
+    for pref in "${rc[@]}"  
+        do
+	# echo "Preference = " $pref
+        if [ $pref -eq 0 ]
+        then
+            `ip rule add pref 20000 lookup local`
+            `ip rule del pref 0 `
+        fi
+    done
+fi
+#exit 0
+

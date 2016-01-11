@@ -1,0 +1,227 @@
+# @(#)70	1.2  src/htx/usr/lpp/htx/bin/hxecom/how_to.build_net, exer_com, htxubuntu 5/24/04 10:16:04
+#########################################################################
+INSTALATION:
+   build_net code must be installed after htx is loaded. This is done
+because build_net will change root  profiles, .kshrc  and /etc/hosts files
+and .rhosts files.     
+To Install it 
+cd /
+restore -xvf/usr/lpp/htx/bin/bld_net.bak
+
+TO USE BUILD_NET IN MULTIPLE SYSTEM NETWORK TEST.
+STEP BY STEP.
+
+1. 	Draw out network..... mark type of card (tok, ent, fddi, etc) and slot for
+   	each host id  in the test. Use the last nibble of the ip address on the 
+   	comnet as the host id. See drawing 1.
+
+2. 	Connect networks on paper and label each network with a network id
+	(160-219 or com).
+   	Com is the communication network used by hxecom. A com network must
+   	connect all the systems in the test. See drawing 1.
+	You can use the site network as com if you want, but you can't test on
+	the site ring.
+NOTE: You can have a maximum of 10 systems in any one test.
+
+Drawing 1 ******************************************************************
+
+System 1                                   System 2
+hostname hsthuron00				          hostname hsthuron01
+ip 9.3.218.84                             ip 9.3.218.85
+host id 84                                host id 85
+
+type  slot                                type   slot
+
+ent0 17-08-----------com------------------ent2   16-42
+
+
+tok0 1A-08-----------180------------------tok2   18-02
+
+
+fddi0 21-08----------181------------------fddi1  07-06
+
+
+NOTE: ent0 in hsthuron00 is physically connected to ent2 in hsthuron01 and
+	so on.
+
+****************************************************************************
+
+3. Make all the hardware network connections. Get all the wireing just
+   like your drawing......
+
+4. boot the system, login to root, not htx..
+	All of the build_net tools are in the / (root) directory.
+   
+5. If this is a new test with a newly installed card configuration and you
+	have not yet run build_net on this configuration you should:
+	a.  Check to make sure all the devices you installed are Available.
+	    To check that do lsdev -C | grep tok to check tokenring adapters,
+	    lsdev -C | grep ent for ethernet, etc. 
+		ex: lsdev -C | grep ent0
+ent0       Available 17-08         Gigabit Ethernet-SX PCI Adapter (14100401)
+		If you have devices that are in the system but showing up as
+		Defined then you have to find out why the device is not configuring  
+		before continueing to step 6.	
+
+	b.	If you have a lot of Defined devices because of adapters you have
+		removed from the system, you should run clean_net and remove all the
+		devices then reboot then continue to step 6.
+
+6. On each system.... run build_net in one of two ways.
+ 
+	The interactive way:
+	Just enter 
+	build_net
+	from the command line and answer the questions. build_net will 
+	create a profile for you as you answer the questions and when
+	it completes you can use the profile to rerun the same build 
+	configuration later. The saved profile is in /tmp/saveprof.
+	
+
+	Usin a profile template:
+	Just enter 
+	build_net help
+	from the command line.
+	A template file called bpt will be created for the system.
+	if you are on hsthuron00 the file will look like this:
+****************************************************************************
+onesys=n
+thishostid=84
+other_ids=84:
+stresslevel=1
+comhostname=hsthuron00
+use_site_ring=y
+com_configured=y
+#If com_configured=n and use_site_ring=y
+comipaddr=xxx.xxx.xxx.xxx
+comnameserver=xxx.xxx.xxx.xxx
+comgateway=xxx.xxx.xxx.xxx
+commask=xxx.xxx.xxx.xxx
+comdomain=austin.ibm.com
+#dev  net         speed       duplex     cable_type
+#entX XXX/n/com   10/100/auto  full/half  bnc/dix/tp/N/A/n
+ent0 n 100 full tp   #17-08
+
+#dev  net       speed     duplex     recv_q
+#tokX XXX/n/com 4/16/auto full/half  32-160
+tok0 n 16 full 32  #1A-08
+
+#dev  net  atm_connection  master  server_addr switch_addr  server_atm
+#atmX XXX/n pvc/svc_s/svc_c m/s     xxxxxxxxxxx xx.xx.xx.etc  0/1/2/etc
+fddi0 n               #21-08
+****************************************************************************
+
+	First complete the other_ids line.	This line must tell build_net the
+	host ids of all the systems in this test. In our two system example
+	the other_ids line will look like this:
+
+other_ids=84:85
+
+	If you are using the site ring as comnet and the com adapter is already
+	configured you just leave these lines as they are: 
+use_site_ring=y
+com_configured=y
+
+	If you are not using the site ring as com then set these 2 lines to:
+use_site_ring=n
+com_configured=n
+
+	If you are using the site ring as com and it is not yet configured you have
+	to fill out these lines as shown: 
+use_site_ring=y
+com_configured=n
+#If com_configured=n and use_site_ring=y
+comipaddr=ip address for hsthuron00
+comnameserver=nameserver ip
+comgateway=gateway ip
+commask=mask... 255.255.255.0
+comdomain=austin.ibm.com
+
+
+	Now you can fill out the adapter lines.. 
+
+	The ent0 line would look like this: 
+ent0 com 100 full tp   #17-08
+	Note: if you already have the com adapter configured then build_net
+	will not touch it so don't worry about the 100 full tp.
+	But: if you want build_net to configure com, you need to get the
+	speed and duplex settings right for your network.
+
+	The tok0 line should look like this:
+tok0 180 16 full 32  #1A-08
+
+	The fddi0 line should look like this:
+fddi0 181               #21-08
+
+
+	Now to configure the adapters for the network test run this; 
+
+	build_net bpt
+
+	If you need to rerun build_net on this same machine for this same
+	configuration you can reused the same bpt profile so you want to 
+	save that file until you are finished with the current configuration.
+
+
+7. After you have run build_net on all the systems, go back and
+	test all the networks. Use ping to test them.  The configuration
+   for each system in logged by build_net in /tmp/saveprof and is
+	backed up in /tmp/saveprob.bak
+
+8. Now logoff root and back on to htx.
+
+9. On each system, if you want the network entries added to 
+   the test mdt(master device table) file do this: 
+   cd /usr/lpp/htx/mdt and run 'mdt_net' 
+	mdt_net will ask you which mdt file you want to use for test, select one
+	from the list shown.
+
+10. run runsup and select the mdt file you added the networks too above.
+
+
+****************************************************************************
+TO USE BUILD_NET IN SINGLE SYSTEM NETWORK TEST.
+
+1. Lay out the system networks on paper first..
+
+EXAMPLE.. 
+hostname tester00
+ip 9.3.243.151
+host id 151
+Lay out the network addresses to adapter cards in the system.
+1/1 GALAXY(ent2) 200
+1/2 BIGBEND(atm2) 201
+1/3 BIGBEND(atm1) 201
+1/4 CLOVER(ent3)  202
+	CLOVER(ent4)  203
+	CLOVER(ent5)  202
+	CLOVER(ent6)  203
+1/5 HONEYCOMB(fddi1) 204
+1/6 CRICKETSTICK(tok0) 205
+1/7 GALAXY(ent7) 200
+1/9 CRICKETSTICK(tok1) 205
+1/10 HONEYCOMB(fddi0) 204
+1/11 Internal Ent(ent0) com
+1/12 Internal Scsi(scsi0)
+1/13 SPSWITCH(css0)
+
+NOTE: that there are multiple 200nets, 201nets, 202nets etc.
+I support only a two card network when running on one systems.
+build_net will check this to make sure. If you give it one 200 network
+address and don't have another build_net will fail. If you have more than
+two 200 networks build_net will fail.
+
+2. Again you can run build_net interactively or create a profile template.
+
+NOTE: Do not specify comment when running one system network. Build_net will 
+make each card be its own comnet. This get extra activity on each network.
+
+3.Use the net.mdt file as before.  and run htx.
+
+4. build_net will add a line to the /etc/inittab file so that on reboot the
+   routes and hwloop settings will come back after the reboot.
+
+5. clean net will remove all the static roots created by build_net.
+	and remove the rc.net call that reset routes.
+	NOTE: If you want to run tu's on adapters after you have run hxecom
+	you must use clean_net then reboot before running tu's.

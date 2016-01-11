@@ -1,0 +1,33 @@
+* @(#)50	1.1  src/htx/usr/lpp/htx/rules/reg/hxestorage/hd.cache, exer_storage, htxubuntu 5/5/15 20:20:00
+
+*---------------------------------------------------------------------------*
+*- STANZA 1: One threads writes to disk while 3 threads are reading from   -*
+*-           the same memory buffer that is used to write to the disk.     -*
+*---------------------------------------------------------------------------*
+rule_id = rule_1
+pattern_id = #003
+num_oper = 1000
+oper = cawr carw
+num_threads = 2
+num_cache_threads = 4
+testcase = cache
+seek_breakup_prcnt = 0
+starting_block = BOT MID
+transfer_size = 32BLK
+num_mallocs = 6
+align = 4096
+
+*---------------------------------------------------------------------------*
+*- STANZA 2: Clean up after the CACHE operation. 63 operations * 512       -*
+*-            blocks/oper will cover 32000 blocks, starting from block 0.  -*
+*---------------------------------------------------------------------------*
+rule_id = rule_2
+pattern_id = #003
+num_oper = 63
+oper = w
+num_threads = 2
+seek_breakup_prcnt = 0
+transfer_size = 512BLK
+starting_block = BOT MID
+starting_block = 0
+num_mallocs = 1

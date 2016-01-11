@@ -1,0 +1,11 @@
+* Rule file to Stress test Intra node fabricbus for Power7 MR16 and MR32 box
+
+rule_id =1 	
+compare = 1
+num_oper = 1000
+memory_allocation = 4
+seed = 0
+chips_per_node = 4
+
+
+

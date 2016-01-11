@@ -1,0 +1,9 @@
+* Rules file for P7 MR box
+
+rule_id	= 1	
+compare	= 1
+num_oper = 1000
+threads_per_node = 8
+memory_allocation = 3
+seed = 0
+chips_per_node = 4

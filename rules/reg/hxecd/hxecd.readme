@@ -1,0 +1,485 @@
+* @(#)36        1.9  src/htx/usr/lpp/htx/rules/reg/hxecd/hxecd.readme, exer_cd, htxubuntu 4/22/09 05:14:59
+
+General
+
+     The exerciser program is written in 'C' to run on the RS6000
+     as a normal AIX application program.
+
+     It is invoked and run under control of the HTX (Hardware Test
+     eXecutive) application. HTX may invoke single or multiple copies of
+     the exercisers, each running on a seperate device.
+
+     It is capable of accessing any data on the cdrom test disc provided
+     the proper mode is selected for the data to be accessed.
+
+     The operations to be performed are specified in rules files, and can
+     be modified using any editor without having to change the exerciser
+     program.
+
+     There is one exerciser program for each cdrom device. Hence, it
+     is possible to concurrently exercise all cdrom devices by using
+     HTX control.
+
+     Entries are created in the HTX Master Device Table (MDT) to cause as
+     many exercisers to be initiated as desired (within reason).
+
+
+Functional Specifications
+
+Media Requirement
+ 
+     To run hxecd, the user must use designated HTX test media. 
+     The part numbers of the test media are as follows;
+          
+     Part Numbers 
+     ------------
+     CDROM Test Disk P/N is 81F8902
+     DVDROM Test Disk P/N is 03K9982 or 53P2519.
+          
+Input
+
+     The first argument passed to the program (argv[1]) is the device
+     id e.g. "/dev/rcd0" , "/dev/rcd1" , etc.
+
+     The second argument passed to the program (argv[2]) is the
+     Run Type e.g. "REG", or "EMC". Any other value passed will be
+     intrepreted as running in "stand-alone" mode.
+
+     The third argument passed to the program (argv[3]) is the rules
+     file id e.g. for cd in AIX 3.25 "/usr/lpp/htx/rules/reg/cd/xxxxxxx" or
+     "/usr/lpp/htx/rules/emc/cd/xxxxxxx". In AIX 4.1 the rules file is
+     "/usr/lpp/htx/rules/reg/hxecd/xxxxxxxx" or                         
+     "/usr/lpp/htx/rules/emc/hxecd/xxxxxxxx".
+
+Processing
+
+     Start the exerciser, HTX or stand-alone.
+
+     Sequentially read each rules file stanza and perform the operation(s)
+     specified.
+
+     Keep HTX informed as to the progress of the test and allow the HTX
+     operator to stop the device if desired.
+
+     If an error is detected, immediately inform HTX with an error message.
+
+     After the last rules stanza has been completed, inform HTX of test end
+     and start over with the first rules stanza if not running stand-alone.
+
+Output
+
+     If running stand-alone, all informational messages are written to
+     stdout, and all error messages are written to stderr.
+
+     If initiated by HTX, informational messages are suppressed, and
+     error messages are handled by HTX.
+
+     On buffer mis-compares, the write and read buffers are written
+     out to the /tmp directory. The naming conventions for these buffers
+     in the /tmp directory is as follows: The device id and then which
+     buffer it is. Also, you can have up to ten files of each buffer if
+     you are running with Continue on Error. An example of the file name
+     is: read buffer - rcd0.rbuf1, write buffer - rcd0.wbuf1, etc...
+
+Rules File
+
+    The rules file determines what operations the exerciser program will
+    perform. It will be stored in the HTX Rules file directory. In AIX 3.25
+    it is /usr/lpp/htx/rules/reg/cd/xxxxxxxx or 
+    /usr/lpp/htx/rules/emc/cd/xxxxxxxx and in AIX 4.1 it is
+    /usr/lpp/htx/rules/reg/hxecd/xxxxx or /usr/lpp/htx/rules/emc/hxecd/xxxxx.
+    For further clarification of rule conventions, you can refer to the HTX
+    documentation.
+
+    A rules file will consist of a number rules file stanzas as described
+    below. A stanza consists of several keywords followed by a blank line.
+    The blank is a delimiter telling the exerciser that a stanza is complete.
+
+    Disk/Diskette Rule Stanza Keywords for Random Operations
+    _____________________________________________________________________
+    | Keyword       | Value(s) | Default    |Comments                    |
+    |_______________|__________|____________|____________________________|
+    | RULE_ID       | xxxxxxxx |            |Required, text from 1 to    |
+    |               |          |            |8 characters in length.     |
+    |               |          |            |Must contain a number and   |
+    |               |          |            |the number cannot be        |
+    |               |          |            |duplicated.                 |
+    |_______________|__________|____________|____________________________|
+    | PATTERN_ID    |          |            |Specify the read compare    |
+    |               | CDM101   |            |Mode 1 data file.           |
+    |               | CDM2F101 |            |Mode 2 Form 1 data file.    |
+    |               | CDM2F201 |            |Mode 2 Form 2 data file.    |
+    |_______________|__________|____________|____________________________|
+    | NUM_OPER      | n        | 1          |Specify number of operations|
+    |               |          |            |or times to perform the     |
+    |               |          |            |current rule stanza.        |
+    |_______________|__________|____________|____________________________|
+    | OPER          |          | R          |Specify rule operation:     |
+    |               | R        |            | R = Read.                  |
+    |               | MS       |            |MS = Mode Select.           |
+    |               | RWP      | **NOTE 1   |RWP = Read/Write/Pattern.   |
+    |               | RC       |            |RC = Read/Compare data.     |
+    |               | D        |            |D = Diagnostics command.    |
+    |               | A        |            |A = Play Audio scsi command.|
+    |               | AMM      |            |AMM = multimedia play audio.|
+    |               | RS       |            |RS = Request Sense.         |
+    |               | S        |            |S = Sleep.                  |
+    |               | RRC      | **NOTE 2   |RRC = Read/Read/Compare     |
+    |               | XCMD     |            |XCMD = Run shell command    |
+    |_______________|__________|____________|____________________________|
+    | STARTING_BLOCK| n        | MIN_BLKNO  |Specify the starting block  |
+    |               | mm:ss:bb |            |for an operation.           |
+    |_______________|__________|____________|____________________________|
+    | INCREMENT     | n        | 0          |Number of blocks to skip    |
+    |               |          |            |for next repeat operation.  |
+    |_______________|__________|____________|____________________________|
+    | NUM_BLKS      | n        | 1          |Number of blocks for the    |
+    |               |          |            |current operation.          |
+    |_______________|__________|____________|____________________________|
+    | MODE          |          | M1         |Desired Mode for Mode Select|
+    |               | M1       |            |Mode 1                      |
+    |               | M2F1     |            |Mode 2 Form 1               |
+    |               | M2F2     |            |Mode 2 Form 2               |
+    |               | DA       |            |Digital Audio mode          |
+    |_______________|__________|____________|____________________________|
+    | DISC_PN       |          |            |Specify cdrom test disc P/N |
+    |               |          |            |REQUIRED keyword in stanza  |
+    |_______________|__________|____________|____________________________|
+    | MIN_BLKNO     | n        | 0          |Specify minimum/maximum     |
+    | MAX_BLKNO     |          | total blks |block number to use.        |
+    |_______________|__________|____________|____________________________|
+    | ADDR_TYPE     | SEQ      | SEQ        |Sequential/Random block     |
+    |               | RANDOM   |            |addresses.                  |
+    |_______________|__________|____________|____________________________|
+    | DIRECTION     | UP       | UP         |Specify direction           |
+    |               | DOWN     |            |                            |
+    |_______________|__________|____________|____________________________|
+    | CRASH_ON_MIS  | YES      | YES        |Specifiy whether to crash   |
+    |               | NO       |            |system on a miscompare      |
+    |_______________|__________|____________|____________________________|
+    | COMMAND       |          |            |Specify the command to be   |
+    |               |          |            |run in the shell            |
+    |_______________|__________|____________|____________________________|
+    | #CRASH_ON_MIS | YES      | **NOTE 3   |Specify whether to crash    |
+    |               | NO       |            |system on a miscompare      | 
+    |_______________|__________|____________|____________________________|
+    | #CLOSE_PIPE   | NO       | **NOTE 3   |Specify whether to keep the | 
+    |               |          |            |pipe open or close the pipe | 
+    |_______________|__________|____________|____________________________|
+    | #RULES_NAME   |          | **NOTE 3   |Specify new rules to run in |
+    |               |          |            |the middle of an HTX run    |
+    |_______________|__________|____________|____________________________|
+
+      NOTE 1: RWP (Read/Write/Pattern) rule is designed to be used ONLY
+      for creation of new read/compare data files. For more information
+      on the RWP operation, see the section "RWP Operation" following
+      the Rules Keyword Descriptions.
+
+      NOTE 2: RRC (Read/Read/Compare) rule is designed to be used for
+      reading data and putting it into a buffer and then going back and
+      rereading the same date and putting it into a different buffer. Then
+      the two buffers are compared to see if there are any discrepancies.
+
+      NOTE 3: These keywords are used when the user initiates a signal 30
+      to the exerciser. This signal clues the exerciser to end the current
+      rules file, open a pipe in which the user can input a stanza, change
+      a default using the special keyword, or have the exerciser use a
+      completely new rules file. The pipe is then closed and the rules file
+      is opened and processing continues. See Pipe Processing for further
+      details.
+      
+      NOTE 4: The exerciser has a new function on dealing with miscompares.
+      When checking Mode 2 Form 2 data and the exerciser has a miscompare,
+      it will log the error as a SOFT error and will continue to run. The
+      data will be saved to disk and record will be kept of it internally.
+      If you have three Mode 2 Form 2 miscompares that occur within an hour's
+      time, then this will be logged as a severe error and the exerciser will
+      stop if you are running "HALT ON ERROR". If the error message you will
+      get a listing of the three miscompares starting LBA, offset into the
+      buffer where the miscompare occurred, and the time of the miscompare.
+      Also, this data will have been saved to the disk.
+
+Rules Keyword Descriptions
+
+
+RULE_ID
+
+The rule id is used to identify the rule stanza being run when putting out
+messages. It can contain any ASCII characters except for a whitespace, it 
+must be specified, and can be 1 to 8 characters in length. This must be the
+first keyword in the stanza.
+
+MIN_BLKNO/MAX_BLKNO
+
+These keywords can be used to specify a subset of blocks on the test disk
+to be used.
+
+PATTERN_ID
+
+The pattern id specifies what read/compare data file to use for a subsequent
+read/compare operation. The read/compare data files are located in the 
+/usr/lpp/htx/pattern directory. 
+
+The available read compare files are:
+
+ CDM102        - read compare data for mode 1 data.
+
+ CDM2F101      - read compare data for mode 2 form 1 data.
+
+ CDM2F201      - read compare data for mode 2 form 2 data.
+
+
+ADDR_TYPE
+
+If SEQ, the disk will be addressed sequentially as specified by
+the STARTING_BLOCK, DIRECTION, INCREMENT, TYPE_LENGTH, and NUM_BLKS keywords.
+
+NUM_OPER
+
+Number of times to iterate the operation in this stanza.
+
+OPER
+
+ Operation to be performed.  The following operations are allowed:
+  R   = Read data block(s).
+* MS  = Do a Mode Select to the desired mode (MODE).
+  RWP = Perform a Read of specified data blocks and write the data to a
+        file to be later used for read/compare operations. This operation
+        is NOT intended for to be placed in a rules file. It is used ONLY
+        to create new read/compare data files. For more information on the
+        RWP operation, see the section "RWP Operation" following this
+        section.
+  RC  = Read/Compare data blocks from the specified read/compare data file.
+  RRC = Read/Read/Compare performs a read of date and puts the data into a
+        buffer. It then rereads the same data and puts the result into a 
+        different buffer. It then compares the two different buffers.
+* D   = Perform a scsi Diagnostics command.
+* A   = Play Audio using the proper play audio command scsi command.
+  AMM = Play audio using the device driver's multimedia play audio functions.
+* RS  = Perform a scsi Request Sense command.
+  S   = Sleep for x seconds.
+       
+        NOTE: Those operations marked with an asterick (*) are operations 
+              that are done in pass-thru mode and may not be logged in the 
+              system error log.
+
+STARTING_BLOCK
+
+This parameter is required for read and read/compare operations. It can be
+an integer specifing a block number between 0 and the last block on the disc.
+This parameter may also be specified in the mm:ss:bb (minutes, seconds, blocks)
+format.
+
+DIRECTION
+
+This parameter specifies the direction for sequential operations.
+UP is used to proceed from bottom to top.  DOWN to proceed from top to bottom.
+
+INCREMENT
+
+Number blocks to skip for sequential operations.
+
+NUM_BLKS
+
+The number of data blocks to be read for each operation. The maximum value
+is determined by the blocksize divided into a set buffer size of 51200 bytes.
+An example would be bs = 512, then the number of operations would be 100 or
+a blocksize of 2048, then the number of operations would be 25. The number of
+operations can not exceed a set default maximum lba value of 269250 or the 
+last lba value acquired from the device driver get disc info function.
+If the STARTING_BLOCK is specified in MSF format, then the number of blocks
+specifies the number of frames.  In this format, each second consists of  75 
+frames.
+
+SLEEP
+
+Number of seconds the exercisor will sleep (wait). The number of seconds is
+defined using the NUM_BLKS keyword.
+
+CRASH_ON_MIS
+
+Go into the kernel debugger when a miscompare occurs. Typing "g" at the
+debugger prompt will continue the exerciser. Where it is desired to go 
+into the debugger on a miscompare, CRASH_ON_MIS = YES must be put into each 
+rules stanza.  By default, CRASH_ON_MIS = YES in all the rule file stanzas.
+When the debugger is entered, the following characters will be seen: 
+
+     register 1 - 0xBEEFDEAD
+     register 2 - pointer to write buffer 
+     register 3 - pointer to read buffer
+     register 4 - offset into buffer where miscompare occurred
+     register 5 - pointer to htx_data structure
+     register 6 - pointer to ruleinfo structure
+     
+By default when HTX is invoked as 'htx', HTXKDBLEVEL env. var is set to 1.
+We can control whether the exer should enter the system into KDB, in case 
+of a miscompare based on this keyword's value in the rule file stanza. 
+By default as said above, this keyword is set to YES in all the hxecd rule 
+files, so that in case of a miscompare, the system enters KDB, and valuable
+debugging data related to the miscompare can be collected.
+
+When HTX is invoked as 'htx -k', HTXKDBLEVEL env. var is set to 0.
+This would override/ignore the CRASH_ON_MIS keyword present in the rules file,
+and the system will just HALT in case of a miscompare, and will NOT enter
+KDB. This option ( htx -k ) is provided so that exers such as hxecd, along 
+with others like hxehd, hxefd, hxetape etc which can potentially get a system
+into KDB in case of a miscompare, can be controlled simultaneously, to just
+halt the exer, instead of going into KDB.
+
+These options help the tester to control each exer individually and collectively, 
+so that he/she can control when the system should enter KDB in case of a miscompare 
+while carrying out his/her tests.
+
+When hxecd is used on the cmd line in stand-alone mode, HTXKDBLEVEL env. var cease
+to exist, in such a situation, this keyword's value in rules file will control
+whether the system should enter KDB in case of a miscompare.
+
+COMMAND
+
+This keyword is used to input the command you want to run from a shell. You
+type in the command in the format you want it to run. You have a special char-
+acter that you can input into the command to get the device name.
+   $d = just the device name ( ex. hdisk1 )
+   $D = just the raw device name ( ex. rhdisk1 )
+   $p = fully qualified device name ( ex. /dev/hdisk1 )
+   $P = fully qualified raw device name ( ex. /dev/rhdisk1 )
+   $o = this is used to generate the error file for the command             
+        ( ex. errout.hdisk1 ). This file is only used by the exerciser and
+        will be deleted when the exerciser is finished with it.
+
+#CRASH_ON_MIS
+
+Go into the kernel debugger when a miscompare occurs. Typing "g" at the
+debugger prompt will continue the exerciser. CRASH_ON_MIS = NO is the
+default. Where it is desired to go into the debugger on a miscompare,
+CRASH_ON_MIS = YES must be put into each rules stanza.  When the
+debugger is entered, the following characters will be seen in register 1:
+BEEFDEAD. This keyword is used during the pipe processing.
+
+#CLOSE_PIPE
+
+Do not close the pipe after processing the data from the pipe as the user
+wants to input more data.
+
+#RULES_NAME
+
+Input the name of a new rules file that you want the exerciser to run while
+the exerciser is currently running.
+
+PIPE Processing
+
+ This process is used while the exerciser is running. This is a way to change
+parameters of the exerciser without having to stop the exerciser such as
+changing the message variable from NO to YES or to changing the name of the
+rules file you want to exercise. To invoke this process, you must follow the
+following steps:
+ 1) Take option 11 from the HTX supervisor screen to get into a shell.
+ 2) Run cmd "ps -ef" to get the process id of the exerciser you wish to halt.
+ 3) Run cmd "kill -30 process_id" ( ex. kill -30 10956 ).
+At this point the exerciser will halt at the end of the stanza it is running
+and will create a file called "device_id.pipe" (ex. rcd0.pipe). Make sure the
+pipe exists before continuing. You do this by:
+ 4) Run cmd "li -l *.pipe".
+ 5) Once the file exists, you can type directly into the file by using cmd
+    "cat >device_id.pipe ( ex. cat >rcd0.pipe ). Once done writing in the file
+    do a cntl-d to end the writing and this will signal the exerciser to read
+    the pipe and continue processing. You could also copy a file into the pipe
+    with the command - cp fn device_id.pipe ( ex. cp new_rule rcd0.pipe).
+Once the exerciser has read from the pipe file and processed the data, it then
+deletes the file and continues running the exerciser.
+
+RWP Operation
+
+ The RWP operation is used to create a read data compare file from a
+cdrom disc. This read/compare file is then later used to compare
+against data read from the cdrom disc.
+
+ The RWP operation is performed by creating a short rules file
+which selects the desired data to be written into the read/compare
+data file. This temporary short rules files should contain the cdrom
+disc's part number, the RWP OPER keyword, the desired mode select
+keyword of MODE, a PATTERN_ID, the number of blocks to read, and
+the starting block.
+
+ Below is a recommended example of a read/compare data file generation
+rules file. This particular rules file was used to generate the
+read/compare data file for cdrom mode 1 data.
+
+*
+* cdm102.genpat - generate a read/compare file.
+*
+*    Inputs: 1) CDROM Disc part number       (RULE_ID=...........)
+*            2) Pattern ID to create         (PATTERN_ID=........)
+*            3) CD-ROM Mode                  (MODE=..............)
+*            4) Starting Block to begin read (STARTING_BLOCK=....)
+*            5) Number of blocks to read     (NUM_BLKS=..........)
+*            6) Possibly, increment value    (INCREMENT=.........)
+*
+*   Outputs: /tmp/CD<PATTERN_ID>.info    = Information contents file.
+*            ..../pattern/<PATTERN_ID> = Read/Compare binary file.
+*
+*---------------------------------------------------------------------------*
+*- Start Rules in CD-ROM Mode 1                                            -*
+*---------------------------------------------------------------------------*
+RULE_ID = MSM1
+OPER = MS
+MODE = M1
+
+*---------------------------------------------------------------------------*
+*- Generate the read/compare data file                                     -*
+*---------------------------------------------------------------------------*
+RULE_ID = 81F8902
+OPER = RWP
+MODE = M1
+PATTERN_ID = M102
+NUM_BLKS = 20
+STARTING_BLOCK = 04:48:00
+
+--------------------------------------------------------------------
+
+ Two files are created by the RWP operation:
+
+  1.  /tmp/CD<PATTERN_ID>.info    = Information contents file.
+
+  2.    ..../pattern/<PATTERN_ID> = Read/Compare binary file.
+
+ The information contents file is placed in the /tmp directory
+and is used as a reference to later review the contents of the
+read/compare data file. This file's name is the supplied
+PATTERN_ID preceded by "CD" and followed by ".info".
+
+ The Read/Compare binary data file is placed in the HTX pattern
+directory, "/usr/lpp/htx/pattern", using the filename of the
+supplied PATTERN_ID value.
+
+ Of course, if you create a read/compare data file, you then get
+to create your own rules file to read the proper data again for
+the read compare operations.
+
+------------------------------------------------------------------
+
+hxecd under VIOS setup
+----------------------
+
+hxecd has the capability to run on the guest partitions under VIOS setup.
+hxecd-VIOS support for HTX-AIX was added through Feature # 541684 and for 
+HTX-Linux through defect # 538241.
+The VIOS (Virtual I/O Server) called the Alpha Partition, currently 
+runs AIX53. The partitions managed by the VIOS, called the guest partitions
+can either host Linux or AIX.
+VIOS manages all the physical devices and its job is to assign the devices
+to the guest partitions on a non-sharing basis. The guest partitions see these
+devices as "virtual" devices and inturn communicate with the VIOS to access
+these devices.
+Virtual optical supports a strict sub-set of all the possible commands supported 
+by all possible optical devices. Likewise, AIXVIOS does not support Mode 2 data, 
+Digital Audio and Digital Video.
+Thus, we use an abridged rules file for CD-ROM media under VIOS namely cdrom.vios.
+This rules file is deviod of stanzas related to M2 mode and Digital Audio.
+Hence, hxecd running on a CD-ROM media, either on a AIX guest partition or a 
+Linux guest partition uses cdrom.vios rules file since they eventually have to
+communicate with the AIXVIOS server which does not support M2 and DA modes.
+
+Since, DVD-ROM has only one mode and this mode being supported by AIXVIOS, 
+hxecd running on DVD-ROM media under a VIOS setup would continue to use 
+dvdrom.p1 rules file. 

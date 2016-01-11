@@ -1,0 +1,48 @@
+#!/bin/bash
+#
+# @(#)14        1.5.4.3  src/htx/usr/lpp/htx/etc/scripts/ver, htx_linux, htxubuntu 5/13/14 23:18:33
+#
+#------------------------------------------------------------------------------
+
+  OS=`uname -o`
+  [ -f /etc/SuSE-release ]   && OS_VERSION=`head -n 1 /etc/SuSE-release`;
+  [ -f /etc/redhat-release ] && OS_VERSION=`cat /etc/redhat-release`;
+  [ -z "$OS_VERSION" ]       && OS_VERSION=`cat /etc/issue 2>/dev/null`
+
+  KERNEL_VERSION=`uname -r`
+  [ -f /usr/lpp/htx/etc/version ] && HTX_VERSION=`cat /usr/lpp/htx/etc/version 2>/dev/null` || HTX_VERSION=`rpm -qa 2>/dev/null | grep htx`
+  HOST_NAME=`hostname`
+  SERIAL_NO=`cat /proc/device-tree/system-id 2>/dev/null || echo "Not Found"`
+  TYPE_MODEL_NO=`cat /proc/device-tree/model 2>/dev/null || echo "Not Found"`
+  SYS_FW_LEVEL=`cat /proc/device-tree/openprom/model | cut -d ',' -f2 2>/dev/null || echo "Not Found"`
+
+# Clear screen
+[ $# -lt 1 ] && tput clear
+
+# Display the gathered information
+	                     echo "       ver 1.5.4.3 - OS, HTX, Firmware and Machine details"
+                         echo
+
+[ "$OS" ]             && echo "                           OS: $OS"
+[ "$OS_VERSION" ]     && echo "                   OS Version: $OS_VERSION"
+[ "$KERNEL_VERSION" ] && echo "               Kernel Version: $KERNEL_VERSION"
+[ "$HTX_VERSION" ]    && echo "                  HTX Version: $HTX_VERSION" 
+[ "$HOST_NAME" ]      && echo "                    Host Name: $HOST_NAME"	
+[ "$SERIAL_NO" ]      && echo "            Machine Serial No: $SERIAL_NO" 
+[ "$TYPE_MODEL_NO" ]  && echo "           Machine Type/Model: $TYPE_MODEL_NO" 
+[ "$SYS_FW_LEVEL" ]   && echo "              System FW Level: $SYS_FW_LEVEL" 
+
+
+# cat README.patch file
+  [ -f /usr/lpp/htx/README.patch ] && {
+     echo
+     echo "Applied patches"
+     echo "---------------"
+     cat /usr/lpp/htx/README.patch
+     echo
+   }
+   
+     
+   
+       
+

@@ -1,0 +1,16 @@
+--------------------------------------------------
+|                                                |
+| Device SEARCH page:                            |
+|                                                |
+|   To search any device, just type the device   |
+|   name without the "/dev/" part. Device name   |
+|   may/may not have the device number.          |
+|                                                |
+|   For example, to search device "/dev/fpu20"   |
+|   just type "fpu20"{without the quotes} and    |
+|   press 'return'.                              |
+|   PS : Backspace not supported. 'Esc' closes.  |
+|                                                |
+|   Enter the device name :                      |
+|                                                |
+--------------------------------------------------

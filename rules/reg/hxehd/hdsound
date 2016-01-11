@@ -1,0 +1,17 @@
+*  "@(#)08 1.1.4.1 src/htx/usr/lpp/htx/rules/reg/hxehd/hdsound, exer_hd, htxubuntu 7/25/13 05:35:08" *
+*******************************************************************************
+* COMPONENT_NAME: exer_hd
+*******************************************************************************
+*---------------------------------------------------------------------------*
+*- STANZA 1: Randon addressing of 10K data transfers for Acoustics.        -*
+*---------------------------------------------------------------------------*
+rule_id = RANWRC1 
+pattern_id = hxpa5
+addr_type = random
+num_oper = 1000000
+oper = wrc
+num_blks = 20
+type_length = fixed
+no_mallocs = 4
+loop_on_offset = yes
+

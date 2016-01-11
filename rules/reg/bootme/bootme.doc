@@ -1,0 +1,338 @@
+# @(#)58        1.14  src/htx/usr/lpp/htx/rules/reg/bootme/bootme.doc, htx_bootme, htxubuntu 10/16/14 06:48:25
+#
+
+/usr/lpp/htx/etc/scripts/bootme			Combines cronset and autostart
+/usr/lpp/htx/etc/scripts/bootmeStuff		Replaces autostuff
+/usr/lpp/htx/rules/reg/bootme/default		The new rules file
+/usr/lpp/htx/rules/reg/bootme/bootme.doc	This document
+/usr/lpp/htx/setup/bootme.setup			Detects if the system cron
+						process is running (only in AIX)
+ 
+
+Purpose:
+Automatically reboot system at periodic intervals; Restart HTX at boot time.
+
+
+Usage Description:
+bootme [on|off]
+Enable/Disable autostart of HTX and to create/remove crontab entry to call
+bootmeStuff (normal operation)
+
+bootme [on] [nostart]
+Create the crontab entry to call bootmeStuff and load HTX, but not autostart.
+
+bootme [on] [bypass]
+bootme will bypass the HTX autostart process - ie, set the crontab to reboot
+only to the AIX login prompt.
+
+
+
+
+Please Note: The only user editable values are now located in 
+/usr/lpp/htx/rules/reg/bootme/default - do not edit any other files.
+
+
+Error Monitoring:
+The AIX error log is where bootme errors should be looked for.  Typically, HTX 
+is running on a known good configuration and bootme is run to uncover firmware 
+and AIX booting and shutdown errors.
+
+There is the possibility that HTX errors will occur due to race conditions in
+the way AIX kills running processes as it shuts down.  If the exerciser 
+processes are killed before the HTX supervisor, then you will see this behavior.
+If you discover that exercisers are "dd"ing, check the time stamp of these HTX
+errors to ensure they are not coinciding with a scheduled bootme shutdown.  If 
+they are, then ignore them.
+
+
+Detailed Usage Description:
+bootme on:
+
+  + Checks for available disk space.  An error message is displayed and the
+    program terminated if less than 10MB of disk space is available in /tmp
+    or in /var.
+
+  + Makes appropriate crontab entry to cause system reboot at specified times.
+
+  + Disables console login by changing the login attribute to "login=disable".
+
+  + Adds inittab entry to load HTX on boot.
+
+  + Changes .htx_profile to begin execution when HTX is loaded, by changing
+    the keyword "autostart = no" to "autostart = yes". The existing file is
+    copied to OLD.htx_profile before modification.
+
+  + Copies /usr/lpp/htx/mdt/mdt to /usr/lpp/htx/mdt/mdt.bootme for use by
+    runsup during the bootme test
+
+
+bootme on nostart
+
+  + performs the same operation as bootme on, except leaves the keyword 
+    "autostart = no" set in .htx_profile
+
+
+bootme off:
+
+  + Reverses all changes made by "bootme on" or "bootme on nostart"
+
+  + Deletes copies of /tmp/htxerr.bootmex
+
+  + Prompts user to press enter to run "shutdown -Fr"
+
+
+bootme on bypass:
+
+  + Makes appropriate crontab entry to cause system reboot at specified times.
+
+  Note: This variation of bootme should not be used by the average tester
+        unless directed to do so.
+
+
+bootme off bypass:
+
+  + Reverses all changes made by "bootme on bypass"
+
+  + Prompts user to press enter to run "shutdown -Fr"
+
+
+Script descriptions:
+bootmeStuff:
+
+  + Tests for existance of sctResults or scanlog files. Logs error and 
+    does not reboot if found.
+
+  + Tests for existance of /usr/lpp/htx/mdt/mdt.bootme. Logs error and 
+    does not reboot if not found.  Will resume rebooting if recreated.
+
+  + Checks for existence of a file defined by BOOT_PRE and runs it if
+    found. This provides a mechanism to add user functions such as
+    logging or data management.
+
+  + Issues reboot command defined in /usr/lpp/htx/rules/reg/bootme/default
+
+  + Logs boot information to a file: /tmp/bootme.log
+
+  + Creates backup copies of /tmp/htxerr to be used for debug.  These files
+    are named htxerr.bootme1 and htxerr.bootme2.  Just before the reboot,
+    htxerr.bootme1 is copied to htxerr.bootme2 and htxerr is copied to 
+    htxerr.bootme1 thus maintaining a backup through two reboots.
+    
+
+bootme.setup:
+
+  + Runs once initially when HTX is started
+
+  + Detects if the /usr/sbin/cron process has been started.  If it hasn't,
+    it will attempt to start it.
+
+  + Logs all activity to /tmp/bootme.log and to the AIX error log.
+
+  + Checks for existence of a file defined by BOOT_POST and runs it if
+    found. This provides a mechanism to add user functions such as logging,
+    data management or changing system settings.
+
+
+
+Basic Usage:
+Setting up bootme:
+
+1. Login to the system to be tested as user "htx".
+
+2. Edit default rules file in /usr/lpp/htx/rules/reg/bootme/default
+
+   REBOOT:
+   The variable "REBOOT" sets the crontab interval which executes the
+   "bootmeStuff" script to reboot the system.  The time element must be in a
+   legal crontab format. This variable is only used by bootme, not bootmeStuff.
+   Because this variable is only used when bootme is run, it will not affect
+   a change in the reboot interval if changed "on-the-fly" in the default
+   rules.  Only two items are allowed after "REBOOT:" - if more or less than
+   two, the crontab entry will not function correctly.
+
+   Only one uncommented item allowed for this statement type.
+
+   NOTE: Please be aware of the time it takes the test system to reboot as you
+   set this variable.  Also be aware that BOOT_WAIT no longer behaves as a 
+   delay before powering (booting) the system back on.
+
+   Example 1: will reboot every half hour (0,30), every hour (*)
+     REBOOT: 0,30 *
+
+   Example 2: will reboot every 20 minutes (0,20,40), every hour (*)
+     REBOOT: 0,20,40 *
+
+   Example 3: will reboot at the top of each hour specified in the hour field
+            (Midnight, 4am, 8am, 12pm, 4pm, and 8pm).  Do not place the 
+            wildcard "*" in the minutes position as this will cause your
+            test system to reboot continuously during the hours in the 
+            second field.
+     REBOOT: 0 0,4,8,12,16,20
+
+   Example 4: will reboot every half hour during the hours in the hour field.
+     REBOOT: 0,30 0,4,8,12,16,20
+
+   For more ionformation on crontab and the crontab format, refer to url:
+   http://publib.boulder.ibm.com/doc_link/en_US/a_doc_lib/cmds/aixcmds1/crontab.htm
+
+   Reminder: If you must use crontab fields other than minutes and hours, then you
+   should run "bootme on" and manually edit the crontab entry (crontab -e).  The
+   bootme scripts only allows for the setting of these two fields and does pad
+   the remaining crontab time entries with "*" wildcards.  Adding a third or
+   fourth entry in this default profile will result in unexpected behavior.
+
+
+
+   BOOT_METHOD:
+   The variable BOOT_METHOD sets the reboot method that bootmeStuff will 
+   use.  This variable can be changed "on-the-fly".  This means that you can
+   affect a change in the method that bootme uses without the need to run
+   "bootme off" then "bootme on".
+
+   Examples:
+      BOOT_METHOD: single    (default)
+      BOOT_METHOD: random
+      BOOT_METHOD: sequential
+
+
+   "single" is the default method that most will use. Uncomment ONE BOOT_CMD
+            and bootme will use it for every reboot.
+   "random" selects a random method from the list of uncommented BOOT_CMD's.
+            Uncomment 2 or more BOOT_CMD's when using this method.
+   "sequential" will select, in order, from the uncommented BOOT_CMD's.
+            Uncomment 2 or more BOOT_CMD's when using this method.
+
+   Only one uncommented item allowed for this statement type.
+
+
+
+   BOOT_CMD:
+   The variable BOOT_CMD sets the command that bootmeStuff will issue to
+   cause the system to shutdown and reboot. This variable can be changed
+   "on-the-fly".
+
+   For single BOOT_METHOD: Only one uncommented item allowed.  If more than one
+       BOOT_CMD is uncommented, the first uncommented item will be used.
+   For random or sequential BOOT_METHOD's: two or more uncommented items are
+       allowed.
+
+
+   Examples:
+
+     BOOT_CMD: shutdown -Fr    (default)
+     BOOT_CMD: shutdown -r
+     BOOT_CMD: shutdown -t
+     BOOT_CMD: reboot -q
+     BOOT_CMD: reboot -t
+
+
+   BOOT_WAIT:
+   The variable "BOOT_WAIT" sets the time in the future when the system will
+   begin to power back on (boot).  This value is ONLY used with reboot -t and
+   shutdown -t.  The current default is set at 600 seconds.  It is HIGHLY
+   recommended that you measure the amount of time your test system takes to 
+   power down  using the reboot -t or shutdown -t before setting this value.
+   If this value is less than the amount of time it takes the test system to
+   power down, the test system will begin booting immediately upon shutting
+   down.
+
+   For example, the test system takes 5 minutes to power down (shutdown -t).
+   With a BOOT_WAIT of 300, the test system will begin rebooting immediately.
+   Change this value to 600 or something other than 300 to ensure that the 
+   -t feature is tested.
+
+   This variable can be changed "on-the-fly".
+
+   Only one uncommented item allowed. If more than one BOOT_CMD is uncommented,
+   the first uncommented item will be used.
+
+   Examples:
+
+     BOOT_WAIT: 300
+     BOOT_WAIT: 600    (default)
+
+   A bit more clarification on BOOT_WAIT and the reboot -t and shutdown -t 
+   commands: These commands require a time value in the future.  bootme
+   calculates this time using the current time just before issuing the 
+   -t command.  The -t commands can only be programmed down to minutes, not
+   seconds.  To ensure that the full BOOT_WAIT minutes are allotted, bootme
+   adds 30 seconds to the calculated values to accomodate any "rounding"
+   errors.
+
+
+   BOOT_PRE and BOOT_POST:
+   The variables "BOOT_PRE" and "BOOT_POST" define directory paths with file
+   names that will be executed if found.  Any valid directory path and file
+   name can be used.  If the path/file name is not valid or is not found, 
+   bootme will do nothing.  If found, a log entry will be made to the
+   bootme.log.
+
+   BOOT_PRE will be run just before the system reboots (pre-boot)
+   BOOT_POST will be run just after the system reboots (post-boot)
+
+   The entries shipped in the default rules file are:
+     BOOT_PRE: /usr/lpp/htx/etc/scripts/boot_pre
+     BOOT_POST: /usr/lpp/htx/etc/scripts/boot_post
+
+   Both entries can be modified "on-the-fly" as bootme is running.  This means
+   that you can affect a change in the filenames without the need to run "bootme
+   off" then "bootme on".
+
+
+3. Start HTX as per local procedures.
+   NOTE: HTX must be started before running "bootme on". This is to ensure that
+         the mdt file has been selected so that bootme copies the correct one.
+         Running "bootme on" before starting HTX may result in setting bootme's
+         mdt file to the wrong file or to null. This will result in HTX running
+         unexpected tests or bootme not to reboot.
+
+4. Exit to the AIX shell (option 11), and run "bootme on".
+
+5. When the specified time (in crontab) is reached, the system will shutdown,
+   reboot and restart HTX.
+
+Tip: Type "cat /etc/inittab | grep htxauto" to verify if HTX autostart has been
+     added to /etc/inittab.
+
+Tip: Type "crontab -l" to list the contents of the crontab to verify if
+     bootmeStuff is present and set to your defined REBOOT settings.
+
+
+
+Stopping bootme:
+
+1. Wait until the HTX status screen is displayed indicating that the system is
+   up and running.
+
+2. Exit to the AIX shell via option 11.
+
+3. Run the command "bootme off".  The bootme off command will prompt the user
+   to press enter to issue a "shutdown -Fr" command.  Pressing enter will 
+   result in a system to reboot.  To avoid this, press Ctrl-C.
+
+4. Run any data saving program(s).
+
+5. Reboot the system (shutdown -Fr).
+   NOTE: A reboot is required after running bootme.  Until the system is
+         rebooted, it will be operating in a shell environment and some AIX
+         commands will not behave as expected.  Like "exit" or "logout".
+
+Tip: Type "cat /etc/inittab | grep htxauto" to verify if HTX autostart has been
+     removed from /etc/inittab.
+
+Tip: Type "crontab -l" to list the contents of the crontab to verify if
+     bootmeStuff has been removed.
+
+
+HTX Usage Tip:
+
+ + Most testers will start HTX then select option 2, Activate/Halt devices.
+   Please note that HTX does not save these changes and that they will not
+   convey to the next bootme session.  If you need to have HTX run the same
+   from one session to the next, you must edit mdt.bu or whichever mdt file
+   you are using to meet your testing needs.  This may include deleting device
+   stanzas or removing start_halted lines from stanzas. In short, make the
+   initial HTX session represent what you want tested without any other HTX
+   manipulation (like option 2).  If you must make a change to the mdt file
+   after HTX and bootme are running, use mdt.bootme.
+ 

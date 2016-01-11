@@ -1,0 +1,652 @@
+HXESTORAGE README
+============
+
+GOAL:
+====
+
+Hxestorage is an exerciser that aims at stress testing storage subsystem in particular and IO subsystem in general through block
+devices like direct/network attached storage, DVD RAM, USB attached storage by performing data integrity checks
+
+SALIENT FEATURES:
+=================
+
+1. Supports direct/network attached storage devices, DVD RAM and USB attached storage
+2. Supports various storage environments JBODs, RAID, SAN etc
+3. Exerciser is generic enough to test any new device in above mentioned categories as long as OS device driver support is present.
+4. Supports concurrent IO (helps varying SCSI adapter qdepth)
+5. Supports random/sequential access types
+6. Supports random/fixed data transfer size.
+7. Supports any combination of read/write ratio.
+8. Supports various intelligent data patterns to help isolate the cause of data corruption.
+
+DESCRIPTION:
+============
+
+HTX storage exerciser is a multi threaded test program that performs data integrity tests(Write/read/compare) on device under 
+test(disks).One copy of hxestorage runs for each testable storage device on the system. Hence it is possible to concurrently 
+exercise all disks of the system. It is capable of accessing any logical block on a disk. To avoid loss of data Hxestorage doesnt 
+test disk that has a file system on it. The operations to be performed are specified in rule file, and can be modified using any 
+text editor without having to change the exerciser.
+
+It is also possible to run two or more programs on the same physical disk by ensuring exclusive access of disk
+areas (non overlapping LBA range) to each program. Hxestorage writes known pattern data on the disk before any other thread starts
+performing data integrity checks. This job is done by background thread (stanza no 1 in default rule file). The default pattern
+is pattern #3. Refer Note 2 for more details about the pattern 3 format. The background stanza starts num of threads as specified
+in stanza (By default creates 4 threads) and divides the disk in as many sections as the num. of threads and each thread will do
+a 256 KB write/read/compare operation in its own section. It gets a two minute head start before several other threads are kicke
+off that run concurrently along with the background thread. These threads are aware of the LBA range that has already been covered
+by background threads. Hence the threads which perform read/compare operations run their test operations in the same range as the
+data read from the disk can be compared against a known pattern. Threads which perform write/read/compare operations can run their
+test operation anywhere on the disk regardless of range of background threads. Each thread performs specified disk operations in
+a loop as specified in the rule stanza.
+
+When thread detects a data anomaly, the exerciser drops to kernel debugger (if configured to do so) for further debug. On continuing
+from kernel debugger exerciser does a reread into a separate buffer in memory. The exerciser then compares the reread buffer against
+what is expected. If a miscompare occurs again, then the data on the disk is likely to be bad and all three buffers will be saved. If
+no miscompare occurs on the reread then the data on the disk is likely to be good then only the write and the first read buffers are
+saved. This indicates some issue with the first read from a data integrity perspective.
+
+Hxestorage spawns a thread that monitors all the IO ops performed by other threads. Incase any operation takes longer than expected
+(configured through rule parameter HANG_TIME), this thread flags an error indicating a possible issue with an IO operation.
+
+Running HXESTORAGE on command line:
+=============================
+
+        The first argument passed to the program (argv[1]) is the device
+        id e.g. "/dev/rhdisk0" , "/dev/rlv0hd0" , etc.
+
+        The second argument passed to the program (argv[2]) is the
+        Run Type e.g. "REG", or "EMC". Any other value passed will be
+        intrepreted as running in "stand-alone" mode.
+
+        The third argument passed to the program (argv[3]) is the rules
+        file id. The rules are found in "/usr/lpp/htx/rules/reg/hxestorage/xxxxxxxx"
+
+        Exact command line is:
+        /usr/lpp/htx/bin/hxestorage /dev/rhdisk* OTH /usr/lpp/htx/rules/reg/hxestorage/xxxxxxxx
+
+SAMPLE RULE FILE:
+======================
+Please refer to the default.ssd/default.hdd file in the rules file directory. Default rulefile is associated to a device
+based upon the type of media. For SSD media, default.ssd will be associated. for HDD, default.hdd will be associated.
+
+
+SAMPLE RULE:
+===========
+
+rule_id = rule_1 
+pattern_id = #003
+num_threads = 2
+num_oper = 0
+seek_breakup_prcnt = 0
+oper = wrc w
+transfer_size = [4K-256K,-1]
+starting_block = BOT TOP 
+direction = up down
+no_mallocs = 1
+blk_hop = 0
+skip = -99999999
+
+EXERCISER SPECIFIC LOG FILES:
+============================
+File name format of the buffers is "/tmp/<htx devname>.rbuf<n>", "/tmp/
+<htx devname>.wbuf<n>, and "/tmp/<htx devname>.rerd<n>". In case of 
+miscompare, up to ten buffers of each will be saved for each disk or
+logical volume.
+
+UNDERSTANDING HTXSTATS:
+======================
+
+sdc:
+  cycles                              =                  9   <----- Total number of complete rule file parses completed.
+  # good reads                        =              5076276 <----- Total number of good reads
+  # bytes read                        =       338506638848   <----- Total number of bytes read
+  # good writes                       =              6150757 <----- Total number of good writes
+  # total instructions                =                  0
+  # bytes written                     =       864959630336   <----- Total number of bytes read
+  # good others                       =                  0
+  # bad others                        =                  0
+  # bad reads                         =                  0
+  # bad writes                        =                  0
+  # data transfer rate(bytes_wrtn/s)  =        14506904.00   <----- (Avg)Number of bytes written in a second
+  # data transfer rate(bytes_read/s)  =         5677355.00   <----- (Avg)Number of bytes read in a second
+  # instruction throughput(MIPS)      =           0.000000
+
+RULE FILE PARAMETERS:
+====================
+
+     There are 2 types of stanzas defined in rule file i.e template stanza and rule stanza. Each stanza is separated by 
+     blank line. 
+    *** NOTE*** 
+        The first line of each stanza in the rulefile must be either template_id (For template stanza) OR 
+        rule_id (For rule stanza).
+    **** END ***
+
+Template stanza parameters:
+--------------------------
+    A template stanza is a subset of rule stanza. It can be associated with any rule stanza. Template itself is
+    not a rule or testcase. Only single value can be defined for each of the params in template.
+
+    Template Stanza Keywords
+
+    _____________________________________________________________________________
+    |   Keyword             |       Value           |   Default Value           |
+    |_______________________|_______________________|___________________________|
+    |TEMPLATE_ID            |       XXXXXXXX        |                           |
+    |---------------------------------------------------------------------------|
+    | Explanation: The template id is used to identify the template stanza      |
+    | associated with any rule stanza. It can contain any ASCII characters, it  |
+    | can be 1-32 characters in length, and it MUST be specified as first       |
+    | parameter in template stanza.                                             |
+    |___________________________________________________________________________|
+    |OPER                   | R, W, S, RC, RW, WR,  |       R                   |
+    |                       | WRC, RWRC, BWRC, XCMD |                           |
+    |                       | W[m]R[n]C, CARW, CARR |                           |
+    |                       | CAWR, CAWW            |                           |
+    |---------------------------------------------------------------------------|
+    | Explanation:  B = BackGround,    C = Compare,       R = Read,             |
+    |               S = Sleep,         W = Write                                |
+    | This keyword is the operation to be performed. Ex. BWRC starts a thread   |
+    | in the background that will write to the disk, read from the disk, and    |
+    | then compare the write and read buffers to make of a match.               |
+    | NOTE: Operation W[M]R[N]C will do M writes, N reads/compare operation in  |
+    | one num_oper loop. This maintains read/write ratio for thread. Possible   |
+    | combinations : w[M]r[N]c, w[M], r[N]c, r[N], r[N]w[M], w[M]r[N].          |
+    | Examples : oper = w[2]r[5]c                                               |
+    |___________________________________________________________________________|
+    | SEEK_BREAKUP_PRCNT    | Any value between 0   |       0                   |
+    |                       | to 100.               |                           |
+    |---------------------------------------------------------------------------|
+    | Explanation: This defines whether disk will be accessed sequentially or   |
+    | randomly. A value of "0" means SEQ seek type. A value of "100" means      |
+    | random seek type. Any value in between will have both sequential as well  |
+    | as random accesses.                                                       |
+    | e.g. seek_breakup_prcnt = 20 means 20% of random accesses and 80% of      |
+    | sequential accesses.                                                      |
+    |___________________________________________________________________________|
+    | TRANSFER_SIZE         | Fixed value           |   1 Block                 |
+    |                       | [min-max,inc]         |                           |
+    |---------------------------------------------------------------------------|
+    | Explanation: It takes input in bytes, KB, MB and GB. Various values are:  |
+    |       <FIXED VALUE> e.g. 4k                                               |
+    |       [<min_len>-<max_len>,<increment>]                                   |
+    |       *NOTE: NO spacing in-between. Also, if any of the values is not     |
+    |              given as multiple of block size, it will be rounded off to   |
+    |              closet multiple of block.                                    |
+    |       increment can be +ve or -ve.                                        |
+    |       +ve means incremeneting from min_len to max_len                     |
+    |       -ve means decrementing from max_len to min_len                      |
+    |       -1 meand random between min_len and max_len                         |
+    |       e.g. [512-4k,-1] means any random size betweeb 512 bytes to 4K.     |   
+    |       e.g. [1k-8k,2k] means incremting. First 1k, then 3k, then 5k and    |
+    |            then 7k inside each num_oper loop. This will keep going in a   |   
+    |            round robin manner.                                            |
+    |       e.g. [512-4k,-1k] means decrementing. First 4K, then 3K, then 2k    |
+    |            and then 1K inside each num_oper loop.                         |
+    |___________________________________________________________________________|
+
+
+Rule stanza parameteres:
+-------------------------
+    Below is teh detail description of each rule parametere. Some of params can be
+    assigned only single value which will be applicable to all threads of the stanza,
+    while others can have multiple values. 
+    _________________________________________________________________________________________________________
+    |   Keyword             |       Value           |   Default Value           |   Single/Multiple values  |
+    |_______________________|_______________________|___________________________|___________________________|
+    | RULE_ID               |       XXXXXXXX        |                           |       Single Value        |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: The rule id is used to identify any rule stanza uniquely. It can contain any ASCII       |
+    | characters, it can be 1-32 characters in length and it MUST be specified as first parameter in rule   |
+    | stanza. It can have single value assigned to it.                                                      |
+    |_______________________________________________________________________________________________________|
+    | PATTERN_ID            | #xxx                  |   #003                    |       Multiple Values     |
+    |                       | HTX pattern Library   |                           |                           |
+    |                       | Any explicit HEX value|                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This specifies which bit pattern is to be used. It can have a single value assigned to   |
+    | it. Various pattern types are explained below in NOTE 1.                                              |               
+    |_______________________________________________________________________________________________________|
+    |OPER                   | R, W, S, RC, RW, WR,  |       R                   |       Multiple Values     |
+    |                       | WRC, RWRC, BWRC, XCMD |                           |                           |
+    |                       | W[m]R[n]C, CARR, CARW |                           |                           |
+    |                       | CAWR, CAWW            |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation:  B = BackGround,    C = Compare,       R = Read,         W = Write       S = Sleep       |
+    |                                                                                                       |
+    | This keyword is the operation to be performed. Ex. BWRC starts a thread in the background that will   |
+    | write to the disk, read from the disk, and then compare the write and read buffers to make of a match |    
+    | It can have multiple value.                                                                           |
+    | NOTE: Operation W[M]R[N]C will do M writes, N reads/compare operation in one num_oper loop. This      |
+    | maintains read/write ratio for thread. Possible combinations :                                        |
+    | w[M]r[N]c, w[M], r[N]c, r[N], r[N]w[M], w[M]r[N].                                                     |
+    | Examples : oper = w[2]r[5]c                                                                           |
+    |_______________________________________________________________________________________________________|       
+    | NUM_THREADS           | n (any integer),      |       1                   |   Multiple values if      |
+    |                       | .nn/nQD (multiple of  |                           |   more than 1 tmplt       |
+    |                       | queue depth),         |                           |   is associated,          |
+    |                       | n(tmplt_id)- num of   |                           |   otherwise single value  |   
+    |                       | threads of associated |                           |                           |
+    |                       | template              |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation - This keyword tells how many threads to create for ai particular stanza. It can have     |
+    | single value assigned except in case of multiple templates associated with the rule. Each template    |
+    | will have its own number of threads.                                                                  |
+    |       n - Any integer number                                                                          |
+    |       nQD - multiple of queue depth (can be in decimal)                                               |
+    |       n(<tmplt_id>) - n threads for a particular template                                             |
+    |                       e.g. defined 2 templates (i.e tmplt_1 and tmplt_2)                              |   
+    |                       num_threads =  3(tmplt_1) 5(tmplt_2)                                            |
+    |                       means 3 threads of type tmplt_1 and 5 threads of                                |
+    |                       type tmplt_2. So, in total create 8 threads.                                    |
+    |_______________________________________________________________________________________________________|
+    | ASSOCIATIVITY         |   SEQ                 |       RROBIN              |       Single Value        |
+    |                       |   RROBIN              |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This expains how each of the parameter value is picked for a partucular thread in the    |
+    | rule.                                                                                                 |
+    |_______________________________________________________________________________________________________|
+    | TESTCASE              | SYNC                  |       SYNC                |       Single Value        |
+    |                       | PASSTHROUGH(only on   |                           |                           |
+    |                       | AIX)                  |                           |                           |
+    |                       | CACHE                 |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This keyword tells which type of testcase to run.                                        |       
+    |_______________________________________________________________________________________________________|
+    | MODE                  | VALIDATION            |       VALIDATION          |       Single Value        |
+    |                       | PERFORMANCE           |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This keyword tells in which mode to run the test.                                        |
+    | In PERFORMANCE mode - BWRC, WRC, RC, W[m]R[n]C types of operation can not be run. Also,               |
+    |                       seek_breakup_prcnt value can be either "0" OR "100".                            |
+    |_______________________________________________________________________________________________________|
+    | NUM_OPER              | n                     |       1                   |       Multiple Values     |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: Specify the number of operations to be performed by the exerciser. If 0 is specified     |
+    | then the number of operations to cover the disk in the range of min_blkno and max_blkno will be       |
+    | calculated.                                                                                           |
+    |_______________________________________________________________________________________________________|
+    | SEEK_BREAKUP_PRCNT    | Any value between 0   |       0                   |       Multiple Values     |
+    |                       | to 100.               |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This defines whether disk will be accessed sequentially or randomly. A value of "0"      |
+    | means SEQ seek type. A value of "100" means random seek type. Any value in between will have both     |
+    | sequential as well as random accesses.                                                                |
+    | e.g. seek_breakup_prcnt = 20 means 20% of random accesses and 80% of sequential accesses.             |
+    |_______________________________________________________________________________________________________|
+    | TRANSFER_SIZE         | Fixed value           |   1 Block                 |       Multiple Values     |
+    |                       | [min-max,inc]         |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: It takes input in bytes, KB, MB, GB and BLK. Various values are:                         |
+    |       <FIXED VALUE> e.g. 4k  OR 4BLK (i.e. 4 blocks)                                                  |   
+    |       [<min_len>-<max_len>,<increment>]                                                               |
+    |       *NOTE: NO spacing in-between. Also, if any of the values is not given as multiple of block      |
+    |              size, it will be rounded off to closet multiple of block.                                |
+    |       increment can be +ve or -ve.                                                                    |
+    |       +ve means incremeneting from min_len to max_len                                                 |
+    |       -ve means decrementing from max_len to min_len                                                  | 
+    |       -1 meand random between min_len and max_len                                                     |
+    |       e.g. [512-4k,-1] means any random size between 512 bytes to 4K.                                 |
+    |       e.g. [1blk-4blk, 1blk] means incrementing. first 1 blk, then 2 blk, 3 blk and 4 blk and then    |
+    |            wraps back.                                                                                |
+    |       e.g. [1k-8k,2k] means incremting. First 1k, then 3k, then 5k and then 7k inside each            |
+    |            num_oper loop. This will keep going in a round robin manner.                               |
+    |       e.g. [512-4k,-1k] means decrementing. First 4K, then 3K, then 2k and then 1K inside each        |
+    |            num_oper loop.                                                                             |
+    |_______________________________________________________________________________________________________|
+    |  DIRECTION            |    UP                 |       UP                  |       Multiple Values     |
+    |                       |    DOWN               |                           |                           |
+    |                       |    IN                 |                           |                           |
+    |                       |    OUT                |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This parameter specifies the direction for sequential operations. UP is used to proceed  |
+    | from lowest to highest LBA. DOWN is used to proceed from highest to lowest LBA. IN will pingpong      |
+    | from low to high LBA while working its way to the middle LBA. OUT will pingpong from low to high LBA  |
+    | while working its way from the middle. If the last LBA is encountered and the number of operations    |
+    | has not been reached, it will then start over with the starting LBA number.                           |
+    |_______________________________________________________________________________________________________|
+    | STARTING_BLOCK        | n                     |       BOT                 |       Multiple Values     |
+    |                       | BOT                   |                           |                           |
+    |                       | TOP                   |                           |                           |
+    |                       | MID                   |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This parameter is required for sequential operations only. It can be an integer specifing|       
+    | an LBA number between 0 and the maximum LBA on the disk being exercised. BOT, MID, and TOP are        |   
+    | provided to allow symbolic reference to the starting LBA number. BOT is always 0, MID is the LBA that |
+    | halfway between 0 and the maximum LBA, and TOP refers to the maximum LBA number.                      |
+    |_______________________________________________________________________________________________________|
+    | MAX_BLKNO             |    n, .nn             |   highest LBA on media    |       Multiple Values     |
+    |-------------------------------------------------------------------------------------------------------|       
+    | Explanation: This number is highest LBA number to be used during each iteration of the operation.     |
+    | You can also set this number to a percentage of the total number of blocks on the disk. Make sure     |
+    | that if you use a percentage that it is greater than zero and less than one.                          |
+    | Ex. .75.                                                                                              |
+    |_______________________________________________________________________________________________________|
+    |  MIN_BLKNO            |    n, .nn             |       0                   |       Multiple Values     |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This number is lowest LBA number to be used during each iteration of the operation.      |   
+    | You can also set this number to a percentage of the total number of blocks on the disk. Make sure     |
+    | thatif you use a percentage that it is greater than zero and less than one.                           |
+    | Ex. .25.                                                                                              |
+    |_______________________________________________________________________________________________________|
+    |  BLK_HOP              |    +/-n              |       0                    |       Multiple Values     |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: Specify the number of blocks to skip between each iteration of the operation during      |   
+    | a sequential operation. This value can be either a positive number or a negative number. If the       |
+    | value is a negative number then it CANNOT be greater than the transfer size in blocks.                |
+    |_______________________________________________________________________________________________________|
+    | ALIGN                 |   n                   |       0 (On AIX)          |   Multiple Values         |
+    |                       |                       |       blksize (On linux)  |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This keyword is used to align the malloced buffers on a boundary specified in the value. |
+    | The value is specified in  bytes and is equal to the width of the SCSI bus in bytes. If pattern_id    |
+    | is specified as #007 then a positive value for align needs to be specified.                           |
+    |_______________________________________________________________________________________________________|
+    | LBA_ALIGN             |   n                   |       0                   |       Multiple Values     |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This tells if any aligned IO operation (i.r if aligned to any LBA) need to be done.      |
+    |_______________________________________________________________________________________________________|
+    | HOTNESS               |   n                   |       1                   |       Multiple Values     |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This tells how many times to do operation on a given set of LBAs. In case of easytier,   |
+    | this is used to make any band HOT.                                                                    | 
+    |_______________________________________________________________________________________________________|
+    | LOOP_ON_OFFSET        |   NO                  |       NO                  |       Multiple Values     |
+    |                       |   YES                 |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: For each iteration of an operation, a loop will be performed that starts the read and    |
+    | write buffers at 0, 1, .. 63 byte offsets into the buffer boundry.                                    |
+    |_______________________________________________________________________________________________________|
+    | SECTION               |   NO                  |       NO                  |       Single Value        |
+    |                       |   YES                 |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This parameter if set to "yes" will divide the disk (between min_blkno and max_blkno)    |
+    | into as many sections as the num_threads defined  and run each thread on its own section.             |
+    |_______________________________________________________________________________________________________|
+    | SKIP                  |   +/-n                |       0                   |       Single value        |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation:This keyword is used to skip a stanza except when divided evenly by the number. See       |
+    | NOTE 3.                                                                                               |
+    |_______________________________________________________________________________________________________|
+    | NUM_MALLOCS           | 1 - 100               |       1                   |       Multiple Values     |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: Allocate the specified number of memory areas for the read and write buffers. If         |
+    | NO_MALLOCS = 10, 10 read buffers and 10 write buffers will be allocated. After every 10 operations,   |
+    | these 20 buffers will be freed, and 10 more each will again be allocated. The advantage of this is    |
+    | to increase the number of start addresses for the buffers and hence to create more DMA mappings to    |
+    | stress DMA engines.                                                                                   |
+    |_______________________________________________________________________________________________________|
+    | RUN_REREAD            | YES                   |       YES                 |       Single Value        |
+    |                       | NO                    |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This tells whether to reread a section of the disk that had reported a miscompare.       |
+    |_______________________________________________________________________________________________________|
+    | RULE_OPTION           | save_seeds            |                           |       Single Value        |
+    |                       | restore_seeds         |                           |                           |
+    |                       | seeds                 |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: See NOTE 2                                                                               |
+    |_______________________________________________________________________________________________________|
+    | UNIQUE_PATTERN        |   YES                 |       NO                  |       Single Value        |
+    |                       |   NO                  |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanantion:Use this keyword to generate the data pattern that are unique for each test run. The     |
+    | patterns 3,4,5 etc. contain data that will remain unchanged across the devices for the same LBA       |
+    | (Note that the header portion will be different). But when trouble shooting certain type of problems  |
+    | i.e. failures in the memory/cache subsystem and the system side of the IO subsystem it would be nice  |
+    | to have a pattern that is unique to all tests running.  This would allow the data to indicate its     |
+    | origin when looking at these types of problems. See the NOTE on unique_patterns, to find an           |
+    | explanation for the header and the data portions in case of unique_patterns.                          |
+    |_______________________________________________________________________________________________________|
+    |  CRASH_ON_ANYERR      |    NO                 |        NO                 |       Single Value        |
+    |                       |    YES                |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|   
+    | Explanation: CRASH_ON_ANYERR = YES allows the exerciser to go into the kernel debugger when any error |
+    | occurs. Typing a "g" at the debugger prompt will continue the exerciser. When the debugger is         |
+    | entered, the following will be seen:                                                                  |
+    |     register 3 - 0xDEADDEED                                                                           |
+    |     register 4 - a loop number                                                                        |
+    |     register 5 - a block number (LBA #)                                                               |
+    |     register 6 - pointer to the htx supervisor structure                                              |   
+    |     register 7 - pointer to the thread context structure                                              |
+    | Once this keyword is used, then this setting will stay in effect until you end the program or you     |
+    | reset this keyword in a later stanza.                                                                 |
+    |_______________________________________________________________________________________________________|
+    |  CRASH_ON_MIS         |    NO                 |        NO                 |       Single value        |
+    |                       |    YES                |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: CRASH_ON_MIS = YES allows the exerciser to go into the kernel debugger when a miscompare |
+    | occurs. Typing a "g" at the debugger prompt will continue the exerciser. When the debugger is         |
+    | entered, the following will be seen:                                                                  |
+    |     register 3  - the word BEEFDEAD                                                                   |
+    |     register 4  - a pointer to the write buffer                                                       |
+    |     register 5  - a pointer to the read buffer                                                        |
+    |     register 6  - offset into the buffer where the miscompare occurred                                |
+    |     register 7  - pointer to lba_fencepost structure                                                  |
+    |     register 8  - pointer to the thread context info                                                  |
+    |     register 9  - Transfer size                                                                       |
+    |     register 10 - Miscomapre analysis buffer address                                                  |                                             
+    | Once this keyword is used, then this setting will stay in effect until you end the program or you     |
+    | reset this keyword in a later stanza.                                                                 |
+    |                                                                                                       |
+    | HTX supports en environment variable HTXKDBLEVEL which determines whether the exerciser will trap     |
+    | into KDB or not in case the exerciser rules file does not specify CRASH_ON_MIS = YES. By default      |
+    | HTXKDBLEVEL has been set to 1 which means evenif the exerciser rules file does not specify            |
+    | CRASH_ON_MIS = YES, exerciser will trap into KDB on miscompare.                                       |
+    |_______________________________________________________________________________________________________|
+    | HANG_TIME             |   n                   |       600                 |       Single Value        |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This variable takes an integer and it is the amount of time you want the system to wait  |
+    | (in seconds) before reporting any HANG.                                                               |
+    |_______________________________________________________________________________________________________|
+    | HANG_THRESHOLD        |   n                   |       3                   |       Single Value        |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This variable is an integer and it is the number of times you want the notification      |
+    | of a thread being HUNG before it errors out.                                                          |
+    |_______________________________________________________________________________________________________|
+    | DEBUG_FLAG            |   NO                  |       NO                  |       Single Value        |
+    |                       |   YES                 |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This keyword is used to add some extra debug prints. Mostly, used in PASSTHROUGH         |
+    | testcase.                                                                                             |           
+    |_______________________________________________________________________________________________________|
+    | NUM_CACHE_THREADS     |   N                   |       4                   |       Single Value        |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This keyword is used only for CACHE testcase. It tells how many cache threads to         |
+    | create.                                                                                               |       
+    |_______________________________________________________________________________________________________|
+    | COMMAND               |                       |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This keyword is used to This keyword is used to input the command you want to run        |
+    | from a shell. You type in the command in the format you want it to run. You do have some special      |           
+    | characters that you can input into the command to get the device name. See NOTE 5.                    |
+    |_______________________________________________________________________________________________________|
+    | CONT_ON_ERR           |   NO                  |      NO                   |       Single Value        |
+    |                       |   YES                 |                           |                           |
+    |                       |   MISCOMPARE          |                           |                           |
+    |-------------------------------------------------------------------------------------------------------|
+    | Explanation: This keyword is used to decide on whether to halt on any error or to continue with       |
+    | the testcase.                                                                                         |
+    |  NO - means stop on any error.                                                                        |
+    | YES - means continue the test on MISCOMPARE and IO_HARD type of error. But stop on SYS_HARD error.    |
+    | MISCOMPARE - means continue on MISCOMPARE but stop on any other kind of error.                        |
+    |_______________________________________________________________________________________________________|                   
+ 
+
+NOTE 1:
+--------------------------------------------------------------------------------
+If a pattern from the pattern library is to be used then a buffer is filled
+with data from the specified pattern. If the number of characters to be copied
+into the buffer is greater than the size of the pattern file, the pattern
+file data is repeated until the designated number of characters have been
+copied. If the number of characters to be copied into the buffer is less than
+size of the pattern file, the pattern file data is truncated to that size.
+
+Pattern_id #003:
+===============
+
+Each block has a 64 byte header (16 words) as follows:
+  bytes  description
+  -----  ------------------------------------------ 
+ 0  - 7  LBA number on disk
+ 8  - 11 Time Stamp
+ 12 - 21 ASCII Device Name
+ 22 - 33 thread ID generating buffer
+ 34 - 47 ASCII Host Name
+ 48 - 49 writestamping 
+ 50 - 57 RESERVED
+ 58 - 61 Buffer Signature ("MDHF")
+ 62 - 63 Checksum Value of header
+ and the remaining words of each block is formatted as follows:
+  bytes  description
+  -----  ------------------------------------------
+  0 - 1  relative word number (ex. 0000, 0001, 0002, ...)
+  2 - 3  recreateable pattern (ex. add the one to the starting LBA to get your
+         pattern.
+
+Pattern_id #004:
+===============
+
+Each block has a 64 byte header (16 words) as follows:
+  bytes  description
+  -----  ------------------------------------------
+ 0  - 7  LBA number on disk
+ 8  - 11 Time Stamp
+ 12 - 21 ASCII Device Name
+ 22 - 33 thread ID generating buffer
+ 34 - 47 ASCII Host Name
+ 48 - 49 writestamping
+ 50 - 57 RESERVED
+ 58 - 61 Buffer Signature ("MDHF")
+ 62 - 63 Checksum Value of header
+ and the remaining words of each block is formatted as follows:
+  bytes  description
+  -----  ------------------------------------------
+  0 - 1  fixed pattern of A5A5.
+
+pattern_id #005:
+===============
+
+Each block has a 64 byte header (16 words) as follows:
+  bytes  description
+  -----  ------------------------------------------
+ 0  - 7  LBA number on disk
+ 8  - 11 Time Stamp
+ 12 - 21 ASCII Device Name
+ 22 - 33 thread ID generating buffer
+ 34 - 47 ASCII Host Name
+ 48 - 49 writestamping
+ 50 - 57 RESERVED
+ 58 - 61 Buffer Signature ("MDHF")
+ 62 - 63 Checksum Value of header
+ and the remaining words of each block is formatted as follows:
+  bytes  description
+  -----  ------------------------------------------
+  0 - 1  relative word number (ex. 0000, 0001, 0002, ...)
+  2 - 3  fixed pattern of A5A5.
+
+Pattern_id #007:
+===============
+ 0  - 7  LBA number on disk
+ 8  - 11 Time Stamp
+ 12 - 21 ASCII Device Name
+ 22 - 33 thread ID generating buffer
+ 34 - 47 ASCII Host Name
+ 48 - 49 writestamping
+ 50 - 57 RESERVED
+ 58 - 61 Buffer Signature ("MDHF")
+ 62 - 63 Checksum Value of header
+ and the remaining words of each block is formatted as follows:
+  bytes  description
+  -----  ------------------------------------------
+  0 - 1  fixed pattern of FFFF.
+  2 - 4  fixed pattern of 0000.
+
+NOTE 2:
+-------------------------------------------------------------------
+The following rule options are defined:
+  1. SAVE_SEEDS - this option is used in rules generating random LBAs.  The
+     values used to seed the psuedo-random generator for block addresses and
+     data lengths are saved.  They can be restored in a later stanza so that
+     a sequence of addresses and block lengths can be recreated.  This option
+     should only be used for stanzas with ADDR_TYPE = RANDOM.  There is only
+     one set of saved seeds, so every use of this option overwrites previously
+     saved seed values.
+  2. RESTORE_SEEDS - this option restores the last saved seed values.  Multiple
+     stanzas with the restore option can occur, but restore is only allowed
+     if a previous stanza had the save option.
+  3. SEEDS - this option will restore seeds used in a previous run. You can
+     define what the seeds are and in this way you can recreate an error
+     condition. The stanza that you want to recreate will have put out what
+     seeds were used and type then in to recreate the pattern.
+
+Note that the transfer size can be RANDOM as well as FIXED. When using FIXED lengths, 
+the stanza where seeds are restored must have a FIXED length also, and must be of equal 
+or less length than the stanza where seeds were saved.  The regenerated sequence will be
+based on the lengths used when the seeds were saved, although the actual transfers in the
+regenerated sequence will use the length specified in that stanza.
+
+NOTE 3:
+------------------------------------------------------------------- 
+skip flag:
+If you set this value to a negative number, then you will run the stanza on
+the first pass through the Rulefile and on every skip number of iterations
+after the first time. Ex. - If you set it to -5, the stanza will run on the
+first pass and on every 5th iteration after the start of the exerciser.
+If you put a positive number then the stanza will only run on the skip value
+of iterations after the start of the exerciser. It will NOT run on the first
+iteration of the exerciser. Ex. - If you set the value to 5, then the stanza
+will only run on every fifth iteration of the rules file. There is one
+exception to this rule. If you set the SKIP value to a -1 then it will run
+on every odd iteration of the rules file. If you set the SKIP value to a plus
+1 then the stanza will run on every odd iteration of the rules except for the
+first time through the rules file.
+
+NOTE 4:
+------------------------------------------------------------------
+hxestorage supports EEH(Enhanced I/O Error Handling) recovery.
+
+EEH recovery needs to explicilty enabled in hxestorage. By default hxestorage will not
+try EEH error recovery.  To enable EEH in hxestorage, two environment variables
+need to be set before running it , HTXEEH and HTXEEHRETRIES.
+
+To enable EEH recovery in hxestorage do : export HTXEEH = 1 and
+export HTXEEHRETRIES = 24 (after doing "su - htx" and before keying in "htx"
+to start running supervisor).
+
+HTXEEH enables hxestorage to retry the system calls that have failed,
+HTEEXRETRIES number of times with a time gap of 5 seconds between each retry.
+So the above export statements would make hxestorage retry for 2 minutes before
+failing, if the recovery doesnt happen within this time (2minutes in this
+case). You could change the value of  HTXEEHRETRIES  if you wish to.
+If the exerciser does a system call retry due to an error, it would log
+messages in both error log and message log. You can search the log file for
+"EEH" to see these messages. Also as there is no specific error code for
+EEH returned by the device driver , system calls are retried by hxestorage
+without checking for specific error code(errno) when EEH recovery is enabled.
+
+EEH recovery is a function of the device driver. Since hxestorage is a user space
+exerciser hxestorage will retry system calls made by hxestorage that go to the device
+driver i.e read, write, open, close, ioctl and lseek.
+
+To disable EEH recovery in hxestorage do : export HTXEEH = 0.
+This is required only if EEH recovery was enabled on the same htx session.
+
+NOTE 5:
+------------------------------------------------------------------
+An example of a rules stanza showing a command is as follows:
+           rule_id = NAME
+           oper = xcmd
+           command = iostat -d $d 5 5 >$o 2>&1
+The "$" is a special delimiter for the commands. The meaning of which is in the
+following list:
+           $d = just the device name ( ex. hdisk1 )
+           $D = just the raw device name ( ex. rhdisk1 )
+           $p = fully qualified device name ( ex. /dev/hdisk1 )
+           $P = fully qualified raw device name ( ex. /dev/rhdisk1 )
+           $o = this is used to generate the error file for the command
+                ( ex. cmdout.hdisk1 )
+In this case you would execute the command iostat against hdiskx with the
+outputgoing to cmdout.hdisk?. Both the output and error information would go
+to this file.
+

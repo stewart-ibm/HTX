@@ -1,0 +1,80 @@
+*---------------------------------------------------------------------------*
+*- STANZA 21: One thread writes to disk while 3 threads are reading from   -*
+*-            the same memory buffer that is used to write to the disk.    -*
+*---------------------------------------------------------------------------*
+rule_id = CACHWR21
+pattern_id = #003
+addr_type = seq
+num_oper = 1000
+oper = cawr
+max_number_of_threads = 4
+type_length = fixed
+num_blks = 64
+no_mallocs = 6
+crash_on_mis = yes
+
+*---------------------------------------------------------------------------*
+*- STANZA 22: Cache - read from disk while 3 threads writing to memory.    -*
+*-            1000 operations * 64 blocks/oper = 64000 blocks, Starting    -*
+*-            from block 0. WARNING!! This can result in data corruption   -*
+*-            on the disk if a disk reassignment occurs while the disk     -*
+*-            read is in process. Always follow this stanza with something -*
+*-            to clean up the range affected!!!!                           -*
+*---------------------------------------------------------------------------*
+rule_id = CACHRD22
+pattern_id = #003
+addr_type = seq
+num_oper = 1000
+oper = carw
+type_length = fixed
+max_number_of_threads = 4
+num_blks = 64
+starting_block = 0
+no_mallocs = 6
+crash_on_mis = yes
+
+*---------------------------------------------------------------------------*
+*- STANZA 23: One thread reads from disk while 3 threads are reading from  -*
+*-            the same memory buffer that is used to read from the disk.   -*
+*---------------------------------------------------------------------------*
+rule_id = CACHRR23
+pattern_id = #003
+addr_type = seq
+num_oper = 1000
+oper = carr
+max_number_of_threads = 4
+type_length = fixed
+num_blks = 64
+no_mallocs = 6
+crash_on_mis = yes
+
+*---------------------------------------------------------------------------*
+*- STANZA 24: One thread writes to disk while 3 threads are writing to     -*
+*-            the same memory buffer that is used to write to the disk.    -*
+*---------------------------------------------------------------------------*
+rule_id = CACHWW24
+pattern_id = #003
+addr_type = seq
+num_oper = 1000
+oper = caww
+max_number_of_threads = 4
+type_length = fixed
+num_blks = 64
+no_mallocs = 6
+crash_on_mis = yes
+
+*---------------------------------------------------------------------------*
+*- STANZA 25: Clean up aftre the CACHEREA operation. 125 operations * 512  -*
+*-            blocks/oper = 64000 blocks, starting from block 0.           -*
+*---------------------------------------------------------------------------*
+rule_id = CLEAN25
+pattern_id = #003
+addr_type = seq
+num_oper = 125
+oper = w
+type_length = fixed
+num_blks = 512
+starting_block = 0
+no_mallocs = 1
+crash_on_mis = yes
+

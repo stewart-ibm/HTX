@@ -1,0 +1,81 @@
+* @(#)78	1.1  src/htx/usr/lpp/htx/rules/reg/hxestorage/rules.camss_med_imaging, exer_storage, htxubuntu 10/28/15 06:04:21
+
+* Rule file targeted for CAMSS workload
+*---------------------------------------------------------------------------*
+* It provide workload similar to medical imaging. Iniially, it will have   -*
+* write stanza which is similar to uploading of images.                    -*
+* Later, only RC stanzas will be there, which will mimic comparing         -*
+* of images.                                                               -*
+*---------------------------------------------------------------------------*
+*- STANZA 1: Sequentially write the entire disk on 1st iteration of the    -*
+*-           rule file. This stanza will create 10 threads which will run  -*
+*-           in the background while other stanza in the rule are running. -*
+*-           Each thread will be covering a different section of the disk. -*
+*---------------------------------------------------------------------------*
+rule_id = rule_1
+pattern_id = #003
+oper = bwrc
+num_oper = 0
+num_threads = 10
+direction = UP
+starting_block = BOT
+transfer_size = 256K
+num_mallocs = 1
+seek_breakup_prcnt = 0
+skip = -99999999
+section = yes
+
+*---------------------------------------------------------------------------*
+*- STANZA 2: Sleep for 2 minutes.                                          -*
+*-           This lets the background thread (STANZA 1) initialize an area -*
+*-           of the disk before the other rule stanzas start.              -*
+*---------------------------------------------------------------------------*
+rule_id = rule_2
+oper = S
+sleep = 60000000
+skip = -99999999
+
+*---------------------------------------------------------------------------*
+*- STANZA 3: Creates num of threads equal to the queue depth. Each thread  -*
+*- doing 2000 num_oper with RC operation transfer size between 4K to 1M    -*
+*---------------------------------------------------------------------------*
+rule_id = rule_3
+pattern_id = #003
+num_oper = 2000
+num_threads = 1qd
+seek_breakup_prcnt = 100
+min_blkno = 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9
+max_blkno = 0.09 0.19 0.29 0.39 0.49 0.59 0.69 0.79 0.89 0.99
+oper = RC
+transfer_size = [4K-1M,-1]
+num_mallocs = 1
+
+*---------------------------------------------------------------------------*
+*- STANZA 4: Creates num of threads equal to the queue depth. Each thread  -*
+*- doing 1000 num_oper with RC operation with a transfer size between      -*
+*- 1BLK to 4KK.                                                            -*
+*---------------------------------------------------------------------------*
+rule_id = rule_4
+pattern_id = #003
+num_oper = 1000
+num_threads = 1qd
+seek_breakup_prcnt = 0
+min_blkno = 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9
+max_blkno = 0.09 0.19 0.29 0.39 0.49 0.59 0.69 0.79 0.89 0.99
+oper = RC
+transfer_size = [1BLK-4K,-1]
+num_mallocs = 1
+
+*---------------------------------------------------------------------------*
+*- STANZA 5: Creates num of threads equal to the queue depth. Each thread  -*
+*- doing 1000 num_oper with 80% random and 20% seq. RC operation with a    -*
+*- transfer size of 256K.                                                  -*
+*---------------------------------------------------------------------------*
+rule_id = rule_5
+pattern_id = #003
+num_oper = 1000
+num_threads = 0.25qd
+seek_breakup_prcnt = 80
+oper = RC
+transfer_size = [256K-4MB,-1]
+num_mallocs = 1

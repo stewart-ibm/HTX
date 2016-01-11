@@ -1,0 +1,89 @@
+* @(#)77	1.1  src/htx/usr/lpp/htx/rules/reg/hxestorage/rules.camss_cloud, exer_storage, htxubuntu 10/28/15 06:02:36
+
+* Rule file targeted for CAMSS cloud workload.
+*---------------------------------------------------------------------------*
+*- STANZA 1: Creates 1qd BWRC threads which divides the disk               -*
+*            into 1QD sections and each threads does operation             -*
+*            on its own section.                                           -*
+*            This MIMICs the uploading of any data on cloud.               -*
+*---------------------------------------------------------------------------*
+rule_id = rule_1
+pattern_id = #003
+num_threads = 1qd
+num_oper = 0
+oper = bwrc
+starting_block = BOT
+direction = UP
+transfer_size = 512K
+num_mallocs = 1
+skip = -99999999
+section = YES
+
+*---------------------------------------------------------------------------*
+*- STANZA 2: Does random write with very small num_oper. It creates 1QD    -*
+*            threads with RANDOM operations                                -*
+*---------------------------------------------------------------------------*
+rule_id = rule_2
+pattern_id = #003
+num_oper = 500
+num_threads = 1qd
+transfer_size = [1BLK-512K,-1]
+seek_breakup_prcnt = 100
+oper = w
+section = YES
+
+*---------------------------------------------------------------------------*
+*- STANZA 3: sleep stanza                                                  -*
+*---------------------------------------------------------------------------*
+rule_id = rule_3
+oper = S
+sleep = 60000
+skip = -99999999
+
+*----------------------------------------------------------------------------*
+* Rest of the stanzas are doing mostly RC operations to MIMIC the cloud env.-*
+* as most of the time, it is Read operation from the cloud storage e.g.     -*
+* deplyoment of some application on large no. of systems.                   -*
+*----------------------------------------------------------------------------*
+*---------------------------------------------------------------------------*
+*- STANZA 4: Creates 0.25QD threads doing seq RC operations with xfer      -*
+*-           size varying between 1BLK to 64K.                             -*
+*---------------------------------------------------------------------------*
+rule_id = rule_4
+pattern_id = #003
+num_threads = 0.25qd
+num_oper = 2000
+oper = rc
+seek_breakup_prcnt = 0
+transfer_size = [1BLK-64K,-1]
+num_mallocs = 1
+section = YES
+
+*---------------------------------------------------------------------------*
+*- STANZA 5: Creates 0.5QD threads doing random operations with xfer size  -*
+*-           varying between 1BLK to 512K. 33% of threads doing W oper and -*
+*-           66% doing RC oper.                                            -*
+*---------------------------------------------------------------------------*
+rule_id = rule_5
+pattern_id = #003
+num_threads = 0.5qd
+num_oper = 3000
+oper = w rc rc
+transfer_size = [1BLK-512K,-1]
+seek_breakup_prcnt = 100
+num_mallocs = 1
+
+*---------------------------------------------------------------------------*
+*- STANZA 6: Creates 1QD threads doing RANDOM operations with xfer size    -*
+*-           varying between 1BLK to 512K. Each thread will do operation   -*
+*-           in its own section.                                           -*
+*---------------------------------------------------------------------------*
+rule_id = rule_6
+pattern_id = #003
+num_threads = 1qd
+num_oper = 2000
+oper = rc
+seek_breakup_prcnt = 100
+transfer_size = [1BLK-512K,-1]
+section = YES
+num_mallocs = 1

@@ -1,0 +1,187 @@
+* Rule file for BFP devices of hxefpu64 exerciser. Can be used on both P6 and P7.
+* For details of rule keywords, please refer README.hxefpu64
+* in /usr/lpp/htx/rules/reg/hxefpu64 dir on test machine.
+*
+* NOTE: Rule keyword & associated value should be all in one
+*	line _only_. Currently '\n' (newline) is used as
+*	delimiter to differentiate between keywords.
+*
+*
+
+
+* All BFP instructions with normal data
+
+rule_id						test1
+num_oper					5000
+num_threads					0
+seed						[0,0,0,0,0,0,0,0]
+stream_depth				1000
+test_method					1
+unaligned_loads_stores_%	[0,0,0,0,0,0,0,0]
+fpscr						[0,0,0,0,0,0,0,0]
+data_bias_mask    			[0xa, 0xa, 0xa, 0xa, 0xa, 0xa, 0xa, 0xa]
+ins_bias_mask				[(0x020000000007ffff, 100):	(0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100):	(0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100)]
+
+
+
+* All BFP instructions with 50% normal & 50% denormal data
+
+rule_id						test2
+num_oper					5000
+num_threads					0
+seed						[0,0,0,0,0,0,0,0]
+stream_depth				1000
+test_method					1
+unaligned_loads_stores_%	[0,0,0,0,0,0,0,0]
+fpscr						[0,0,0,0,0,0,0,0]
+data_bias_mask    			[0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55]
+ins_bias_mask				[(0x020000000007ffff, 100):	(0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100):	(0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100)]
+
+
+
+* All BFP instructions with 100% denormal data
+
+rule_id						test3
+num_oper					5000
+num_threads					0
+seed						[0,0,0,0,0,0,0,0]
+stream_depth				1000
+test_method					1
+unaligned_loads_stores_%	[0,0,0,0,0,0,0,0]
+fpscr						[0,0,0,0,0,0,0,0]
+data_bias_mask    			[0xa0, 0xa0, 0xa0, 0xa0, 0xa0, 0xa0, 0xa0, 0xa0]
+ins_bias_mask				[(0x020000000007ffff, 100):	(0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100):	(0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100)]
+
+
+
+* All BFP instructions with data biasing towards 10% each of the data zones 
+
+rule_id						test4
+num_oper					5000
+num_threads					0
+seed						[0,0,0,0,0,0,0,0]
+stream_depth				1000
+test_method					1
+unaligned_loads_stores_%	[0,0,0,0,0,0,0,0]
+fpscr						[0,0,0,0,0,0,0,0]
+data_bias_mask    			[0x1111111111, 0x1111111111, 0x1111111111, 0x1111111111, 0x1111111111, 0x1111111111, 0x1111111111, 0x1111111111]
+ins_bias_mask				[(0x020000000007ffff, 100):	(0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100):	(0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100)]
+
+
+
+* BFP DP ALL instructions with 50% normal & 50% denormal data zones
+
+rule_id						test5
+num_oper					5000
+num_threads					0
+seed						[0,0,0,0,0,0,0,0]
+stream_depth				1000
+test_method					1
+unaligned_loads_stores_%	[0,0,0,0,0,0,0,0]
+fpscr						[0,0,0,0,0,0,0,0]
+data_bias_mask    			[0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55]
+ins_bias_mask				[(0x020000000003feb6, 100):	(0x020000000003feb6, 100): (0x020000000003feb6, 100): (0x020000000003feb6, 100): (0x020000000003feb6, 100):	(0x020000000003feb6, 100): (0x020000000003feb6, 100): (0x020000000003feb6, 100)]
+
+
+
+* BFP SP ALL instructions with 50% normal & 50% denormal data zones
+
+rule_id						test6
+num_oper					5000
+num_threads					0
+seed						[0,0,0,0,0,0,0,0]
+stream_depth				1000
+test_method					1
+unaligned_loads_stores_%	[0,0,0,0,0,0,0,0]
+fpscr						[0,0,0,0,0,0,0,0]
+data_bias_mask    			[0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55]
+ins_bias_mask				[(0x0200000000000b49, 100):	(0x0200000000000b49, 100): (0x0200000000000b49, 100): (0x0200000000000b49, 100): (0x0200000000000b49, 100):	(0x0200000000000b49, 100): (0x0200000000000b49, 100): (0x0200000000000b49, 100)]
+
+
+
+* BFP Arithmatic only instructions with 50 % normal & 50 % de-normal data
+
+rule_id						test7
+num_oper					5000
+num_threads					0
+seed						[0,0,0,0,0,0,0,0]
+stream_depth				1000
+test_method					1
+unaligned_loads_stores_%	[0,0,0,0,0,0,0,0]
+fpscr						[0,0,0,0,0,0,0,0]
+data_bias_mask    			[0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55]
+ins_bias_mask				[(0x02000000000003c0, 100):	(0x02000000000003c0, 100): (0x02000000000003c0, 100): (0x02000000000003c0, 100): (0x02000000000003c0, 100):	(0x02000000000003c0, 100): (0x02000000000003c0, 100): (0x02000000000003c0, 100)]
+
+
+* BFP Arithmatic only instructions with 100% de-normal data
+
+rule_id						test8
+num_oper					5000
+num_threads					0
+seed						[0,0,0,0,0,0,0,0]
+stream_depth				1000
+test_method					1
+unaligned_loads_stores_%	[0,0,0,0,0,0,0,0]
+fpscr						[0,0,0,0,0,0,0,0]
+data_bias_mask    			[0xa0, 0xa0, 0xa0, 0xa0, 0xa0, 0xa0, 0xa0, 0xa0]
+ins_bias_mask				[(0x02000000000003c0, 100):	(0x02000000000003c0, 100): (0x02000000000003c0, 100): (0x02000000000003c0, 100): (0x02000000000003c0, 100):	(0x02000000000003c0, 100): (0x02000000000003c0, 100): (0x02000000000003c0, 100)]
+
+
+
+* All BFP instructions with normal data (correctness)
+
+rule_id						test9
+num_oper					5000
+num_threads					0
+seed						[0,0,0,0,0,0,0,0]
+stream_depth				400
+test_method					2
+unaligned_loads_stores_%	[0,0,0,0,0,0,0,0]
+fpscr						[0,0,0,0,0,0,0,0]
+data_bias_mask    			[0xa, 0xa, 0xa, 0xa, 0xa, 0xa, 0xa, 0xa]
+ins_bias_mask				[(0x020000000007ffff, 100):	(0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100):	(0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100)]
+
+
+
+* All BFP instructions with 50% normal & 50% denormal data (correctness)
+
+rule_id						test10
+num_oper					5000
+num_threads					0
+seed						[0,0,0,0,0,0,0,0]
+stream_depth				400
+test_method					2
+unaligned_loads_stores_%	[0,0,0,0,0,0,0,0]
+fpscr						[0,0,0,0,0,0,0,0]
+data_bias_mask    			[0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55]
+ins_bias_mask				[(0x020000000007ffff, 100):	(0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100):	(0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100)]
+
+
+
+* All BFP instructions with 100% denormal data (correctness)
+
+rule_id						test11
+num_oper					5000
+num_threads					0
+seed						[0,0,0,0,0,0,0,0]
+stream_depth				400
+test_method					2
+unaligned_loads_stores_%	[0,0,0,0,0,0,0,0]
+fpscr						[0,0,0,0,0,0,0,0]
+data_bias_mask    			[0xa0, 0xa0, 0xa0, 0xa0, 0xa0, 0xa0, 0xa0, 0xa0]
+ins_bias_mask				[(0x020000000007ffff, 100):	(0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100):	(0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100)]
+
+
+
+* All BFP instructions with data biasing towards 10% each of the data zones 
+
+rule_id						test12
+num_oper					5000
+num_threads					0
+seed						[0,0,0,0,0,0,0,0]
+stream_depth				400
+test_method					2
+unaligned_loads_stores_%	[0,0,0,0,0,0,0,0]
+fpscr						[0,0,0,0,0,0,0,0]
+data_bias_mask    			[0x1111111111, 0x1111111111, 0x1111111111, 0x1111111111, 0x1111111111, 0x1111111111, 0x1111111111, 0x1111111111]
+ins_bias_mask				[(0x020000000007ffff, 100):	(0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100):	(0x020000000007ffff, 100): (0x020000000007ffff, 100): (0x020000000007ffff, 100)]

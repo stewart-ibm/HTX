@@ -1,0 +1,35 @@
+ Randomly activate/halt HTX exercisers:
+ =====================================
+
+This feature of HTX automatically toggles the exercisers (except mem and tlbie) between active/halt state after random intervals of time. The feature is enabled if the value of parameter "random_ahd" in file .htx_profile  is "1". By default , this feature is disabled .
+
+Motivation :
+===========
+
+This HTX feature allows GR/GS(and follow on) processor threads to switch between SMT(symmetric multi thread) and ST(single thread) by reducing the load on processors to significantly low amount and hence testing the hardware switching between SMT/ST.
+
+Tunable parameters for random_ahd feature:
+=========================================
+
+One needs to set two parameters in /usr/lpp/htx/.htx_profile file to tune random_ahd behaviour :
+
+1. random_ahd :  This parameter is used to enable/disable this feature. Feature is disabled if value is "0" and enabled if value is "1". By default, its value is "0".
+ 
+2. random_halt_low and random_halt_hi :  All HTX exercisers (except mem and tlbie) are halted after every random amount of time (generated between random_halt_low and random_halt_hi). Default values for random_halt_low and random_halt_hi are 3600 secs and 5400 secs. Halted htx exercisers remain halted for a random amount of time (generated between 0 an 10 % of random_halt_hi) 
+
+Caution: The value of rand_halt_hi should always be greater than rand_halt_low.
+
+Basic Functionality:
+===================
+
+Random_ahd is a child process spawned by supervisor if the value of parameter   "random_ahd"  in file .htx_profile  is "1".  It generates a random number in between the range random_halt_hi and random_halt_low  which will be used as a time (defined as rand_halt_tm) after which all htx exercisers (except mem and tlbie) are halted. Before halting the exercisers, it sleeps for a time period equals to rand_halt_tm. Then, it checks the status of each exerciser(except mem and tlbie) one by one . If the status is RUNNING, it makes them to halt and sets the rand_halt flag. rand_halt flag is  defined in per exerciser shared memory structure. Then it waits till the status of all the exercisers (which are made to halt) on screen5 becomes .HR. or for a maximum of 5 minutes. If all the exercisers do not stop within 5 minutes, a SIGALARM will b sent to it to come out of the wait loop. 
+
+Once all exercisers (except mem and tlbie) are halted , they remain halted for random amount of time called random_act_tm. random_act_tm is calculated by generating a random no between 10% of random_halt_low and 10% of random_halt_hi. By generating random_act_tm as mentioned above It ensures that HTX has apprx. 90%  runtime. After this it checks for the exercisers which were halted by this process only (i.e. whose status on screen 5 will be shown as "HR") and  makes them active (.i.e. their staus will be shown as "RN" on screen5).
+
+
+Screen 5 status:
+===============
+
+A status of "HR" (Halted randomly) will be displayed on screen 5 for the exerciser if it has been stopped by random_ahd process
+
+

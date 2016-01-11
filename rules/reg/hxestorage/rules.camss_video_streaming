@@ -1,0 +1,108 @@
+* @(#)22	1.1  src/htx/usr/lpp/htx/rules/reg/hxestorage/rules.camss_video_streaming, exer_storage, htxubuntu 10/29/15 05:06:46
+
+* Rule file targeted for CAMSS workload
+*---------------------------------------------------------------*
+* It provides the workload similar to video streaming.         -*
+* Considering the case of any video going viral where no. of   -*
+* hits keep on increasing.                                     -*
+* To mimic the scenario, no. of threads will keep on increasing-*
+* in each stanza.                                              -*
+*---------------------------------------------------------------*
+*---------------------------------------------------------------*
+*-  STANZA 1: It creates 10 threads, each doing W operation in -*
+*-           its own region. This is similar to uploading of   -*
+*-           videos.                                           -*
+*---------------------------------------------------------------*
+rule_id = rule_1
+pattern_id = HEX55
+oper = w
+num_oper = 2000
+num_threads = 10
+transfer_size = 512K
+mode = performance
+min_blkno = 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9
+max_blkno = 0.09 0.19 0.29 0.39 0.49 0.59 0.69 0.79 0.89 0.99
+num_mallocs = 1
+seek_breakup_prcnt = 0
+skip = -99999999
+
+*----------------------------------------------------------------*
+*-  STANZA 2: creates 0.1 QD threads, each doing R operation in -*
+*-            same section of the disk with transfer size 64K   -*
+*----------------------------------------------------------------*
+rule_id = rule_2
+pattern_id = HEX55
+oper = r
+num_threads = 0.1qd
+mode = performance
+num_oper = 5000
+transfer_size = 64K
+min_blkno = 0.8
+max_blkno = 0.89
+seek_breakup_prcnt = 0
+
+*-----------------------------------------------------------------*
+*-  STANZA 3: creates 0.2QD threads, each doing R operation in   -*
+*-            same section of the disk with transfer size varying-*
+*-            between 1BLK - 64K.                                -*
+*-----------------------------------------------------------------*
+rule_id = rule_3
+pattern_id = HEX55
+oper = r
+mode = performance
+num_oper = 5000
+num_threads = 0.2qd
+min_blkno =  0.8
+max_blkno = 0.89
+seek_breakup_prcnt = 100
+transfer_size = [1BLK-64K,-1]
+
+*-----------------------------------------------------------------*
+*-  STANZA 4: creates 0.4QD threads, each doing R operation in   -*
+*-            same section of the disk with transfer size varying-*
+*-            between 1BLK - 64K.                                -*
+*-----------------------------------------------------------------*
+rule_id = rule_4
+pattern_id = HEX55
+oper = r
+mode = performance
+num_oper = 4000
+associativity = SEQ
+num_threads = 0.4qd
+min_blkno =  0.6 0.8
+max_blkno = 0.69 0.89
+seek_breakup_prcnt = 0
+transfer_size = [1BLK-64K,-1]
+
+*---------------------------------------------------------------*
+*-  STANZA 5: creates 0.8QD threads, each doing R operation in -*
+*-            same section of the disk with transfer size      -*
+*-            varying between 1BLK - 64K.                      -*
+*---------------------------------------------------------------*
+rule_id = rule_5
+pattern_id = HEX55
+oper = r
+mode = performance
+num_threads = 0.8qd
+num_oper = 4000
+associativity = SEQ
+min_blkno =  0.1 0.30.8
+max_blkno = 0.19 0.39 0.89
+seek_breakup_prcnt = 100
+transfer_size = [1BLK-64K,-1]
+
+*---------------------------------------------------------------*
+*-  STANZA 6: creates 1.6QD threads, each doing R operation in -*
+*-            same section of the disk with transfer size      -*
+*-            varying between 1BLK - 64K.                      -*
+*---------------------------------------------------------------*
+rule_id = rule_6
+oper = r
+pattern_id = HEX55
+mode = performance
+num_oper = 4000
+num_threads = 1.6qd
+min_blkno =  0.8
+max_blkno = 0.89
+seek_breakup_prcnt = 0
+transfer_size = [1BLK-64K,-1]

@@ -1,0 +1,50 @@
+# @(#)62	1.2  src/htx/usr/lpp/htx/bin/hxecom/bprof, exer_com, htxubuntu 5/24/04 10:10:53
+onesys=y/n
+thishostid=xxx   { id of this host }
+#{list of all system ids for this hxecom test, including thishostid
+#not needed for one system test}
+other_ids=xxx:xxx:xxx  
+stresslevel=x  {1-5}
+comhostname=ioflab101  {site ring name of this host if on site ring}
+use_site_ring=y/n
+com_configured=y/n
+# if com_configured = n then you need these next lines down to #done: 
+comipaddr=xxx.xxx.xxx.xxx
+comnameserver=xxx.xxx.xxx.xxx
+comgateway=xxx.xxx.xxx.xxx
+commask=xxx.xxx.xxx.xxx
+comdomain=austin.ibm.com
+#done... com_configured=n
+
+#NOTE>>>>>> You can delete or omit any device that is not supposed to be in the test.
+
+#token ring>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#                    speed is 4, 16, or autosense 
+#                    recv_q is 32 to 160
+#                    duplex full or half
+#                    net is xxx or n or com
+#dev  net       speed     duplex     recv_q
+tokX XXX/n/com 4/16/auto full/half  32-160
+
+#for ethernet>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#dev  net         speed       duplex     cable_type       ipsec  local/remote
+entX XXX/n/com   10/100/auto  full/half  bnc/dix/tp/N/A     n/y    l/r
+
+#for fddi>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#dev   net        
+fddiX XXX/n/com
+
+#for atm>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# atm cannot be com net... Does not support broadcasts
+# get the server addr by doing lscfg -vl on the adapter that is the svc_s
+# server_addr, switch_addr, and server_atm can be left out if connection is pvc
+#dev  net  atm_connection  master   server_addr switch_addr  server_atm
+atmX XXX/n pvc/svc_s/svc_c  m/s     xxxxxxxxxxx xx.xx.xx.etc  0/1/2/etc
+
+#for hippi>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# hippi cannot be com net... Does not support broadcasts
+# also cannot have onesys network with hippi. and only back to back supported
+# no switch setups.
+#dev   net   other_sysid 
+hippiX XXX/n   XX       
+

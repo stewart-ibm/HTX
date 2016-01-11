@@ -1,0 +1,181 @@
+#!/usr/bin/perl
+
+use File::Basename;
+
+#mdt.surelock would have 128 instances of hxesurelock per capi device. 
+#if you want to increase/decrease the instance, change this variable .. 
+$instances_per_capi_device=128; 
+
+#other mdts will have surelock stanza's along with other devices, thus 
+#adding fewer stanzas to these mdt files, to increate/decrease the instance, change this variable ..  
+$num_instances_per_capi_device=128; 
+
+# each KV instance requires 16G of space on Texan so considering 2TB LUN we can create 
+# 128 instances which makes 64 instances per adpater port 
+$num_kvinstances_per_capi_device=64; 
+ 
+
+# If enable debug prints. 
+$debug=0; 
+
+# Pass the mdt file name to append Surelock stanza  
+# with updated rules file. 
+sub add_surelock_device_stanza { 
+
+	local($mdt, $exerciser, $rules_path) = @_; 
+	local($i); 
+	local($num_instances); 
+	$rule=basename($rules_path); 
+
+	if($exerciser =~ /hxekvs/) { 
+		$num_instances = $num_kvinstances_per_capi_device; 
+	} else { 
+		$num_instances = $num_instances_per_capi_device; 
+	}
+	unless (open (MDT,">>$mdt")) {
+        print ("Can't open $mdt file!\n");
+		return; 
+    }
+
+	#find capi devices configured on system 
+	#@capi_devices=`ls  -lat /dev/capi[a-z][0-9][a-z] | awk '{print \$10}' `; 
+	#@capi_devices=`ls -alt /dev/cxl/afu[0-9].[0-9]m |  awk '{print \$10}'`; 
+	#@capi_devices=`cd /dev/; ls -alt cxl/afu[0-9].[0-9]m |  awk '{print \$10}'; cd  ;`; 
+	@capi_devices=`cd /dev/cxl/; ls -alt afu[0-9].[0-9]s |  awk '{print \$10}'; cd  ;`; 
+ 	print ("Adding ") if($debug);  	
+	foreach $capidevice (@capi_devices) { 
+		chomp($capidevice); 
+		for($i = 0; $i < $num_instances; $i++) { 	
+			$device = $capidevice."\.$i"; 
+			print(" $device:$rule,") if($debug); 
+			print MDT ("\n"); 
+			print MDT ("$device:\n"); 
+			print MDT "\tHE_name = \"$exerciser\"\n";
+    		print MDT "\tadapt_desc = \"CorsaA5 CAPI-Enabled FPGA\"\n";
+    		print MDT "\tdevice_desc = \"TMS Drawer\"\n";
+    		print MDT "\treg_rules = \"$exerciser/$rule\"\n";
+    		print MDT "\temc_rules = \"$exerciser/$rule\"\n";
+		}
+
+	}
+	printf(" to mdt file=%s \n", basename($mdt)) if($debug);  
+	close(MDT); 
+
+}
+
+sub print_default_stanza
+{
+	local($mdt) = @_; 
+
+    print $mdt <<EOF
+default:
+    HE_name = ""                      * Hardware Exerciser name, 14 char
+    adapt_desc = ""                   * adapter description, 11 char max.
+    device_desc = ""                  * device description, 15 char max.
+    reg_rules = ""                    * reg rules
+    emc_rules = ""                    * emc rules
+    dma_chan = 0                      * DMA channel number
+    idle_time = 0                     * idle time (secs)
+    intrpt_lev = 0                    * interrupt level
+    load_seq = 32768                  * load sequence (1 - 65535)
+    max_run_tm = 7200                 * max run time (secs)
+    port = "0"                        * port number
+    priority = 19                     * priority (1=highest to 19=lowest)
+    slot = "0"                        * slot number
+    max_cycles = "0"                  * max cycles
+    hft = 0                           * hft number
+    cont_on_err = "YES"               * continue on error (YES/NO)
+    halt_level = "1"                  * level <= which HE halts
+    start_halted = "n"                * exerciser halted at startup
+    dup_device = "n"                  * duplicate the device
+    log_vpd = "y"                     * Show detailed error log
+
+EOF
+}
+sub create_surelock_device_stanza { 
+
+	local($mdt, $exerciser, $rules_path) = @_;
+	local($i); 
+	local($num_instances);
+
+    if($exerciser =~ /hxekvs/) {
+        $num_instances = $num_kvinstances_per_capi_device;
+    } else {
+        $num_instances = $instances_per_capi_device;
+    }
+
+    unless (open (MDT,">$mdt")) {
+        print ("Can't open $mdt file!\n");
+		return; 
+    }
+	$rule=basename($rules_path);
+	print("Creating Surelock mdt \n") if($debug); 
+	&print_default_stanza(MDT); 
+	
+    #@capi_devices=`cd /dev/cxl/; ls -alt afu[0-9].[0-9] |  awk '{print \$10}'; cd  ;`;
+	@capi_devices=`cd /dev/cxl/; ls -alt afu[0-9].[0-9]s |  awk '{print \$10}'; cd  ;`; 
+    print ("Adding ") if($debug);
+    foreach $capidevice (@capi_devices) {
+        chomp($capidevice);
+        for($i = 0; $i < $num_instances; $i++) {
+            $device = $capidevice."\.$i";
+            print(" $device:$rule,") if($debug);
+            print MDT ("\n");
+            print MDT ("$device:\n");
+            print MDT "\tHE_name = \"$exerciser\"\n";
+            print MDT "\tadapt_desc = \"CorsaA5 CAPI-Enabled FPGA\"\n";
+            print MDT "\tdevice_desc = \"TMS Drawer\"\n";
+            print MDT "\treg_rules = \"$exerciser/$rule\"\n";
+            print MDT "\temc_rules = \"$exerciser/$rule\"\n";
+        }
+
+    }
+    printf(" to mdt file=%s \n", basename($mdt)) if($debug);
+    close(MDT);
+
+
+}
+# Main Line code starts here 
+
+
+# List of mdt files where this script would append hxesurelock stanza's. 
+# If you have custom mdt, add it as entry to this array and re-run script. 
+$num_mdts = 10;
+@hxehd_details = ( 	["mdt.bu", "hxesurelock", "default"], 
+					["mdt.hd", "hxesurelock", "default"], 
+					["mdt.hdbuster", "hxesurelock", "default"], 
+					["mdt.io", "hxesurelock", "default"], 
+					["mdt.mem.io", "hxesurelock", "default"], 
+					["mdt.nest.io", "hxesurelock", "default"], 
+					["mdt.cache.io", "hxesurelock", "default"], 
+					["mdt.surelock", "hxesurelock", "default"],
+					["mdt.surelock_perf", "hxesurelock", "default.perf"],
+					["mdt.kvs", "hxekvs", "default"]
+				);
+
+for($i=0; $i < $num_mdts; $i++) {  
+
+	$mdt=$hxehd_details[$i][0];
+	$mdt_file="/usr/lpp/htx/mdt/".$mdt; 	
+
+	print(" \nOperation going on for $mdt_file, i=$i \n") if($debug);  
+
+	if( -e $mdt_file) { 
+		# Check if CAPI stanza already exists 
+		$res=`grep afu $mdt_file`; 
+		chomp($res); 
+		if($res) { 
+			print("CAPI stanza exists in $mdt file. Hence not adding .. \n") if($debug); 
+		} else { 
+			print("Adding hxesurelock stanza to $mdt file \n") if($debug); 
+			# &append_surelock_stanza($mdt_file, $hxehd_details[$i][1]); 
+			&add_surelock_device_stanza($mdt_file, $hxehd_details[$i][1], $hxehd_details[$i][2]);
+		} 
+		next; 
+	}  
+	#mdt file doesn't exists .. 
+	#creating it 
+	print("Creating $mdt_file \n") if($debug); 
+	&create_surelock_device_stanza($mdt_file, $hxehd_details[$i][1], $hxehd_details[$i][2]);
+	 
+}

@@ -1,0 +1,166 @@
+#!/usr/bin/perl
+# @(#)72	1.2.4.3  src/htx/usr/lpp/htx/bin/hxecom/mdt_net, exer_com, htxubuntu 9/28/15 04:33:48
+#########################################################################
+
+$mdtname = $ARGV[0];
+
+if($mdtname eq "") {
+	chdir("/usr/lpp/htx/mdt");
+	while(1) {
+		@res = `ls`;
+		$line = "";
+		foreach $name (@res) {
+			chop($name);
+			if($name !~ /mdt_net/ && $name !~ /net.mdt/) {
+				$line = "$line " . "$name";
+			}
+		}
+		print("Which mdt file should I add net.mdt to?\n$line\n>>");
+		$mdtname=<STDIN>;
+		chop($mdtname);
+		if($line !~ /$mdtname/ || $mdtname eq "") {
+			print("Bad mdt file name, try again!\n");
+			next;
+		}
+		if($mdtname eq "") {
+			$mdtfile = "/usr/lpp/htx/mdt/mdt.bu";
+		} else {  
+			$mdtfile = "/usr/lpp/htx/mdt/$mdtname";
+		}
+		last;
+	}
+} else {  
+	$mdtfile = "/usr/lpp/htx/mdt/$mdtname";
+}
+
+#read in the net.mdt file
+$netfile = "/usr/lpp/htx/mdt/net.mdt";
+
+unless (open (MDT_NET,"$netfile")) {
+	die ("Can't open $netfile file!\n");
+}
+@netlines = <MDT_NET>;
+close(MDT_NET);
+
+$devcount=0;
+@devs="";
+
+foreach $line (@netlines) {
+	if($line !~ /default:/ && $line =~ /:$/) {
+		$devs[$devcount]=$line;
+		++$devcount;
+	}
+}
+
+if(!$devcount) {
+	exit(0);
+}
+
+print("Adding $devcount devices to mdt\n");
+
+
+#read in the mdtfile
+print("Open $mdtfile to insert the new lines\n");
+unless (open (MDT_FILE,"$mdtfile")) {
+	die ("Can't open $mdtfile file!\n");
+}
+$tmpfile = "/usr/lpp/htx/mdt/net.tmp";
+unless (open (TMP_FILE,">$tmpfile")) {
+	die ("Can't open $tmpfile file!\n");
+}
+
+$line = <MDT_FILE>;
+while($line ne "") {
+    if($line =~ /\d{1,3}:/) {
+		$mlx="";
+		$match="";
+		foreach $dev (@devs) {
+
+			if($dev =~ /:$/){
+				chomp($dev);
+				($dev_name,$temp)= split(":",$dev);
+				chomp($dev_name);
+				$res = `ls /sys/class/net/$dev_name/device/infiniband 2>/dev/null`;
+
+				chomp($res);
+				if($res && $res ne " ") {
+					if($line =~ /$res/) {
+						$mlx=$res;
+					}
+				}		
+			}
+			if($dev && $dev ne " ") {
+			    if($line =~ /$dev/) {
+				    $match="y";
+				    last;
+			    }
+			}
+		}
+		if($match) {
+REDO:
+			$line = <MDT_FILE>;
+			while($line !~ /:/ && $line ne "") {
+				$line = <MDT_FILE>;
+			}
+			$match1="";
+			foreach $dev (@devs) {
+				if($line =~ /$dev/) {
+					$match1="y";
+					last;
+				}
+			}
+			if($match1) {
+				goto REDO;
+			} else {
+				foreach $dev (@devs) {
+            		if($dev =~ /:$/){
+                		chomp($dev);
+                		($dev_name,$temp)= split(":",$dev);
+                		chomp($dev_name);
+                		$res = `ls /sys/class/net/$dev_name/device/infiniband 2>/dev/null`;
+
+                		chomp($res);
+                		if($res && $res ne " ") {
+                    		if($line =~ /$res/) {
+                        		$mlx=$res;
+                    		}
+                		}
+            		}
+        		}
+				if($mlx eq "") {
+					print TMP_FILE ("$line");
+				}
+			}
+		} else {
+			if($mlx eq "") {
+				print TMP_FILE ("$line");
+			}
+		}
+	} else {
+		if($mlx eq "") {
+			print TMP_FILE ("$line");
+		}
+	}       
+	$line = <MDT_FILE>;
+}
+close(MDT_FILE);
+
+# now add in the network stanzas
+$gotone="";
+foreach $line (@netlines) {
+	if($line !~ /default:/ && $line =~ /:/) {
+		$gotone="y";
+		print TMP_FILE ("$line");
+	} elsif($gotone) {
+		print TMP_FILE ("$line");
+	}
+}
+
+close(TMP_FILE);
+
+$res = `cp $tmpfile $mdtfile`;
+$res = `rm $tmpfile`;
+print("Done OK\n");
+
+
+exit(0);

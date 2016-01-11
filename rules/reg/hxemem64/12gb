@@ -1,0 +1,85 @@
+* @(#)93        1.2  src/htx/usr/lpp/htx/rules/reg/hxemem64/12gb, exer_mem64, htxubuntu 2/25/04 06:19:43
+*********************************************************************
+* write out all zeros to memory...
+rule_id = mem_0x00
+pattern_id = HEXZEROS
+messages = no
+compare = yes
+num_oper = 1
+oper = mem
+seg_size = 268435456
+num_seg = 48
+width = 8
+
+* write out all 0xFF's to memory...
+rule_id = mem_0xFF
+pattern_id = HEXFF
+messages = no
+compare = yes
+num_oper = 1
+oper = mem
+seg_size = 268435456
+num_seg = 48
+width = 8
+
+* write out all 0x55's to memory...
+rule_id = mem_0x55
+pattern_id = HEX55
+messages = no
+compare = yes
+num_oper = 1
+oper = mem
+seg_size = 268435456
+num_seg = 48
+width = 8
+
+* write out all 0xAA's
+rule_id = mem_0xAA
+pattern_id = HEXAA
+messages = no
+compare = yes
+num_oper = 1
+oper = mem
+seg_size = 268435456
+num_seg = 48
+width = 8
+
+* write out all zeros to memory from disk
+rule_id = dma_0x00
+pattern_id = HEXZEROS
+messages = no
+compare = yes
+num_oper = 1
+oper = dma
+seg_size = 268435456
+num_seg = 48
+
+* write out all 0xFF's to memory from disk
+rule_id = dma_0xFF
+pattern_id = HEXFF
+messages = no
+compare = yes
+num_oper = 1
+oper = dma
+seg_size = 268435456
+num_seg = 48
+
+* write out all 0x55's to memory from disk
+rule_id = dma_0x55
+pattern_id = HEX55
+messages = no
+compare = yes
+num_oper = 1
+oper = dma
+seg_size = 268435456
+num_seg = 48
+
+* write out all 0xAA's to memory from disk
+rule_id = dma_0xAA
+pattern_id = HEXAA
+messages = no
+compare = yes
+num_oper = 1
+oper = dma
+seg_size = 268435456
+num_seg = 48

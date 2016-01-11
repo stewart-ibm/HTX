@@ -1,0 +1,265 @@
+#!/bin/ksh
+#
+# @(#)08        1.4.4.1  src/htx/usr/lpp/htx/etc/scripts/save.it, htx_linux, htxubuntu 2/24/15 00:01:16
+#
+#------------------------------------------------------------------------------
+# Determine if echo interprets backslash formatting and correct if possible
+  [ -x /bin/echo ] && {
+     [ "X`(echo '\t') 2>/dev/null`" = 'X\t' ] && alias echo="/bin/echo -e"
+  }
+
+
+#------------------------------------------------------------------------------
+  saveDir=/tmp/trial
+  tput clear
+  printf "save.it - HTX Version v1.4\n\n"
+
+
+#------------------------------------------------------------------------------
+# Functions
+  CLine     () { printf "\r                                                                               "; printf "\r$1"; }
+  count5    () { printf "xxxxx\r"; for count in 1 2 3 4 5; do printf"."; sleep 1; done; echo; }
+  runWarn   () { printf "\nIf running save.it is unintentional, Ctrl-C to exit\n\n--\n"; }
+  copyStuff () {
+     [ -f $1 ] && {
+        CLine "Copying file: $1"
+        SaveFile=$(echo $1 | sed 's|^/||;s|/$||;s/\//_/g;s/ /_/g')
+        cp $1 $saveDir/$SaveFile 2>/dev/null
+     }
+
+     [ -d $1 ] && { 
+        CLine "Copying Directory: $1"
+        find $1 | cpio -pmd /tmp/trial 2>/dev/null
+     }
+  }
+  runCommand () {
+     [ -x "$(which $1 2>/dev/null)" ] || return
+     Command="$*"
+     SaveFile=$saveDir/$(echo $Command | sed 's|^/||;s|/$||;s/\//_/g;s/ /_/g')
+     CLine "Running: $Command"
+     eval $Command >$SaveFile 2>$SaveFile.err
+     [ -s $SaveFile.err ] || rm $SaveFile.err
+  }
+
+
+#------------------------------------------------------------------------------
+# Check to see if HTX or STX is running
+  psCheck="$(ps -ef | grep hxssup 2>/dev/null | grep -v grep)"
+  [ "$psCheck" ] && { echo "WARNING: HTX is running:\n$psCheck"; runWarn; }
+                                                                                                                           
+  psCheck="$(ps -ef | grep eservd 2>/dev/null | grep -v grep)"
+  [ "$psCheck" ] && { echo "WARNING: STX is running:\n$psCheck"; runWarn; }
+
+
+#------------------------------------------------------------------------------
+# Setting Directory Name for Saving Data
+  [ -d $saveDir ] && {
+     [ -d $saveDir.old ] && rm -rf $saveDir.old
+     mv $saveDir $saveDir.old
+  }
+  mkdir -p $saveDir
+
+
+#------------------------------------------------------------------------------
+# Add/edit comment about trial
+  comment=/tmp/.ttcomment
+  [ -f $comment ] && {
+        printf "\n$(<$comment)\nDo you need to edit or add to these comments? (y/N): "
+        read yn
+
+     } || {
+
+        echo "Answering 'yes' will result in a vi session to be opened for you to"
+        printf "add comments about this specific trial.  Add comments? (y/N): "
+        read yn
+  }
+
+  #typeset -u -L1 yn
+  [ "$yn" = " " -o "$yn" = "N" -o "$yn" = "n" ] || vi $comment
+
+
+#------------------------------------------------------------------------------
+  printf "\nCopying trial data...\n"
+
+# Copy trial data files in the /tmp dir
+  copyItems="
+     /bpt
+     /tmp/htx* 
+     /tmp/hxe* 
+     /tmp/sct* 
+     /tmp/syserr* 
+     /tmp/*wbuf* 
+     /tmp/*rbuf* 
+     /tmp/*rerd* 
+     /tmp/*mem* 
+     /tmp/hxemul* 
+     /tmp/README* 
+     /tmp/*log 
+     /tmp/*.errpt 
+     /tmp/*warn 
+     /tmp/sig_*
+     /tmp/HTXScreenOutput
+     /usr/lpp/htx/trial.log
+     /usr/lpp/htx/htxlinuxlevel
+     /usr/lpp/htx/.htx_profile
+     /usr/lpp/htx/mdt/mdt
+     /etc/motd
+     /etc/issue
+     /etc/resolv.conf
+     /etc/services
+     /etc/exports
+     /var/log/messages*
+     /var/log/boot.msg
+     /var/log/platform
+     /var/adm/ffdc
+     /tmp/eehdata
+  "
+
+  for item in $(ls $copyItems 2>/dev/null); do
+     [ -f $item ] && copyStuff $item
+  done
+
+
+#------------------------------------------------------------------------------
+
+  catItems="
+     /proc/apm
+     /proc/bus
+     /proc/cmdline
+     /proc/cpuinfo
+     /proc/devices
+     /proc/dma
+     /proc/environ
+     /proc/fd
+     /proc/filesystems
+     /proc/ide
+     /proc/iomem
+     /proc/ioports
+     /proc/interrupts
+     /proc/ksyms
+     /proc/loadavg
+     /proc/locks
+     /proc/mem
+     /proc/meminfo
+     /proc/misc
+     /proc/modules
+     /proc/mounts
+     /proc/net
+     /proc/partitions
+     /proc/rtc
+     /proc/scsi
+     /proc/slabinfo
+     /proc/stat
+     /proc/status
+     /proc/swaps
+     /proc/sys
+     /proc/tty
+     /proc/uptime
+     /proc/version
+  "
+
+  for item in $catItems; do
+     for subitem in $(find $item 2>/dev/null); do
+        [ -f $subitem ] && {
+		   CLine "Catting file: $subitem"
+           SaveFile=$(echo $subitem | sed 's|^/||;s|/$||;s/\//_/g')
+           cat $subitem >$saveDir/$SaveFile 2>/dev/null
+        }
+     done
+  done
+
+
+#------------------------------------------------------------------------------
+# Collecting system info 
+  printf "\rCollecting system information...\n"
+
+  runCommand df -k
+  runCommand lscfg -vp
+  runCommand lsdev -C
+  runCommand lsvpd
+  runCommand lsslot -c pci
+  runCommand ps -ef
+  runCommand vgdisplay
+  runCommand /usr/lpp/htx/etc/scripts/ver
+  runCommand ifconfig -a
+  runCommand netstat
+  runCommand netstat -r
+  runCommand netstat -i
+  runCommand netstat -rn
+  runCommand netstat -in
+  runCommand netstat -s
+
+  runCommand ctrmc
+  runCommand lssrc -ls IBM.AuditRM
+  runCommand lssrc -ls IBM.ERRM
+  runCommand lssrc -ls IBM.FSRM
+  runCommand lssrc -ls IBM.DMSRM
+  runCommand lssrc -ls IBM.HostRM
+  runCommand lssrc -ls IBM.SensorRM
+  runCommand lssrc -l -s cthats
+  runCommand lssrc -l -s cthags
+  runCommand lsaudrec -l
+  runCommand lsrsrc -a b -t IBM.SharedResourceCluster
+  runCommand lsrsrc -a b -t IBM.PeerNode
+  runCommand lsrsrc -a b -t IBM.NetworkInterface
+  runCommand lsrsrc -a b -t IBM.CommunicationGroup
+  runCommand lsrsrc -a b -t IBM.RSCTParameters
+  runCommand lsrsrc -ab IBM.ManagedNode
+  runCommand lsrsrc -ab IBM.ManagementServer
+  runCommand lsnode -l
+
+
+
+#------------------------------------------------------------------------------
+# Moves any core files to the save dir
+  CLine "Saving any core files..."
+  for corefile in $(find /usr/lpp/htx -name core); do
+     printf "."
+     CoreFile=$(echo "$corefile" | sed  "s/\//\./g")
+     CoreFile=${CoreFile#\.}
+     mv $corefile $saveDir/$CoreFile
+  done
+
+
+
+#------------------------------------------------------------------------------
+# Save rules files used in test (based on mdt file)
+  CLine "Saving rules files used in test..."
+
+  mdtFile=/usr/lpp/htx/mdt/mdt
+  for item in $(grep reg_rules $mdtFile 2>/dev/null | awk -F\" '{print $2}' | sed '/^$/d' | sort -u); do
+     saveFile=$(echo $item | sed 's|^/||;s|/$||;s/\//_/g')
+     cp /usr/lpp/htx/rules/reg/$item $saveDir/rules_$saveFile 2>/dev/null
+  done
+
+
+#------------------------------------------------------------------------------
+# Change to $saveDir and create an html web page of this trial named index.html
+  cd $saveDir
+
+  [ -x /usr/lpp/htx/etc/scripts/create.trial.index ] && {
+     CLine "Running create.trial.index script"
+     /usr/lpp/htx/etc/scripts/create.trial.index quiet 2>/dev/null
+  }
+
+
+#------------------------------------------------------------------------------
+# If exists, will run a post save.it script named save.it.post
+  [ -x /usr/lpp/htx/etc/scripts/save.it.post ] && {
+     CLine "Running save.it.post script"
+     /usr/lpp/htx/etc/scripts/save.it.post 2>/dev/null
+  }
+
+
+#------------------------------------------------------------------------------
+# change file permissions to 644
+  CLine "Setting $saveDir permissions"
+  for item in $(find $saveDir); do
+     [ -f $item ] && chmod 644 $item
+     [ -d $item ] && chmod 755 $item
+  done
+
+
+#------------------------------------------------------------------------------
+  printf "\nDone\n"
+

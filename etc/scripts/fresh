@@ -1,0 +1,129 @@
+#!/bin/ksh
+# @(#)07        1.6  src/htx/usr/lpp/htx/etc/scripts/fresh, htx_linux, htxubuntu 3/10/07 11:47:53
+#
+#------------------------------------------------------------------------------
+# Determine if echo interprets backslash formatting and correct if possible
+  [ -x /bin/echo ] && {
+     [ "X`(echo '\t') 2>/dev/null`" = 'X\t' ] && alias echo="/bin/echo -e"
+  }
+
+#
+#------------------------------------------------------------------------------
+#
+# Filename: fresh
+#           A shell script to clean error logs from previous HTX runs and
+#           to create a trial summary for the current HTX run.
+#
+#     Note: fresh is intended to be used in place of HTX's 'runsup'
+#
+#------------------------------------------------------------------------------
+# start collecting basic information on trial
+  TLog=/usr/lpp/htx/trial.log
+
+  tput clear
+  echo "fresh - HTX Version v1.6\n"
+
+
+#------------------------------------------------------------------------------
+# Check to see if HTX is running and act accordingly
+  [ "$(ps -ef | egrep "hxssup|eservd" 2>/dev/null | grep -v grep)" ] && {
+     echo "HTX is already running - no need to start it again"
+     exit 9
+  }
+
+  echo "WARNING! Continuing will destroy previous HTX trial data. Ensure
+         that you have run save.it or recorded your trial data.
+         Use <Ctrl-C> to exit
+"
+
+
+#------------------------------------------------------------------------------
+# Check if save.it has been run (ensure saved data)
+  [ -f /tmp/.fresh ] && {
+     echo "Warning: save.it has not been run!
+
+Did you forget? It is important to save each trial's data no matter
+how small or useless you may think it is.  Press CTRL-C and run
+save.it to gather the trial data and then run tsave to upload the
+saved data to dfs.
+
+or
+
+At least run save.it and move the results directory (/tmp/trial)
+to another directory name for future viewing.  To do this, type:
+
+   mv /tmp/trial /tmp/<unique_trialname>
+
+Continue? \c"
+
+     read junk
+
+     tput clear
+     echo "fresh - HTX Version v1.6\n"
+  }
+
+
+#------------------------------------------------------------------------------
+# remove previous copy of trial.log if it exists
+  rm -f $TLog
+
+
+#------------------------------------------------------------------------------
+# Check for trial.log and create if not found or incomplete
+  create.trial.log.linux
+
+
+#------------------------------------------------------------------------------
+# Modify the htxaixlevel file to include the current trial name from trial.log
+  htxlinuxlevel="/usr/lpp/htx/htxlinuxlevel"
+  if [[ -e $htxlinuxlevel ]]
+     then [ -e $htxlinuxlevel.orig ] || cp $htxlinuxlevel $htxlinuxlevel.orig
+          [ -e $htxlinuxlevel.orig ] && cp $htxlinuxlevel.orig $htxlinuxlevel
+
+          htxlinux=$(cat $htxlinuxlevel)
+          llength=$(echo "$htxlinux" | wc -c)
+          let mlength=77-llength
+
+          tname=$(grep "Trial Name:" /usr/lpp/htx/trial.log)
+          tname=${tname#*: }
+          tname="Trial: $tname"
+
+          echo "$htxlinux  $tname" > $htxlinuxlevel
+  fi
+
+#------------------------------------------------------------------------------
+# Add comment about trial
+  comment=/tmp/.ttcomment
+  rm -f $comment
+
+  echo "Answering yes will start a vi session for you to add trial comments"
+  echo "Add comments? (y/N): \c"
+  read yn
+  typeset -u -L1 yn
+  [ "$yn" = " " -o "$yn" = "N" ] || vi $comment
+
+
+#------------------------------------------------------------------------------
+# Removes any core files from previous trial
+  rm -f $(find /usr/lpp/htx -name "core") 2>/dev/null
+
+
+#------------------------------------------------------------------------------
+# delete all htx logs and other extraneous info from previous trial
+  for item in htx hxe stx sct err aix syserr short start list scraid sig tb3; do
+     rm -fr /tmp/${item}*
+  done
+
+  rm -f /tmp/*memo /tmp/*.errpt /tmp/gardLog /var/tmp/*.log
+
+
+#------------------------------------------------------------------------------
+# Touch file to let fresh know if save.it has been run
+  touch /tmp/.fresh
+  echo
+ 
+
+###############################################################################
+# Start HTX, pass any command line options through to runsup
+  runsup $*
+
