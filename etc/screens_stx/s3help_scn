@@ -1,0 +1,64 @@
+--------------------------------------------------
+|                                  Page  1 of  4 |
+|                                                |
+| Welcome to STX screen three  HELP screen :     |
+|                                                |
+| I. Features :                                  |
+|                                                |
+|     The COE flag of one or more devices can    |
+|   be toggled using this screen. To toggle the  |
+|   state of a device, type the index of the     |
+|   device in the screen.                        |
+|                                                |
+|                                                |
+|                                                |
+|          F = Forward      Q = Quit             |
+--------------------------------------------------
+--------------------------------------------------
+|                                  Page  2 of  4 |
+|                                                |
+| II. Paging the Screen:                         |
+|                                                |
+|     'f' : move one page forward                |
+|     'nf': move n pages forward                 |
+|     'b' : move one page backward               |
+|     'nb': move n pages backward                |
+|     'l' : move to the last page                |
+|     'u' : move to the first page               |
+|                                                |
+|                                                |
+|                                                |
+|      F = Forward   B = Back    Q = Quit        |
+--------------------------------------------------
+--------------------------------------------------
+|                                  Page  3 of  4 |
+|                                                |
+| III. Refreshing the Screen:                    |
+|                                                |
+|     Sometimes due to noise on the line or      |
+|   operator error the screen can become messed  |
+|   up.  When this occurs, you can get a new     |
+|   "refreshed" screen by entering the letter    |
+|   'r' followed by the return or enter key.     |
+|                                                |
+|                                                |
+|                                                |
+|                                                |
+|      F = Forward   B = Back    Q = Quit        |
+--------------------------------------------------
+--------------------------------------------------
+|                                  Page  4 of  4 |
+|                                                |
+| IV. Activate or Suspend multiple devices:      |
+|                                                |
+|     Option 'c' and 's' can be used to set or   |
+|   clear the COE flag of all the devices in the |
+|   screen.                                      |
+|   <start index>-<end index> can be used to     |
+|   toggle devices from start index to end index.|
+|   Regular expressions with wild characters can |
+|   be used to toggle multiple devices.          |
+|                                                |
+|                                                |
+|                    B = Back    Q = Quit        |
+--------------------------------------------------

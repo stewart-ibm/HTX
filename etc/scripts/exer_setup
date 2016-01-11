@@ -1,0 +1,146 @@
+#!/bin/ksh
+# @(#)14	1.4  src/htx/usr/lpp/htx/etc/scripts/exer_setup.sh, htxconf, htx530 9/17/03 09:32:52
+
+  if [[ -n $(grep "^atm" $1 2>/dev/null) ]]
+     then if [[ -e ${HTXRUNSETUP}chatmpvc.runsetup ]]
+             then echo "Preparing atm"
+                  ${HTXRUNSETUP}chatmpvc.runsetup
+          fi
+  fi
+ 
+
+  if [[ -n $(grep "hxecom" $1 2>/dev/null) ]]
+     then if [[ -e ${HTXRUNSETUP}chatmpvc.runsetup ]]
+             then echo "Preparing hxecom environment"
+                  ${HTXRUNSETUP}hxecom.runsetup
+          fi
+  fi
+
+  if [[ -n $(grep "hxepit" $1 2>/dev/null) ]]
+     then if [[ -e ${HTXRUNSETUP}crick.runsetup ]]
+             then echo "Preparing Cricketstick token ring"
+                  ${HTXRUNSETUP}crick.runsetup
+          fi
+  fi
+
+  if [[ -n $(grep "hxediva" $1 2>/dev/null) ]]
+     then if [[ -e ${HTXRUNSETUP}diva.runsetup ]]
+             then echo "Preparing Diva isdn"
+                  ${HTXRUNSETUP}diva.runsetup
+          fi
+  fi
+
+  if [[ -n $(grep "hxestorage" $1 2>/dev/null) ]]
+     then if [[ -e ${HTXRUNSETUP}hd.runsetup ]]
+             then echo "Preparing disk(s)"
+                  ${HTXRUNSETUP}hd.runsetup
+          fi
+  fi
+
+  if [[ -n $(grep "hxeglx" $1 2>/dev/null) ]]
+     then if [[ -e ${HTXRUNSETUP}glx.runsetup ]]
+             then echo "Preparing Galaxy ethernet"
+                  ${HTXRUNSETUP}glx.runsetup
+          fi
+  fi
+
+
+  if [[ -n $(grep "hxesct" $1 2>/dev/null) ]]
+     then if [[ -e ${HTXRUNSETUP}sct.runsetup ]]
+             then echo "Preparing SCT environment"
+                  ${HTXRUNSETUP}sct.runsetup
+          fi
+  fi
+
+
+  if [[ -n $(grep "hxeskfp" $1 2>/dev/null) ]]
+     then if [[ -e ${HTXRUNSETUP}honeycomb.runsetup ]]
+             then echo "Preparing Honeycomb (SysKonnect) fddi"
+                  ${HTXRUNSETUP}honeycomb.runsetup
+          fi
+  fi
+
+  if [[ -n $(grep "hxempa" $1 2>/dev/null) ]]
+     then if [[ -e ${HTXRUNSETUP}mpa.runsetup ]]
+             then echo "Preparing mpa"
+                  ${HTXRUNSETUP}mpa.runsetup
+          fi
+  fi
+
+  if [[ -n $(grep "gio" $1 2>/dev/null) ]]
+     then if [[ -e ${HTXRUNSETUP}sgio.runsetup ]]
+             then echo "Preparing gio"
+                  ${HTXRUNSETUP}sgio.runsetup
+          fi
+  fi
+
+  if [[ -n $(grep "hxesky" $1 2>/dev/null) ]]
+     then if [[ -e ${HTXRUNSETUP}skyline.runsetup ]]
+             then echo "Preparing Skyline token ring"
+                  ${HTXRUNSETUP}skyline.runsetup
+          fi
+  fi
+
+  if [[ -n $(grep "bench" $1 2>/dev/null) ]]
+     then if [[ -e ${HTXRUNSETUP}bench.runsetup ]]
+             then echo "Preparing Bench exerciser"
+                  ${HTXRUNSETUP}bench.runsetup
+          fi
+  fi
+
+  if [[ -n $(grep "hxevmx64" $1 2>/dev/null) ]]
+       then if [[ -e ${HTXRUNSETUP}hxevmx64.runsetup ]]
+               then echo "Preparing VMX exerciser"
+                    ${HTXRUNSETUP}hxevmx64.runsetup
+            fi
+  fi
+  
+  if [[ -n $(grep "hxedfp" $1 2>/dev/null) ]]
+       then if [[ -e ${HTXRUNSETUP}hxedfp.runsetup ]]
+               then echo "Preparing DFP exerciser"
+                    ${HTXRUNSETUP}hxedfp.runsetup
+            fi
+  fi  
+
+  if [[ -n $(grep "ablink" $1 2>/dev/null) ]]
+  	then if [[ -e ${HTXRUNSETUP}ablink.runsetup ]]
+  		then echo " Preparing Ablink Enviroment ..."
+  			${HTXRUNSETUP}ablink.runsetup
+  	     fi
+  fi
+  
+  if [[ -n $(grep "xyzlink" $1 2>/dev/null) ]]
+  	then if [[ -e ${HTXRUNSETUP}xyzlink.runsetup ]]
+  		then echo " Preparing xyzlink enviroment ..."
+  			${HTXRUNSETUP}xyzlink.runsetup
+  		fi
+  fi
+  
+  if [[ -n $(grep "hxesysben" $1 2>/dev/null) ]]
+  	then if [[ -e ${HTXRUNSETUP}sysben.runsetup ]]
+  		then echo " Preparing Hxesysben enviroment ..."
+  			${HTXRUNSETUP}sysben.runsetup
+  		fi
+  fi
+  
+  if [[ -n $(grep "hxemmioi" $1 2>/dev/null) ]]
+  	then if [[ -e ${HTXRUNSETUP}mmioi.runsetup ]]
+  		then echo " Preparing Hxemmioi environment ..."
+  			${HTXRUNSETUP}mmioi.runsetup
+  		fi
+  fi
+  
+  if [[ -n $(grep "hxeehca" $1 2>/dev/null) ]]
+  	then if [[ -e ${HTXRUNSETUP}hxeehca.runsetup ]]
+  		then echo " Preparing HCA environment ..."
+  			${HTXRUNSETUP}hxeehca.runsetup
+  		fi
+  fi
+
+  if [[ -n $(grep "hxediag" $1 2>/dev/null) ]]
+    then if [[ -e ${HTXRUNSETUP}hxediag.runsetup ]]
+        then echo " Preparing hxediag environment ..."
+            ${HTXRUNSETUP}hxediag.runsetup
+        fi
+  fi
+

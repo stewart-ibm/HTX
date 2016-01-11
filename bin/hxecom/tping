@@ -1,0 +1,44 @@
+#!/usr/bin/perl
+# @(#)78	1.2  src/htx/usr/lpp/htx/bin/hxecom/tping, exer_com, htxubuntu 5/24/04 15:58:45
+#this pings all networks in net.mdt and on hosts $1 and $2
+
+$id = $ARGV[0]; 
+
+$MDT="/usr/lpp/htx/mdt/net.mdt";
+
+if ($id !~ /\d{1,3}/) {
+  print("useage\n");
+  print ("tping hostnumber1\n");
+  exit(1);
+}
+@numbers = `grep reg_rules $MDT`;
+@done="";
+$done_count=0;
+
+foreach $item (@numbers) {
+	if($item =~ /\d{1,3}/) {
+		$num = $&;
+	    chomp($num);
+	    $net= "$num" . "net" . "$id";
+	    if(&check($net)) {
+		$res = `ping -c 1 -w 1 $net | grep  "100% packet loss"`;
+		if($res) {
+		      print ("$net broke\n")
+		}
+		$done[$done_count++] = "$net";
+	    }
+	}
+}
+
+exit(0);
+
+sub check {
+	local($netwk) = @_;
+	foreach $one (@done) {
+		if($one eq $netwk) {
+			return(0);
+		}
+	}
+	return(1);
+}
+

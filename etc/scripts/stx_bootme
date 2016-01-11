@@ -1,0 +1,307 @@
+#!/bin/ksh
+# IBM_PROLOG_BEGIN_TAG 
+# This is an automatically generated prolog. 
+#  
+# htxltsbml src/htx/usr/lpp/htx/etc/scripts/stx_bootme 1.5 
+#  
+# Licensed Materials - Property of IBM 
+#  
+# COPYRIGHT International Business Machines Corp. 2010 
+# All Rights Reserved 
+#  
+# US Government Users Restricted Rights - Use, duplication or 
+# disclosure restricted by GSA ADP Schedule Contract with IBM Corp. 
+#  
+# IBM_PROLOG_END_TAG 
+# @(#)75        1.5.4.1  src/htx/usr/lpp/htx/etc/scripts/stx_bootme, htx_bootme, htxubuntu 8/30/12 01:52:01
+#
+# COMPONENT_NAME: htx_bootme
+#
+# ORIGINS: 27
+#
+###############################################################################
+###############################################################################
+##
+##  bootme:  setup AIX system to automatically load and run htx on reboot
+##
+###############################################################################
+
+
+# THERE IS NOTHING TO EDIT IN THIS FILE
+# GO TO: /usr/lpp/htx/rules/reg/bootme/default
+
+
+###############################################################################
+###############################################################################
+stx_bootme_on ()
+{
+#  [ "$HTXLPP" ] || {
+#     echo "you must be logged in as htx to start bootme";
+#     exit 1;
+#  }
+
+  # Check for free space in directories likely to cause problems if full
+    check_space "/tmp" 10
+    check_space "/var" 10
+
+
+  # Special treatment for ecg.all case
+    if [ "$1" = "ecg.all" ]
+       then
+         echo " You have specified ecg.all, so all the ecgs will be started"
+         start_all=1;
+    fi
+
+  # create crontab entry
+  # Add crontab entry to cause system to run stx_bootmeStuff
+    CRONENTRY="`cat /etc/crontab | grep bootme`"
+    if ["$CRONENTRY" -ne ""]
+    then
+      cp /etc/crontab /etc/crontab.ORIG
+      bootmeStuff=/usr/lpp/htx/etc/scripts/stx_bootmeStuff
+      echo "$REBOOT * * *  root $bootmeStuff >/dev/null 2>&1 &" >>/etc/crontab
+    else
+      echo "Crontab entry for bootme exists"
+      exit
+    fi
+
+  # initialize STX autostart
+    if [[ -z $CRONSET_ONLY ]]
+       then echo "Setting up STX autostart"
+
+          cp /etc/inittab /etc/inittab.bootme
+
+          # Disable console
+          #chcons -a"login=disable" > /dev/null
+          CON=$(cat /proc/cmdline | tr "," " " | awk '{ print $2}')
+          LOGICAL_CON=$(echo $CON | grep console )
+          if [ ! -z "$LOGICAL_CON" ]
+             then
+                CON1=${CON##*=}
+                cat /etc/inittab | grep -v $CON1 >/etc/inittab.htx
+            else
+                cp /etc/inittab /etc/inittab.htx
+          fi
+
+
+          # Check for non-zero '.htx_profile'; exit if not
+            [ -s /usr/lpp/htx/.htx_profile ] || { echo "ERROR: .htx_profile not found or zero-length"; exit; }
+            cp /usr/lpp/htx/.htx_profile /usr/lpp/htx/OLD.htx_profile
+
+          # Change keyword "autostart" in .htx_profile to appropriate value
+          # This controls whether the STX exercisers beginning running or not
+          if [ "$1" != "bypass" ] 
+           then if [ "$1" != "nostart" ]
+               then cat /usr/lpp/htx/OLD.htx_profile | \
+                    sed 's/stx_autostart\ .*/stx_autostart = "yes"/' > /usr/lpp/htx/.htx_profile
+                    # Add inittab entry to start STX at boot time
+                     cat /etc/inittab.htx  | grep -v ahtx >/etc/inittab
+                    if [ -z "$start_all" ] 
+                     then
+                        echo "ahtx:2:boot:/usr/bin/stx -r -a /usr/lpp/htx/ecg/ecg.bootme </dev/console >/dev/console 2>&1" >>/etc/inittab
+                        #mkitab "ahtx:2:boot:/usr/bin/stx -r -a /usr/lpp/htx/ecg/ecg.bootme </dev/console >/dev/console 2>&1" > /dev/null
+                     else
+                        echo "ahtx:2:boot:/usr/bin/stx -r -a </dev/console >/dev/console 2>&1" >>/etc/inittab
+                        #mkitab "ahtx:2:boot:/usr/bin/stx -r -a  </dev/console >/dev/console 2>&1" > /dev/null
+                    fi
+                        
+                    # Save a copy of the users ecg file for bootme to use
+                    if [ -z "$start_all" ] 
+                     then
+                       cp /usr/lpp/htx/ecg/$1 /usr/lpp/htx/ecg/ecg.bootme
+                    fi
+
+               else cat /usr/lpp/htx/OLD.htx_profile | \
+                    sed 's/stx_autostart\ .*/stx_autostart = "no"/' > /usr/lpp/htx/.htx_profile
+
+            fi
+          fi
+
+          # Causes .profile to run STX (hxssup)
+            touch /usr/lpp/htx/.autostart.stx
+
+
+          # Create a hidden "yes" file to pipe into the shutdown -t command
+            echo "yes" > /tmp/.bootme
+
+          # Echo usage comments to tester
+            echo
+            echo "STX will start automatically the next time the system is booted."
+            echo
+            echo "To stop STX from auto starting, wait until AIX has booted completely"
+
+            echo "type \"bootme off\".  bootme will prompt you to press enter to reboot"
+            echo "the system.  Press Ctrl-C to resume using the shell to run any data"
+            echo "saving program(s) as needed and then type \"shutdown -Fr\" to reset"
+            echo "the test system for normal testing."
+            echo
+
+    fi
+
+  # Log bootme on
+    echo >> $BM_LOG
+    echo "`date +\"%D %T\"`: bootme on" >> $BM_LOG
+    echo "`date +\"%D %T\"`: bootme session started" >> $BM_LOG
+    echo "crontab: $REBOOT * * * $bootmeStuff" >> $BM_LOG
+
+}
+
+
+###############################################################################
+###############################################################################
+stx_bootme_off ()
+{
+  # remove crontab entry
+    cp /etc/crontab.ORIG /etc/crontab
+
+    echo
+    echo "Crontab entry removed"
+    echo
+
+  # Checking for htxauto in /etc/inittab regardless of CRONSET_ONLY
+    [ -n "$(cat /etc/inittab | grep ahtx)" ] && CRONSET_ONLY=""
+
+  # de-initialize STX autostart
+    if [[ -z $CRONSET_ONLY ]]
+       then echo "Disabling STX autostart"
+
+          # re-enable console
+           # chcons -a"login=enable" >/dev/null 2>/dev/null
+
+          # remove inittab entry
+           # rmitab astx >/dev/null 2>/dev/null
+           mv /etc/inittab.bootme /etc/inittab
+
+          # restore STX profile to manual start
+            [ -e /usr/lpp/htx/OLD.htx_profile ] || cp "/usr/lpp/htx/.htx_profile" "/usr/lpp/htx/OLD.htx_profile"
+            cat /usr/lpp/htx/OLD.htx_profile | sed 's/stx_autostart\ .*/stx_autostart = "no"/' > /usr/lpp/htx/.htx_profile
+
+          # cause .profile to not run hxssup
+            [ -e /usr/lpp/htx/.autostart.stx ] && rm -f /usr/lpp/htx/.autostart.stx
+
+          # Remove the saved copy of the users mdt file
+          [ -e /usr/lpp/htx/ecg/ecg.bootme ] && rm /usr/lpp/htx/ecg/ecg.bootme
+
+          # Remove the hidden "yes" file for the shutdown -t command
+            [ -e /tmp/.bootme ] && rm /tmp/.bootme
+    fi
+
+  # Remove copies of htxerr.bootme
+    [ -e /tmp/htxerr.bootme1 ] && rm /tmp/htxerr.bootme1
+    [ -e /tmp/htxerr.bootme2 ] && rm /tmp/htxerr.bootme2
+    [ -e /tmp/htxerr.bootme.log ] && rm /tmp/htxerr.bootme.log
+
+  # Remove the touched bootme.bypass file - if it exists
+    [ -e /usr/lpp/htx/bootme.bypass ] && rm /usr/lpp/htx/bootme.bypass
+
+  # Log bootme off
+    echo "`date +\"%D %T\"`: bootme off" >> $BM_LOG
+    echo "`date +\"%D %T\"`: bootme session ended" >> $BM_LOG
+    echo >> $BM_LOG
+
+    echo
+    echo "STX will no longer start automatically when the system is rebooted."
+    echo "This system must be rebooted before resumng normal use."
+    echo
+    echo "Press Enter or "y" to issue a \"reboot\" command - any other"
+    echo "key to continue in this shell."
+    echo
+
+    echo "Reboot? (Y/n): \c"
+    read yn
+    typeset -i ynn=$(echo $yn | wc -w)
+    typeset -u -L1 yn=$yn
+    if [[ $ynn = "0" || $yn = "Y" ]]
+       then reboot
+       else echo "\nReminder: When you are finished in this shell, type shutdown -Fr"
+            echo "          in order to complete reseting the test environment."
+    fi
+}
+
+
+###############################################################################
+###############################################################################
+usage ()
+{
+  echo "bootme v1.12"
+  echo
+  echo "Usage: stx_bootme [on | off] <ecg_name>"
+  echo "       stx_bootme [on | off] [bypass]"
+  echo "       bootme [on] [nostart]"
+  echo
+  echo "stx_bootme  on: cause STX to automatically load and run on next reboot."
+  echo "stx_bootme off: restores normal system operation"
+  echo
+  echo "stx_bootme [on|off] bypass: bootme will bypass the STX autostart process."
+  echo "                        ie, reboot to AIX login prompt only."
+  echo
+  echo "stx_bootme [on] nostart: bootme will log into STX, but will not start."
+  echo
+
+  exit 0
+}
+
+
+###############################################################################
+###############################################################################
+check_space ()
+{
+  integer SpaceAvail=`df -k $1 | tail -1 | awk '{print $3}'`
+  SpaceAvail=$((SpaceAvail/1024))
+  [ $SpaceAvail -lt $2 ] && { echo "Insufficient space in $1 (needed $2 MB, have $SpaceAvail MB"; exit 1; }
+}
+
+
+###############################################################################
+###############################################################################
+#
+# main
+#
+###############################################################################
+###############################################################################
+
+  echo
+  echo "bootme v1.12"
+
+  BM_LOG=/tmp/bootme.log
+
+# If the second command line arguement is bypass, only execute crontab functions
+  [ "$2" = "bypass" ] && { CRONSET_ONLY="yes"; touch /usr/lpp/htx/bootme.bypass; }
+
+# pulls REBOOT statement from /usr/lpp/htx/rules/reg/bootme/default
+  rules=/usr/lpp/htx/rules/reg/bootme/default
+  REBOOT=$(grep "^REBOOT:" $rules | head -n1)
+  REBOOT=${REBOOT##*: }
+  [ -z "$REBOOT" ] && { echo "Please check the value of REBOOT in: $rules"; exit; }
+
+# checks BOOT_CMD statement from $rules
+  BOOT_CMD=$(grep "^BOOT_CMD:" $rules | head -n1)
+  BOOT_CMD=${BOOT_CMD##*: }
+  [ -z "$BOOT_CMD" ] && { echo "Please check the value of BOOT_CMD in: $rules"; exit; }
+
+# checks BOOT_WAIT statement from $rules
+  BOOT_WAIT=$(grep "^BOOT_WAIT:" $rules | head -n1 | awk '{ print $2 }')
+  [ -z "$BOOT_WAIT" ] && { echo "Please check the value of BOOT_WAIT in: $rules"; exit; }
+
+
+# select action
+  case $1 in
+
+      on|ON) if [ $# -lt 2 ]
+                then echo "No ECG parameter provided. Using /usr/lpp/htx/ecg/ecg.bu as the default ecg";
+                ECG_NAME="ecg.bu";
+             else
+                ECG_NAME=$2;
+             fi
+             stx_bootme_on $ECG_NAME;;
+
+    off|OFF) stx_bootme_off;;
+
+          *) usage;;
+
+  esac
+
+  sync; sync
+
+  exit 0
+

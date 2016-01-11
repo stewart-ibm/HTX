@@ -1,0 +1,35 @@
+default:
+         HE_name = ""
+         adapt_desc = ""
+         device_desc = ""
+         reg_rules = ""
+         emc_rules = ""
+         dma_chan = "0"
+         idle_time = "0"
+         load_seq = "32768"
+         max_run_tm = "7200"
+         port = "0"
+         priority = "1"
+         slot = "0"
+         max_cycles = "0"
+         hft = "0"
+         cont_on_err = "YES"
+         halt_level = "1"
+         start_halted = "n"
+         dup_device = "n"                  
+         log_vpd = "y"                     
+
+eth0:
+        HE_name = "hxecom"
+        adapt_desc = "Network"
+        device_desc = "Network"
+        reg_rules = "hxecom/150net"
+        emc_rules = "hxecom/150net"
+
+eth1:
+        HE_name = "hxecom"
+        adapt_desc = "Network"
+        device_desc = "Network"
+        reg_rules = "hxecom/150nets"
+        emc_rules = "hxecom/150nets"
+

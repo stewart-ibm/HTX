@@ -1,0 +1,45 @@
+**      @(#)62  1.2  src/htx/usr/lpp/htx/rules/reg/hxemem64/128mb_rim, exer_mem64, htxubuntu 2/25/04 06:20:48
+******************************************************
+* write out all zeros to memory...
+rule_id = rim_0x00
+pattern_id = HEXZEROS
+messages = no
+compare = yes
+num_oper = 1
+oper = rim
+seg_size = 134217728
+num_seg = 1
+width = 8
+
+* write out all 0xFF's to memory...
+rule_id = rim_0xFF
+pattern_id = HEXFF
+messages = no
+compare = yes
+num_oper = 1
+oper = rim
+seg_size = 134217728
+num_seg = 1
+width = 8
+
+* write out all 0x55's to memory...
+rule_id = rim_0x55
+pattern_id = HEX55
+messages = no
+compare = yes
+num_oper = 1
+oper = rim
+seg_size = 134217728
+num_seg = 1
+width = 8
+
+* write out all 0xAA's
+rule_id = rim_0xAA
+pattern_id = HEXAA
+messages = no
+compare = yes
+num_oper = 1
+oper = rim
+seg_size = 134217728
+num_seg = 1
+width = 8

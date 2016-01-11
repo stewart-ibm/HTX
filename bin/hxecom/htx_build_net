@@ -1,0 +1,123 @@
+#!/usr/bin/perl
+#*************************************************
+#Automates setting up test networks using buildnet 
+#*************************************************
+
+#Stores auto command
+$auto_binary_cmd = " ";
+#Stores auto exe path
+$auto_binary='/usr/lpp/htx/bin/auto';
+#File that holds available test interfaces
+$iface_file_name = "/tmp/net_iface";
+#File that holds list of loopback devices
+$net_file_name = "/tmp/networks";
+
+if ( -e $auto_binary) {
+	print"Discovering test network...\n";
+}else {
+	print"Couldnot find auto binary. Unable to find test networks.\n";
+	exit(0);
+}
+
+#Creates basic bpt file. Also, writes interface details to /tmp/net_iface file.
+system("build_net help y n $iface_file_name");
+
+if ( !(-s $iface_file_name))
+{
+	print "No interfaces found\n";
+	exit(0);
+}
+
+#Reads interface details from /tmp/net_iface file and generate auto command.
+unless (open(IN_FILE,$iface_file_name)) {
+	die ("Can't open $iface_file_name file!\n");
+}
+
+@iface_data = <IN_FILE>;
+close(IN_FILE);
+foreach $iface(@iface_data)
+{
+	$iface=&trim($iface);
+
+    `ip link set dev $iface up`;
+    `echo 1 > /proc/sys/net/ipv4/conf/$iface/arp_filter`;
+    $auto_binary_cmd = $auto_binary_cmd . " " . $iface;
+}
+
+if(!$auto_binary_cmd) {
+	exit(0);
+}
+#executes auto command: /usr/lpp/htx/bin/auto interface0 interface2....
+&run_auto($net_file_name, $auto_binary_cmd);
+
+#################################################################################
+### Function Definition Starts here
+#################################################################################
+
+#################################################################################
+### Function name:        run_auto
+### Function arguments:   Network file name, auto binary command
+### Function description: Executes auto command along with test interfaces and 
+###						  write the loop back interface info in /tmp/networks 
+###						  file.  
+#################################################################################
+
+sub run_auto {
+	local($file, $auto_cmd) = @_;
+	$cmd = $auto_binary . " " . $auto_cmd;
+	print("Running command .. \n $cmd \n");
+	$retry=0;
+	$sleep_interval=2;
+
+
+	`rm $file 2>/dev/null`; 
+	while($retry < 3) {
+		@res = `$cmd`;
+	    if(!defined($res[0]) || $res[0] eq "") {
+    		sleep($sleep_interval);
+        	$retry++;
+     	    } else {
+        	last;
+            }
+        }
+	if( (!defined($res[0]) || $res[0] eq "") && ($retry == 3)) {   
+	    print"Couldnot find single system configuration.\n\n";
+  	    exit(0);
+   	}
+	else {
+   	    ($first_iface, $second_iface) = split(/ -> /,$res[0]);
+		chomp($first_iface);
+		chop($first_iface);
+		&trim($first_iface);
+		chomp($second_iface);
+		chop($second_iface);
+	    &trim($second_iface);
+	    if(($first_iface =~ /^en/ || $first_iface =~ /^eth/) && ($second_iface =~ /^en/ || $second_iface =~ /^eth/)) {
+    		print"Found single system configuration.Your network setup looks like...\n@res\n";
+	    	print"Run command htx -b mdtfile to setup hxecom network.\n";
+		    unless (open(IN_FILE,">$file")) {
+    		    die ("Can't open $file file!\n");
+		    }
+    		print IN_FILE ("@res");
+	    	close(IN_FILE);
+	    }
+	    else {
+	        print"Couldnot find single system configuration.\n\n";
+	        exit(0);		
+	    }
+	}
+}
+
+
+#################################################################################
+### Function name:		  trim
+### Function arguments:   No Arguments
+### Function description: trims string variable
+#################################################################################
+sub trim {
+
+	local($string) = @_;
+	$string =~ s/^\s+//;
+	$string =~ s/\s+$//;
+	return $string;
+}

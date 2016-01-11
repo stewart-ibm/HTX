@@ -1,0 +1,29 @@
+#!/bin/bash
+#
+#   COMPONENT_NAME: exer_com
+#
+#   FUNCTIONS: none
+#
+#   ORIGINS: 27
+#
+#   IBM CONFIDENTIAL -- (IBM Confidential Restricted when
+#   combined with the aggregated modules for this product)
+#   OBJECT CODE ONLY SOURCE MATERIALS
+#
+#   (C) COPYRIGHT International Business Machines Corp. 1994
+#   All Rights Reserved
+#   US Government Users Restricted Rights - Use, duplication or
+#   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+#
+# 
+# Returns 0 if pid $2 with process $1 is found with ps.
+#              pid found may be parent or child process.
+# Returns 1 if pid $2 with process $1 is not found with ps.
+#
+host=$1;
+
+res=`ping -c1 -w1 $host | grep 100%`;
+if [ "$res" = "" ]
+then exit 1
+else exit 0
+fi

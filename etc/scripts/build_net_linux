@@ -1,0 +1,2319 @@
+#!/usr/bin/perl
+#@(#)51       1.1  src/htx/usr/lpp/htx/etc/scripts/build_net_linux, exer_com, htxubuntu 6/11/02 00:36:25 
+#INTSTRUCTIONS:: 
+#1. If you already have a profile named prof_name built run: 
+#   build_net prof_name
+#   This will configure your networks based on the info in the profile.
+#2. If you don't have a profile built either:
+#    a) run build_net
+#      and answer the questions just like the old build_net..
+#      NOTE: build_net will output your responces to a file called /tmp/saveprof
+#      that can be used later to redo the build configuration as long as
+#      the same networks are to be configured.
+# or b) Run build_net help   
+#       to get a profile template file for your system. 
+#       With the help option, build_net asks you one question, then looks
+#       at all the network cards in your system and outputs a profile
+#       template to a file in the current directory called bpt.
+#       You can then fill in the profile template and run
+#       build_net bpt    to configure your networks.
+#       for help knowing what to put in a profile vi bprof file in the
+#       same directory as build_net. 
+
+$debug="1";  # set this to one and rerun to get more debug info.. 
+@profile = "";  #global array for profile data
+
+if($debug) { print("debug is $debug\n"); }
+
+$prof = $ARGV[0];   # pass in a profile if you have one.
+if($debug) { 
+	if($prof) { print("Using input profile $prof\n"); }
+	else {print("Not Using input profile.\n"); }
+}
+
+$mdtname="/usr/lpp/htx/mdt/net.mdt";
+@nets_used="";
+%nets="";
+%odmlist="";
+$net_count=0;
+@cudvnames="";
+$gotcom="";
+$use_iov="";
+$use_site="";
+$config_com="";
+$this_host_number=0;
+$next_host_number=0;
+$linux ="";             # set it to null string if not linux
+$linux = `uname -a |grep Linux`;
+print ( "$linux\n");
+@other_ids="";
+$comhostname=""; 
+$comipaddr="";
+$comnameserver="";
+$comgateway="";
+$commask="";
+$comdomain="";
+
+if($prof =~ /help/i) {
+	print("To learn more about this program, vi build_net and read the instructions at the top of the file\n");
+	&make_temp("/bpt");
+	exit(0);
+}
+if ($debug){print "$prof\n";}
+if ($prof) {
+	# now read in the profile if it exists. 
+	unless (open (IN_FILE,"$prof")) {
+		die ("Can't open $prof file!\n");
+	}
+	@profile = <IN_FILE>;
+	close(IN_FILE);
+}
+#create a new profile based on the info I get from the user. 
+unless (open (PROF_FILE,">/tmp/saveprof")) {
+	die ("Can't open /tmp/saveprof file!\n");
+}
+
+#get the onesys value from users profile or from user input.
+$onesys=&get_onesys();
+if(debug) {print("onesys is $onesys\n");}
+
+#stop snmp deamon
+    print("stopping snmpd and dpid2 with 'kill -9'\n");
+    $res = `/etc/kill_snmp > /dev/null 2>&1`;
+# clean up the old set_onesys file if it exists */
+	$res = `/bin/rm /etc/set_onesys > /dev/null 2>&1`;
+# rm the file hxecom uses to check for connection permission.. 
+	$res = `/bin/rm /tmp/other_ids > /dev/null 2>&1`;
+
+#check tmp dir for enough space. 
+        if($linux){
+	$value = `df | grep "tmp" | awk '{print $5}'`;
+	}else{
+	$value = `df | grep "tmp\$" | awk '{print \$4}'`;
+	}
+ 	chop($value);
+	chop($value);
+
+	if($value > 95) {
+		print("Need more tmp space\n");
+		exit(0);
+	} else {
+		print("tmp space ok\n");
+	}
+
+
+
+if(!$onesys) {
+	$use_site = &get_use_site();
+
+	if($use_site =~ /y/i) {  	#using site ring
+		$use_iov="";
+		$answer = &get_com_configured();
+		if($answer =~ /y/i) {  	#already configured
+			$config_com="";
+			$comhostname = `hostname`;
+			chop($comhostname);
+			if($comhostname eq "") {
+				print("Could not find hostname for this machine. It must not be configured\n");
+				exit(0);
+			}
+			$comhostname = get_comhostname();
+			# get the number or id of this host.. from the config
+			$this_host_number = &get_hostid_from_config();
+		} else {
+			$config_com="1";
+			$this_host_number=&get_site_com_config_info();
+		}
+	} else {
+		# get the number or id of this host.. 
+		$this_host_number=&get_this_host_number();
+		if($debug) {print("host id is $this_host_number\n");}
+	}
+} else {
+	# get the number or id of this host.. 
+	$this_host_number=&get_this_host_number();
+	if($debug) {print("host id is $this_host_number\n");}
+}
+
+
+unless (open (OTHER_IDS,">/tmp/other_ids")) {
+	die ("Can't open /tmp/other_ids file!\n");
+}
+if($onesys) {
+	$comhostname=&get_comhostname();
+	if($debug) {
+		print("comhostname is $comhostname\n");
+	}
+	if($this_host_number != 16) {
+		$next_host_number = 16;
+	} else {
+		$next_host_number = 17;
+	}
+	#/* write other id to file. */
+	print OTHER_IDS ("$this_host_number\n");
+	print OTHER_IDS ("$next_host_number\n");
+
+} else {
+&set_other_ids();
+foreach $id (@other_ids) {
+	print OTHER_IDS ("$id\n");
+}
+}     
+close(OTHER_IDS);
+
+$stresslevel=&get_stresslevel();
+if($debug) {
+print("     stresslevel set to $stresslevel\n");
+}
+
+# now I have to find the net work cards */
+
+if($linux){
+  &get_net("eth");
+}else{
+  &get_net("ent");
+  &get_net("tok");
+  &get_net("atm");
+  &get_net("fddi");
+}
+
+close(PROF_FILE);
+
+
+if($onesys) {
+#	/* now that all the nets are gathered and numbered I need to make
+#	   sure the netids are paired up ok */
+	for($x=100; $x<220; $x++) {
+		if($nets_used[$x] > 0) {
+			if($nets_used[$x] < 2) {
+				print("The netid $x does not have a matching pair\n");
+				exit(0);
+			}
+		}
+	}
+} else {
+	if(!$gotcom) {
+		printf("You did not list a com net please rerun build_net, after you fix the /tmp/saveprof profile.\n");
+		exit(0);
+	} else {
+		if($use_site_ring =~ /y/i && $com_configured =~ /n/i) {
+			if($comipaddr eq "" || $comnameserver eq "" || $comgateway eq "" || $commask eq "" || $comdomain eq "") {
+				print("INPUT ERROR: I you set com_configured = n and use_site_ring = y then you must also give me:\ncomipaddr\ncomnameserver\ncomgateway\ncommask\ncomdomain\n");
+					exit(0);
+			}
+		}
+	}
+}
+
+
+#    /* before running thru all the nets, I need to put default values in
+#        the net.mdt file */
+if ($debug) {print("Init net.mdt file\n");}
+&init_mdt();
+
+#        /* save host number and net count */
+$nets[0]{host_number} = $this_host_number;
+$nets[0]{net_count} = $net_count;
+
+#    /*set NSORDER up. */
+$res = `export NSORDER=local,bind`;
+$res = `echo \"hosts = local , bind\" > /etc/netsvc.conf`;
+
+if($onesys) {
+	unless (open (SET_ONESYS,">/etc/set_onesys")) {
+		die ("Can't open /etc/set_onesys file!\n");
+	}
+}
+#**************************** START LOOP TO CONFIG **********************
+#/* now fix up the rules files  and mdt file and configure the networks */
+    #/* loop thru all the collected network structures. */
+
+if($debug) {
+	print("loop thru.. $net_count networks\n");
+}
+
+#*************************************************************************
+
+for($i=0; $i<$net_count; $i++) {
+	if($onesys && $nets[$i]{net_id} !~ /com/i) {
+		if($nets[$i]{rule_name} =~ /nets/) {
+			$cmd="route delete " . "$nets[$i]{net_id}" . ".1.1/24" . " $nets[$i]{net_id}" . ".1.1." . "$this_host_number" . "  > /dev/null 2>&1";
+			print SET_ONESYS ("$cmd\n");
+
+			$cmd="route delete " . "$nets[$i]{net_id}" . ".1.1/24" . " $nets[$i]{net_id}" . ".1.1." . "$next_host_number" . "  > /dev/null 2>&1";
+			print SET_ONESYS ("$cmd\n");
+
+			$cmd="route delete " . "$nets[$i]{net_id}" . ".1.1." . "$next_host_number" . " $nets[$i]{net_id}" . ".1.1." . "$this_host_number" . "  > /dev/null 2>&1";
+			print SET_ONESYS ("$cmd\n");
+
+			$cmd="route delete " . "$nets[$i]{net_id}" . ".1.1." . "$this_host_number" . " $nets[$i]{net_id}" . ".1.1." . "$next_host_number" . "  > /dev/null 2>&1";
+			print SET_ONESYS ("$cmd\n");
+
+			$cmd="route delete " . "$nets[$i]{net_id}" . ".1.1." . "$this_host_number" . " loopback" . "  > /dev/null 2>&1";
+			print SET_ONESYS ("$cmd\n");
+
+			$cmd="route delete " . "$nets[$i]{net_id}" . ".1.1." . "$next_host_number" . " loopback" . "  > /dev/null 2>&1";
+			print SET_ONESYS ("$cmd\n");
+
+			$cmd="route delete " . "$nets[$i]{net_id}" . ".1.1.255" . "  > /dev/null 2>&1";
+			print SET_ONESYS ("$cmd\n");
+		}
+	}
+
+	if($nets[$i]{net_id} =~ /com/i) {
+		#/* if this is the comnet then save the host name. */
+		if(!$config_com) {
+			print("COMNET $nets[$i]{dev_name} already configured.\n");
+			next;
+		}  else {
+			print("Configure the $nets[$i]{dev_name} network as COMNET.\n");
+		}
+	} else {
+		print("Configure the $nets[$i]{dev_name} network... rule $nets[$i]{rule_name}\n");
+		#/* add the other_ids testnet names to /etc/hosts */
+		for($y=0; $y<10; $y++) {
+			if(!$other_ids[$y]) {last;}
+			$string="$nets[$i]{net_id}" . ".1.1." . "$other_ids[$y]";
+			$tmpstring="$nets[$i]{net_id}" . "net" . "$other_ids[$y]";
+			&add_hosts_nets("$tmpstring","$string");
+		}
+
+	}
+
+#	/* for each network set up a rules file .
+#		Set up mdt entry if its not com or com is to be tested */
+	if($debug) {
+		print("check on make_rule and make_mdt.. devname $nets[$i]{dev_name}, rule name $nets[$i]{rule_name}\n");
+	}
+	# /* create rules file and add to net.mdt file if not comnet*/
+	if($nets[$i]{rule_name} !~ /none/) {
+		&make_rule($i);
+		&make_mdt($i);
+	}
+	if($debug) {
+		print("............$nets[$i]{device_type}______\n");
+	}
+	if($nets[$i]{dev_name} =~ /tok/) {
+	    if($nets[$i]{device_type} =~ /skyline/ || $nets[$i]{device_type} =~ /shennandoah/ || $nets[$i]{device_type} =~ /cricketstick/) {
+			if($debug) {
+				print("ifconfig $nets[$i]{net_iface} detach > /dev/null 2>&1\n");
+			}
+		    $res = `ifconfig $nets[$i]{net_iface} detach > /dev/null 2>&1`;
+			if($debug) {
+				print("rmdev -l $nets[$i]{net_iface} > /dev/null 2>&1\n");
+			}
+		    $res = `rmdev -l $nets[$i]{net_iface} > /dev/null 2>&1`;
+
+		    if($nets[$i]{device_type} =~ /shennandoah/) {
+				if($debug) {
+					print("chdev -l $nets[$i]{dev_name} -a ring_speed=$nets[$i]{media_type} -a rx_que_size=$nets[$i]{tok_recv_q} -a full_duplex=$nets[$i]{full_duplex}\n");
+				}
+			    $res = `chdev -l $nets[$i]{dev_name} -a ring_speed=$nets[$i]{media_type} -a rx_que_size=$nets[$i]{tok_recv_q} -a full_duplex=$nets[$i]{full_duplex}`;
+		    } else {
+				if($debug) {
+			    	print("chdev -l $nets[$i]{dev_name} -a rx_que_size=$nets[$i]{tok_recv_q} -a full_duplex=$nets[$i]{full_duplex}\n");
+				}
+			    $res = `chdev -l $nets[$i]{dev_name} -a rx_que_size=$nets[$i]{tok_recv_q} -a full_duplex=$nets[$i]{full_duplex}`;
+		    }
+			if($debug) {
+		    	print("rmdev -l $nets[$i]{dev_name}\n");
+			}
+		    $res = `rmdev -l $nets[$i]{dev_name}`;
+			if($debug) {
+		    	print("mkdev -l $nets[$i]{dev_name}\n");
+			}
+		    $res = `mkdev -l $nets[$i]{dev_name}`;
+		    if($nets[$i]{device_type} =~ /shennandoah/) {
+				if($debug) {
+					print("This is shennandoah\n");
+				}
+			    if($nets[$i]{net_id} =~ /com/) {
+				    if($use_iov) {
+						if($debug) {
+							print("/usr/sbin/mktcpip -h'$comhostname' -a'$comipaddr' -m'$commask' -i'$nets[$i]{net_iface}' -r'$nets[$i]{media_type}'\n");
+						}
+					    $res = `/usr/sbin/mktcpip -h'$comhostname' -a'$comipaddr' -m'$commask' -i'$nets[$i]{net_iface}' -r'$nets[$i]{media_type}'`;
+				    } else {
+						if($debug) {
+					    	print("/usr/sbin/mktcpip -h'$comhostname' -a'$comipaddr' -m'$commask' -i'$nets[$i]{net_iface}' -n'$comnameserver' -d'$comdonamin' -g'comgateway' -r'$nets[$i]{media_type}'\n");
+						}
+					    $res = `/usr/sbin/mktcpip -h'$comhostname' -a'$comipaddr' -m'$commask' -i'$nets[$i]{net_iface}' -n'$comnameserver' -d'$comdonamin' -g'comgateway' -r'$nets[$i]{media_type}'`;
+				    }
+			    } else {
+					if($debug) {
+					    print("/usr/sbin/mktcpip -h'$nets[$i]{net_name}' -a'$nets[$i]{net_addr}' -m'255.255.255.0' -i'$nets[$i]{net_iface}' -r'$nets[$i]{media_type}'\n");
+					}
+					$res = `/usr/sbin/mktcpip -h'$nets[$i]{net_name}' -a'$nets[$i]{net_addr}' -m'255.255.255.0' -i'$nets[$i]{net_iface}' -r'$nets[$i]{media_type}'`;
+			    }
+		    } else {
+			    if($nets[$i]{net_id} =~ /com/) {
+				    if($use_iov) {
+						if($debug) {
+					    	print("/usr/sbin/mktcpip -h'$comhostname' -a'$comipaddr' -m'$commask' -i'$nets[$i]{net_iface}' -r'16'\n");
+						}
+					    $res = `/usr/sbin/mktcpip -h'$comhostname' -a'$comipaddr' -m'$commask' -i'$nets[$i]{net_iface}' -r'16'`;
+				    } else {
+						if($debug) {
+					    	print("/usr/sbin/mktcpip -h'$comhostname' -a'$comipaddr' -m'$commask' -i'$nets[$i]{net_iface}' -n'$comnameserver' -d'$comdonamin' -g'comgateway' -r'16'\n");
+						}
+					    $res = `/usr/sbin/mktcpip -h'$comhostname' -a'$comipaddr' -m'$commask' -i'$nets[$i]{net_iface}' -n'$comnameserver' -d'$comdonamin' -g'comgateway' -r'16'`;
+				    }
+			    } else {
+					if($debug) {
+				    	print("/usr/sbin/mktcpip -h'$nets[$i]{net_name}' -a'$nets[$i]{net_addr}' -m'255.255.255.0' -i'$nets[$i]{net_iface}' -r'16'\n");
+					}
+				    $res = `/usr/sbin/mktcpip -h'$nets[$i]{net_name}' -a'$nets[$i]{net_addr}' -m'255.255.255.0' -i'$nets[$i]{net_iface}' -r'16'`;
+			    }
+		    }
+
+	    } else {
+		    print("UNKNOWN type of tokenring adpater, this program needs to be updated to handle the new adapter.\n");
+		    exit(0);
+	    }
+
+	} elsif($nets[$i]{dev_name} =~ /eth/) {
+        if($linux){
+           $string = "$nets[$i]{net_id}".".1.1."."$other_ids[0]";
+           $tmpstring = "$nets[$i]{net_id}".".1.1.255";
+           @res = `ifconfig $nets[$i]{dev_name} down `;
+  	   if($debug) {
+           	  print("ifconfig $nets[$i]{dev_name} $string  broadcast $tmpstring netmask 255.255.255.0\n");
+     	    }
+           @res = `ifconfig $nets[$i]{dev_name} $string  broadcast $tmpstring netmask 255.255.255.0`;   
+        }
+        }elsif( $nets[$i]{dev_name} =~ /ent/) {
+	    if($nets[$i]{device_type} !~ /galaxy_fibre/) {
+			if($debug) {
+		    	print("ifconfig $nets[$i]{net_iface} detach > /dev/null 2>&1\n");
+			}
+		    $res = `ifconfig $nets[$i]{net_iface} detach > /dev/null 2>&1`;
+			if($debug) {
+		    	print("rmdev -l $nets[$i]{net_iface}  /dev/null 2>&1\n");
+			}
+		    $res = `rmdev -l $nets[$i]{net_iface}  /dev/null 2>&1`;
+	    }
+	    if($nets[$i]{device_type} =~ /klickatat/) {
+		    #/* klicatat full duplex only. no speed */
+			if($debug) {
+		    	print("chdev -l $nets[$i]{dev_name} -a full_duplex=$nets[$i]{full_duplex}\n");
+			}
+		    $res = `chdev -l $nets[$i]{dev_name} -a full_duplex=$nets[$i]{full_duplex}`;
+	    } elsif($nets[$i]{device_type} =~ /candlestick/) {
+		    #/* full duplex and no speed(media_type) */
+			if($debug) {
+		    	print("chdev -l $nets[$i]{dev_name} -a media_type=$nets[$i]{media_type} -a full_duplex=$nets[$i]{full_duplex}\n");
+			}
+		    $res = `chdev -l $nets[$i]{dev_name} -a media_type=$nets[$i]{media_type} -a full_duplex=$nets[$i]{full_duplex}`;
+	    } elsif($nets[$i]{device_type} =~ /galaxy_utp/ || $nets[$i]{device_type} =~ /phoenix/ || $nets[$i]{device_type} =~ /scurry/ || $nets[$i]{device_type} =~ /clover/) {
+			if($debug) {
+		    	print("chdev -l $nets[$i]{dev_name} -a media_speed=$nets[$i]{media_type}\n");
+			}
+		    $res = `chdev -l $nets[$i]{dev_name} -a media_speed=$nets[$i]{media_type}`;
+	    } elsif($nets[$i]{device_type} =~ /galaxy_fibre/) {
+			#nothing needed
+	    } else {
+		    print("UNKNOWN type of ethernet adapter. This program needs to be updated to handle the new adapter.\n");
+		    exit(0);
+	    }
+	    if($nets[$i]{device_type} !~ /galaxy_fibre/) {
+			if($debug) {
+		    	print("rmdev -l $nets[$i]{dev_name}\n");
+			}
+		    $res = `rmdev -l $nets[$i]{dev_name}`;
+			if($debug) {
+		    	print("mkdev -l $nets[$i]{dev_name}\n");
+			}
+		    $res = `mkdev -l $nets[$i]{dev_name}`;
+	    }
+	    if($nets[$i]{net_id} =~ /com/) {
+		    if($use_iov) {
+  				if($debug) {
+					print("/usr/sbin/mktcpip -h'$comhostname' -a'$comipaddr' -m'$commask' -i'$nets[$i]{net_iface}' -t'$nets[$i]{cable_type}'\n");
+				}
+			    $res = `/usr/sbin/mktcpip -h'$comhostname' -a'$comipaddr' -m'$commask' -i'$nets[$i]{net_iface}' -t'$nets[$i]{cable_type}'`;
+		    } else {
+  				if($debug) {
+			    	print("/usr/sbin/mktcpip -h'$comhostname' -a'$comipaddr' -m'$commask' -i'$nets[$i]{net_iface}' -n'$comnameserver' -d'$comdonamin' -g'comgateway' -t'$nets[$i]{cable_type}'\n");
+				}
+  				if($debug) {
+			    	print("/usr/sbin/mktcpip -h'$comhostname' -a'$comipaddr' -m'$commask' -i'$nets[$i]{net_iface}' -n'$comnameserver' -d'$comdonamin' -g'comgateway' -t'$nets[$i]{cable_type}'\n");
+				}
+			    $res = `/usr/sbin/mktcpip -h'$comhostname' -a'$comipaddr' -m'$commask' -i'$nets[$i]{net_iface}' -n'$comnameserver' -d'$comdonamin' -g'comgateway' -t'$nets[$i]{cable_type}'`;
+		    }
+	    } else {
+			if($debug) {
+				print("/usr/sbin/mktcpip -h'$nets[$i]{net_name}' -a'$nets[$i]{net_addr}' -m'255.255.255.0' -i'$nets[$i]{net_iface}' -t'$nets[$i]{cable_type}\n");
+			}
+		    $res = `/usr/sbin/mktcpip -h'$nets[$i]{net_name}' -a'$nets[$i]{net_addr}' -m'255.255.255.0' -i'$nets[$i]{net_iface}' -t'$nets[$i]{cable_type}'`;
+	    }
+          
+	} elsif($nets[$i]{dev_name} =~ /atm/) {
+	    #/* remove old pvc. */
+		if($debug) {
+	           print("/usr/sbin/rmatmpvc  -v '0:1000' -i '$nets[$i]{net_iface}'\n");
+		}
+	    $res = `/usr/sbin/rmatmpvc  -v '0:1000' -i '$nets[$i]{net_iface}`;
+		if($debug) {
+#	           print("odmdelete  -q'Interface=$nets[$i]{net_iface}' -o ATM_PVC\n");
+		}
+#	    $res = `odmdelete  -q'Interface=$nets[$i]{net_iface}' -o ATM_PVC`;
+
+	    if($nets[$i]{device_type} =~ /jal8/) {
+			    $ub_rate = 25000;
+	    } else {
+			if($debug) {
+		    	print("ifconfig $nets[$i]{net_iface} detach > /dev/null 2>&1\n");
+			}
+		    $res = `ifconfig $nets[$i]{net_iface} detach > /dev/null 2>&1`;
+			if($debug) {
+		    	print("rmdev -l $nets[$i]{net_iface} > /dev/null 2>&1\n");
+			}
+		    $res = `rmdev -l $nets[$i]{net_iface} > /dev/null 2>&1`;
+		    if($nets[$i]{device_type} =~ /bigbend_622/) {
+			    $ub_rate = 622000;
+		    } else {
+			    $ub_rate = 155000;
+		    }
+		    sleep(4);
+			if($debug) {
+		    	print("chdev -l $nets[$i]{dev_name} -a adapter_clock=$nets[$i]{atm_clock}\n");
+			}
+		    $res = `chdev -l $nets[$i]{dev_name} -a adapter_clock=$nets[$i]{atm_clock}`;
+		    sleep(2);
+			if($debug) {
+		    	print("rmdev -l $nets[$i]{dev_name}\n");
+			}
+		    $res = `rmdev -l $nets[$i]{dev_name}`;
+		    sleep(2);
+			if($debug) {
+		    	print("mkdev -l $nets[$i]{dev_name}\n");
+			}
+		    $res = `mkdev -l $nets[$i]{dev_name}`;
+
+	    }
+	    if($nets[$i]{atm_connection} =~ /pvc/) {  # /* do point to point */
+			    if($debug) {
+			    	print("/usr/sbin/mktcpip.atm -h'$nets[$i]{net_name}' -a'$nets[$i]{net_addr}' -m'255.255.255.0' -i'$nets[$i]{net_iface}' -C'pvc' -I'60' -U'$ub_rate'\n");
+				}
+			    $res = `/usr/sbin/mktcpip.atm -h'$nets[$i]{net_name}' -a'$nets[$i]{net_addr}' -m'255.255.255.0' -i'$nets[$i]{net_iface}' -C'pvc' -I'60' -U'$ub_rate'`;
+	    } else {    # /* handle switched connection */
+	       #/* for this I need to know if its client or server */
+		    if($nets[$i]{atm_connection} =~ /svc_c/) {
+			    #/* this is client */
+			    if($debug) {
+			    	print("/usr/sbin/mktcpip.atm -h'$nets[$i]{net_name}' -a'$nets[$i]{net_addr}' -m'255.255.255.0' -i'$nets[$i]{net_iface}' -C'svc_c' -A'$nets[$i]{atm_server_address} -I'60' -U'$ub_rate'\n");
+				}
+			    $res = `/usr/sbin/mktcpip.atm -h'$nets[$i]{net_name}' -a'$nets[$i]{net_addr}' -m'255.255.255.0' -i'$nets[$i]{net_iface}' -C'svc_c' -A'$nets[$i]{atm_server_address} -I'60' -U'$ub_rate'`;
+		    } else {
+			    #/* this is server */
+			    if($debug) {
+			    	print("/usr/sbin/mktcpip.atm -h'$nets[$i]{net_name}' -a'$nets[$i]{net_addr}' -m'255.255.255.0' -i'$nets[$i]{net_iface}' -C'svc_s' -I'60' -U'$ub_rate'\n");
+				}
+			    $res = `/usr/sbin/mktcpip.atm -h'$nets[$i]{net_name}' -a'$nets[$i]{net_addr}' -m'255.255.255.0' -i'$nets[$i]{net_iface}' -C'svc_s' -I'60' -U'$ub_rate'`;
+		    }
+	    }
+
+	    if($nets[$i]{atm_connection} =~ /pvc/) { #  /* do point to point
+#                /* now add the new pvc : for now on point to point stuff
+#                   force number to 1000 and remove the existing one so the
+#                    new one becomes active. */
+
+			if($debug) {
+		    	print("/usr/sbin/mkatmpvc -d'$nets[$i]{net_iface}' -v '0:1000' -i'$nets[$i]{net_iface}'\n");
+			}
+		    $res = `/usr/sbin/mkatmpvc -d'$nets[$i]{net_iface}' -v '0:1000' -i'$nets[$i]{net_iface}'`;
+	    }
+	} elsif($nets[$i]{dev_name} =~ /fddi/) {
+		if($debug) {
+			print("/usr/sbin/mktcpip -h'$nets[$i]{net_name}' -a'$nets[$i]{net_addr}' -m'255.255.255.0' -i'$nets[$i]{net_iface}'\n");
+		}
+	    $res = `/usr/sbin/mktcpip -h'$nets[$i]{net_name}' -a'$nets[$i]{net_addr}' -m'255.255.255.0' -i'$nets[$i]{net_iface}'`;
+	} else {
+		print("$nets[$i]{dev_name}: UNKNOWN type of adapter. This program needs to be updated to handle the new adapter.\n");
+		exit(0);
+	}
+
+
+	if($onesys && $nets[$i]{net_id} !~ /com/i) {
+		$cmd = "/usr/sbin/ifconfig $nets[$i]{net_iface} hwloop";
+		print SET_ONESYS ("$cmd\n");
+		if($debug) {
+			print("$cmd\n");
+		}
+
+		if($nets[$i]{rule_name} =~ /nets/) {
+			$cmd = "route add $nets[$i]{net_id}" . ".1.1.$this_host_number " . "$nets[$i]{net_id}" . ".1.1.$next_host_number" . " -interface";
+			print SET_ONESYS ("$cmd\n");
+			if($debug) {
+				print("$cmd\n");
+			}
+
+			$cmd = "route add $nets[$i]{net_id}" . ".1.1.$next_host_number " . "$nets[$i]{net_id}" . ".1.1.$this_host_number" . " -interface";
+			print SET_ONESYS ("$cmd\n");
+			if($debug) {
+				print("$cmd\n");
+			}
+
+		}
+	}
+
+}   #END LOOP THRU NETWORKS>>>
+if($onesys) {
+	close(SET_ONESYS);
+}
+$res = `chmod +x /etc/set_onesys > /dev/null 2>&1`;
+
+$res=`grep "set_onesys" /etc/inittab`;
+
+if(!$res) { 
+    #its not in rc.net put it in..
+    $res = `cp /etc/inittab /etc/inittab.orig`;
+    $res = `echo "onesys:2:once:/etc/set_onesys > /dev/null 2>&1" >> /etc/inittab`;
+}
+$res=`grep "kill_snmp" /etc/inittab`;
+if(!$res) { 
+    #its not in rc.net put it in..
+    $res = `echo "ksnmp:2:once:/etc/kill_snmp > /dev/null 2>&1" >> /etc/inittab`;
+}
+
+#    /* reset the host name to the comnet name...  */
+  if(!$linux){
+    printf("chdev -l inet0 -a hostname=$comhostname\n");
+    $res = `chdev -l inet0 -a hostname=$comhostname`;
+    }
+    printf("hostname $comhostname\n");
+    $res = `hostname $comhostname`;
+   
+    #/* run the /etc/set_onesys script */
+    if($onesys) {
+		if($debug) {print("Run /etc/set_onesys script\n");}
+        $res = `/etc/set_onesys > /dev/null 2>&1`;
+    }
+
+	# backup the saveprof file incase the next run of build_net fails and
+	# clears out the current saveprof file
+	$res = `cp /tmp/saveprof /tmp/saveprof.bak`;
+
+exit(0);
+
+
+sub get_comhostname() {
+
+if($prof) {
+	$line=get_line_from_profile("comhostname");
+	if(!$line) {
+		print("The comhostname key is not set in the profile $prof\n");		
+		exit(0);
+	}
+	@tmper=split(/=/,$line);
+	$sys1 = $tmper[1];
+} else {
+	$res = `hostname`;
+	$res =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+	while(1) {
+		print("System says host name is $res. Is this correct? y or n\n");
+		$answer=<STDIN>;
+		if($answer =~ /y/i || $answer =~ /n/i) { last; }
+		print("$answer.. bad choice, choose yes or no, try again\n");
+	}
+	if($answer =~ /n/i) {
+		print("What is the site ring hostname of this system?\n");
+		$sys1=<STDIN>;
+	} else {
+		$sys1=$res;
+	}
+}
+$sys1 =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+
+print PROF_FILE ("comhostname=$sys1\n");
+#    /* reset the host name to the comnet name...  */
+$comhostname = $sys1;
+if (!$linux){
+   $res = `chdev -l inet0 -a hostname=$comhostname`;
+}
+$res = `hostname $comhostname`;
+
+&check_hostid();
+
+return($sys1);
+}
+sub check_hostid() {
+	@res = `ping -c 1 $comhostname`;
+	$line1 = $res[0];
+	@sline = split(/\s+/,$line1);
+	$ip = $sline[2];
+	$ip =~ s/[^_0-9a-zA-Z\/+]*$//;
+	$ip =~ s/^[^_0-9a-zA-Z\/+]*//;
+	print("Your comnet ip address is $ip\n");
+	@it = split(/\./,$ip);
+	$thishost = $it[3];
+	if($this_host_number==0 || $this_host_number eq "") {
+		$this_host_number = $thishost;
+	}
+	if($thishost != $this_host_number) {
+		print("The host id you gave me is \"$this_host_number\", the last nibble of this machines ip address is \"$thishost\", They should be the same.\n");
+		exit(0);
+	}
+}
+
+sub get_stresslevel() {
+local($sys1);
+while(1) {
+	if($prof) {
+		$line=get_line_from_profile("stresslevel");
+		if(!$line) {
+			print("The stresslevel key is not set in the profile $prof\n");		
+			exit(0);
+		}
+		@tmper=split(/=/,$line);
+		$sys1 = $tmper[1];
+		chop($sys1);
+
+	} else {
+	# handle the no profile case. 
+		print("What stresslevel do you want? 1.....5..\n");
+		$sys1=<STDIN>;
+		chop($sys1);
+	}
+	if($sys1 < 1 || $sys1 > 5) {
+		print("stresslevel must be between 1 and 5, try again .\n");
+		next;
+	} 
+	last;
+}
+print PROF_FILE ("stresslevel=$sys1\n");
+return($sys1);
+}
+sub set_other_ids() {
+local($sys1);
+while(1) {
+	@other_ids="";
+	if($prof) {
+		$line=get_line_from_profile("other_ids");
+		if(!$line) {
+			print("The other_ids key is not set in the profile $prof\n");		
+			exit(0);
+		}
+		@tmper=split(/=/,$line);
+		$sys1 = $tmper[1];
+		chop($sys1);
+		if(!$sys1) {
+				print("The other_ids key is empty in the profile $prof\n");		
+				exit(0);
+		}
+		if($sys1 !~ /$this_host_number/) {
+			$sys1="$this_host_number" . ":$sys1";
+		}
+	} else {
+			# handle the no profile case. 
+				print("What are the last nibbles of all the hosts ip addresses in this test.\n Enter like this:  20:21:22\n Max of 10 systems\n");
+				$sys1=<STDIN>;
+				chop($sys1);
+				if($sys1 !~ /$this_host_number/) {
+					$sys1="$this_host_number" . ":$sys1";
+				}
+	}
+	@other_ids=split(/:/,$sys1);
+	if(!$sys1) {
+			print("I need some input..!\n");		
+			next;
+	}
+	$got_thisone="";
+	foreach $id (@other_ids) {
+		if($id == $this_host_number) {
+			$got_thisone="y";
+		}
+		if($id !~ /\d{1,3}/) {
+			print("Invalid id entry:$id\n");
+			next;   
+		} 
+	}
+	if(!$got_thisone) {
+		$sys1="$this_host_number" . ":" . "$sys1";
+		@other_ids=split(/:/,$sys1);
+	}
+	last;
+}
+
+	print PROF_FILE ("other_ids=$sys1\n");
+
+}
+
+sub get_this_host_number() {
+	local($sys1);
+	if($prof) {
+		$line=get_line_from_profile("thishostid");
+		if(!$line) {
+			print("The thishostid key is not set in the profile $prof\n");		
+			exit(0);
+		}
+		@tmper=split(/=/,$line);
+		$sys1 = $tmper[1];
+		chop($sys1);
+		if($sys1 < 1 || $sys1 > 254) {
+			print("thishostid must be between 1 and 254, fix the $prof profile.\n");
+			exit(0);
+		} 
+	} else {
+		# handle the no profile case. 
+		if($this_host_number==0 || $this_host_number eq "") {
+		while(1) {
+			print("What is the last nibble of this hosts ip address.1...254\nThis is the host id of this system.");
+			$sys1=<STDIN>;
+			chop($sys1);
+			if($sys1 < 1 || $sys1 > 254) {
+				print("thishostid must be between 1 and 254, try again .\n");
+			} else { 
+				last;
+			}
+		}
+		} else {
+			$sys1 = $htis_host_number;
+		}
+	}
+	print PROF_FILE ("thishostid=$sys1\n");
+	return($sys1);
+}
+sub get_onesys() {
+	local($sys1);
+	if($prof && $prof !~ /help/i) {
+		$line=get_line_from_profile("onesys");
+		if(!$line) {
+			print("The onesys key is not set in the profile $prof\n");		
+			exit(0);
+		}
+		@tmper=split(/=/,$line);
+		$sys1 = $tmper[1];
+		chop($sys1);
+	} else {
+		# handle the no profile case. 
+		while(1) {
+			print("Is this a one system test? y or n\n");
+			$sys1=<STDIN>;
+			chop($sys1);
+			if($sys1 =~ /y/i || $sys1 =~ /n/i) {
+				last;
+			} else {print("answer is $sys1, Please enter y or n, try again\n");}
+		}
+	}
+
+	print PROF_FILE ("onesys=$sys1\n");
+
+	if($sys1 =~ /y/i) { 
+		if($debug) {print("Setup for one system network test\n");} 
+		return("y");
+	} else { 
+		if($debug) {print("Setup for multiple system network test\n");}
+		return("");
+	}
+}
+
+sub get_line_from_profile() {
+	local($key) = @_;
+	local($line);
+	foreach $line (@profile) {
+		if($line =~ /^#/) { next; }
+		if($line =~ /^\s*$key[\s=]/) {
+			$line =~ s/#.*//;
+			return($line);
+		}
+	}
+	return("");
+}
+
+sub get_device_type() {
+	local($device,$PdDvLn) = @_;
+
+	#have to find out what device type it is.
+	if($device =~ /tok/) {
+		# is it shennandoah or cricketstick
+		if($PdDvLn =~ /14101800/) {
+			$device_type="skyline";
+		} elsif ($PdDvLn =~ /14103e00/) {
+			$res = `lscfg -vl $device | grep "41H8862"`;
+			if($res ne "") {
+				$device_type="cricketstick";
+			} else {
+				$device_type="shennandoah";
+			}
+		} else {
+			$device_type="UNKNOWN";
+		}
+	} elsif ($device =~ /eth/) {
+		if($PdDvLn =~ /3C905\s/) {
+			$device_type="candlestick";
+		} elsif ($PdDvLn =~ /22100020/) {
+			$device_type="klickatat";
+		} elsif ($PdDvLn =~ /14100401/) {
+			$res = `lsdev -C | grep "$device " | grep Gigabit`;
+			if($res) {
+				$device_type="galaxy_fibre";
+			} else {
+				$device_type="galaxy_utp";
+			}
+		} elsif ($PdDvLn =~ /23100020/) {
+			#phoenix or clover..
+				$res = `lsdev -C | grep $nets[$net_count]{dev_name} | grep "4-Port"`;
+				if($res) {
+					$device_type="clover";
+				} else {
+					$device_type="phoenix";
+				}
+		} elsif ($PdDvLn =~ /1410ff01/) {
+				$device_type="scurry";
+		}
+
+	} elsif ($device =~ /ent/) {
+		if($PdDvLn =~ /3C905\s/) {
+			$device_type="candlestick";
+		} elsif ($PdDvLn =~ /22100020/) {
+			$device_type="klickatat";
+		} elsif ($PdDvLn =~ /14100401/) {
+			$res = `lsdev -C | grep "$device " | grep Gigabit`;
+			if($res) {
+				$device_type="galaxy_fibre";
+			} else {
+				$device_type="galaxy_utp";
+			}
+		} elsif ($PdDvLn =~ /23100020/) {
+			#phoenix or clover..
+				$res = `lsdev -C | grep $nets[$net_count]{dev_name} | grep "4-Port"`;
+				if($res) {
+					$device_type="clover";
+				} else {
+					$device_type="phoenix";
+				}
+		} elsif ($PdDvLn =~ /1410ff01/) {
+				$device_type="scurry";
+		}
+
+	} elsif ($device =~ /fddi/) {
+		if ($PdDvLn =~ /48110040/) {
+				$device_type="honeycomb";
+		}
+	} elsif ($device =~ /atm/) {
+        if($PdDvLn =~ /14107c00/ || $PdDvLn =~ /14104f00/ || $PdDvLn =~ /14105000/ || $PdDvLn =~ /14104e00/ || $PdDvLn =~ /14106001/ || $PdDvLn =~ /1410c101/) {
+				$device_type="lumbee_155";
+		} elsif($PdDvLn =~ /14105e01/) {
+				$device_type="bigbend_622";
+		} elsif($PdDvLn =~ /14105300/) {
+				$device_type="jal8_25";
+		} else {
+			print("$PdDvLn: UNKNOWN type of $device adapter. This program needs to be updated to handle the new adapter.\n");
+			exit(0);
+		}
+	}
+	return($device_type);
+}
+sub get_net_id() {
+	local($device) = @_;
+	local($sys1);
+	$gotit="";
+	if($prof) {
+		$line=&get_line_from_profile($device);
+		if(!$line) {
+			#print("The profile $prof, has no entry for $device\n");		
+			return("none");
+		} else {
+			@tmper=split(/\s+/,$line);
+			$sys1 = $tmper[1];
+			if($sys1 !~ /\d{1,3}/ && $sys1 !~ /com/i && $sys1 !~ /n/i) {
+				print("net_id is bad in profile. Fix the $prof profile.\n");
+				exit(0);
+			} 
+		}
+		$devline=$line;
+	} else {
+		# handle the no profile case or missing from profile. 
+		print("Enter the network id, 100...220.\n");
+		print("Or 'com' for comlink.\n");
+		print("Or 'none' if network adapter is not in test.\n....");
+		$sys1=<STDIN>;
+		chop($sys1);
+	}
+	$sys1 =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+	return($sys1);
+}
+sub get_net() {
+	local($this_device) = @_;
+	local($doingCom,$devline,$device_type,$rc_check,$i);
+	$targ = "$this_device" . "*";
+	@res="";
+	if($linux){
+        	@res = ("eth0","eth1");
+	}else{
+	@res = `odmget -q"name like $targ" CuDv`; 
+	}
+ if($debug){
+print(" now I have  found the net work cards @res for device $targ \n");
+    }
+
+	if($this_device =~ /iiiit/) {
+		print("device...$this_device\n");
+		foreach $item (@res) {
+			print("$item");
+		}
+	}
+	if($res[1] eq "") {
+                printf("returning here\n");
+	 	return;
+	}
+	#check to see if I need to clear odmlist array.
+	$allcount=0;
+	while($odmlist[$allcount]{"name"} ne "") {
+		++$allcount;
+	}
+	if($allcount > 0) {
+	    for($listcount=0; $listcount<$allcount; ++$listcount) {
+		delete($odmlist[$listcount]{"name"});
+	    }
+	}
+        if($linux){
+		&set_odmlist_linux(@res);	
+        }else {
+        	&set_odmlist(@res);
+        }
+	
+	$allcount=0;
+	while($odmlist[$allcount]{"name"} ne "") {
+		++$allcount;
+	}
+ 
+	if ($debug){
+         	print ("$allcount\n");
+	}
+	for($listcount=0; $listcount<$allcount; ++$listcount) {
+		print("...............................Found $odmlist[$listcount]{\"name\"} in location $odmlist[$listcount]{\"location\"}\n");
+	#	foreach $name (@cudvnames) {
+	#		print("$name = $odmlist[$listcount]{\"$name\"}\n");
+	#	}
+
+RETRY_ID:
+		$devline=$odmlist[$listcount]{"name"};
+		$save_id = &get_net_id($odmlist[$listcount]{"name"});
+		if($debug) { print("net_id set to $save_id\n"); }
+		if($save_id =~ /n/i) { 
+			#print PROF_FILE ("$odmlist[$listcount]{name} n\n");
+			#print ("Assuming $odmlist[$listcount]{name} is not used in network test.\n");
+			next; 
+		} elsif($save_id =~ /com/i && $onesys) {
+			#print PROF_FILE ("$odmlist[$listcount]{name} n\n");
+			print ("$odmlist[$listcount]{name}.. No com needed in onesys test.\n");
+			next; 
+		}
+		# if not used go on */
+
+#            /* if it is going to be used for test or com net then make sure
+#                the device is in the right state */
+		if($odmlist[$listcount]{"status"} != 1) {
+			print("The device $odmlist[$listcount]{\"name\"} is not AVAILABLE, fix it and rerun build_net\n");
+			exit(0);
+		}
+#            /* now check to make sure the user has not reused a net address
+#                or has specified more that one com net */
+		if($save_id !~ /com/i) {
+			$doingCom="";		 
+			$rc_check=&check_net($save_id);
+			if($rc_check<0) {
+				if($prof) {
+					print("The device $odmlist[$listcount]{\"name\"} has a bad net_id in the profile\n");
+				 	exit(0);
+				} else {
+					goto RETRY_ID;
+				}
+			}
+		} else {
+			if($odmlist[$listcount]{"name"}=~/atm/) {
+				printf("atm cannot be commnet, Can't do  broadcast, try again\n");
+				goto retry;
+			}
+			if($gotcom) {
+				print("You already have a com net, try again\n");
+				goto RETRY_ID;
+			} else {
+				if($debug) { print("Set doingCom and gotcom to 1\n"); }
+				$doingCom=1;
+				$gotcom=1;
+			}
+			if($use_site =~ /y/i) {  	#using site ring
+				if($debug) { print("Using site ring.\n"); }
+				if(!$config_com) {
+					&check_hostid();
+				} 
+			} else {	# not using site ring
+				if($debug) { print("NOT>>>Using site ring.\n"); }
+				print("I will use the old iovlab numbers for this test\n");
+				$use_iov=1;
+				$config_com=1;
+
+				#/* set the net name for com net on this host */
+				$comhostname = "iovlab" . "$this_host_number";
+
+				#/* set the comnet ip address for this host */
+				$comipaddr = "192.100.178." . "$this_host_number";
+
+				#/* set the comnet mask for this host */
+				$commask="255.255.255.0";
+
+				#/* I need to add the other systems hostnames to /etc/hosts. */
+				&add_hosts_iovs();
+			}
+		}
+#			/* it is either com or a test net and its available ,
+			#so save it and get other needed information */
+		$nets[$net_count]{net_id} = $save_id;
+			#/* save the slot */
+		$nets[$net_count]{slot} = $odmlist[$listcount]{"location"};
+		$nets[$net_count]{dev_name} = $odmlist[$listcount]{"name"};
+			#/* now get the parent */
+		$nets[$net_count]{parent} = $odmlist[$listcount]{"parent"};
+			#/* now get the PdDvLn .. sample adapter/mca/atm4 */
+		$nets[$net_count]{PdDvLn} = $odmlist[$listcount]{"PdDvLn"};
+
+		if($doingCom && !$config_com) {
+			$nets[$net_count]{net_name}=$comhostname;
+			print PROF_FILE ("$nets[$net_count]{dev_name} $nets[$net_count]{net_id}\n");
+			print ("$nets[$net_count]{dev_name}  $nets[$net_count]{net_id}\n");
+
+		} else {
+		    $nets[$net_count]{net_iface}=&get_iface($devline);
+
+		    $nets[$net_count]{device_type}=&get_device_type($odmlist[$listcount]{name},$odmlist[$listcount]{PdDvLn});
+		    if($odmlist[$listcount]{"name"} =~ /eth/) {    
+			    &get_eth_info($nets[$net_count]{device_type},$devline);
+		    }elsif($odmlist[$listcount]{"name"} =~ /ent/) {    
+			    &get_ent_info($nets[$net_count]{device_type},$devline);
+		    } elsif($odmlist[$listcount]{"name"} =~ /tok/) {    
+			    &get_tok_info($nets[$net_count]{device_type},$devline);
+		    } elsif($odmlist[$listcount]{"name"} =~ /fddi/) {    
+			    &get_fddi_info(); # just writes profile line out..
+		    } elsif($odmlist[$listcount]{"name"} =~ /atm/) {    
+			    &get_atm_info($nets[$net_count]{device_type},$devline);
+		    }
+		}
+
+		if($doingCom) {
+		#                /* check to see if this adapter can be com net */
+			#/* set the comnet ip address for this host */
+			$nets[$net_count]{net_addr}= "$comipaddr";
+			#/* set the net name for com net on this host */
+			$nets[$net_count]{net_name}= "$comhostname";
+			#/* set rule name as none, there is no rule for com net */
+			$nets[$net_count]{rule_name}= "none";
+			$nets[$net_count]{master}= "N/A";
+		} else {
+			if($rc_check > 1) {
+				#/* onesys is set and this is second adapter in ip pair */
+				#/* set the testnet ip address for this network */
+				$nets[$net_count]{net_addr} = "$nets[$net_count]{net_id}" . ".1.1." . "$next_host_number";
+
+			   #/* set the net name for this test net */
+				$nets[$net_count]{net_name} = "$nets[$net_count]{net_id}" . "net" . "$next_host_number";
+
+			   # /* set rule name for hxecom */
+				$nets[$net_count]{rule_name} = "$nets[$net_count]{net_id}" . "nets";
+			} else {
+			   # /* set the testnet ip address for this network */
+				$nets[$net_count]{net_addr} = "$nets[$net_count]{net_id}" . ".1.1." . "$this_host_number";
+
+			   # /* set the net name for this test net */
+				$nets[$net_count]{net_name} = "$nets[$net_count]{net_id}" . "net" . "$this_host_number";
+
+			   # /* set rule name for hxecom or hxenet */
+				$nets[$net_count]{rule_name} = "$nets[$net_count]{net_id}" . "net";
+			}
+		}
+		if($debug) {
+			print("Net addr is $nets[$net_count]{net_addr}\n");
+		}
+		if(++$net_count>121) {  #  /* incremnet the net counter */
+			print("$net_count is to many networks\n");
+			exit(0);
+		}
+	}
+}
+
+sub get_iface() {
+#note line is set to the devline from profile of the device name from odm. 
+	local($line) = @_;
+	local($iface_name);
+	@tmper=split(/\s+/,$line); 
+	$iface_name = $tmper[0];
+	if($line=~/tok/) {
+		$iface_name =~ s/tok/tr/;
+	}
+	if($line=~/diva/) {
+		$iface_name =~ s/diva/pp/;
+	}
+	if($line=~/ampx/) {
+		$iface_name =~ s/ampx/xs/;
+	}
+	if($line=~/dpmpa/) {
+		$iface_name =~ s/dpmpa/xs/;
+	}
+	if($line=~/hippi/) {
+		$iface_name =~ s/hippi/hp/;
+	}
+	if($line=~/fcs/) {
+		$iface_name =~ s/fcs/fc/;
+	}
+	if($line=~/atm/) {
+		$iface_name =~ s/atm/at/;
+	}
+	if($line=~/fddi/) {
+		$iface_name =~ s/fddi/fi/;
+	}
+	if($line =~ /eth/) {
+		$iface_name =~ s/eth/en/;
+	}
+	if($line =~ /ent/) {
+		$iface_name =~ s/ent/en/;
+	}
+	return($iface_name);
+}
+
+sub add_hosts_nets() {
+	local($hostname,$ipaddr) = @_;
+	$fileToChange = "/etc/hosts";
+	unless (open (HOST_FILE,"$fileToChange")) {
+		die ("Can't open $fileToChange file!\n");
+	}
+
+	@host_lines=<HOST_FILE>;
+	close(HOST_FILE);
+	$its_there ="";
+	  
+	foreach $line (@host_lines) {
+		if($line =~ /$hostname\s/) {
+			$its_there = "y";
+			last;
+		}
+	}
+
+	if(!$its_there) { 	# its not there add it..
+		unless (open (TMP_OUT,">tmp_out")) {
+			die ("Can't open tmp_out file doing tmp_out file!\n");
+		}
+		foreach $line (@host_lines) {
+			print TMP_OUT $line;
+		}
+		print TMP_OUT ("$ipaddr $hostname\n");
+
+		close(TMP_OUT);
+		$result = `cp tmp_out $fileToChange`;
+		$result = `rm tmp_out`;
+	}
+}
+
+sub add_hosts_iovs() {
+	$fileToChange = "/etc/hosts";
+	unless (open (HOST_FILE,"$fileToChange")) {
+		die ("Can't open $fileToChange file!\n");
+	}
+	unless (open (TMP_OUT,">tmp_out")) {
+		die ("Can't open tmp_out file doing tmp_out file!\n");
+	}
+
+	@host_lines=<HOST_FILE>;
+	close(HOST_FILE);
+	foreach $line (@host_lines) {
+		print TMP_OUT $line;
+	}
+	$its_there="";
+	  
+	for($y=1; $y<220; $y++) {
+		$tmphost = "iovlab" . "$y";
+		foreach $line (@host_lines) {
+			if($line =~ /$tmphost\s/) {
+				$its_there = "y";
+				last;
+			}
+		}
+		if($its_there ne "y") { 	# if not there then addit
+			$line = "192.100.178." . "$y" . " " . "$tmphost";
+			print TMP_OUT ("$line\n");
+		} else {
+			$its_there = "";
+		}
+	}
+
+	close(TMP_OUT);
+	$result = `cp tmp_out $fileToChange`;
+	$result = `rm tmp_out`;
+}
+  
+sub check_net() {
+	local($new_net) = @_;
+	local($i);
+
+	if($new_net !~ /\d{1,3}/) {
+		print("net_id $new_net, is bad entry, try again\n");
+		return(-1);
+	}
+    if(!$onesys) {
+        for($i=0; $i<$net_count; $i++) {
+            if($nets[$i]{net_id} == $new_net) {
+                print("You already used net_id $new_net, or bad entry, try again\n");
+                return(-1);
+            }
+        }
+    }
+    if($new_net < 100 || $new_net > 220) {
+        printf("Net number less than 100 or greater than 220\n");
+        return(-1);
+    }
+    if($onesys) {
+        ++$nets_used[$new_net];
+        if($nets_used[$new_net] > 2) {
+            print("You used netid $new_net more than twice.\n");
+            return(-1);
+        }
+        if($nets_used[$new_net] == 2) {
+            return(2);
+        }
+    }
+    return(0);
+}
+
+sub set_odmlist() {
+	local(@lines) = @_;
+	$count=-1;
+	$cudvnames_count=0;
+	foreach $line (@lines) {
+		chop($line);
+		if($line ne "") {
+			if($line =~ /CuDv:/) {
+				++$count;			
+			} else {
+				@tmper = split(/=/,$line);
+				$tmper[0] =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+				$tmper[0] =~ s/^[^_0-9a-zA-Z\/\(+]*//;
+				$tmper[1] =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+				$tmper[1] =~ s/^[^_0-9a-zA-Z\/\(+]*//;
+
+				$odmlist[$count]{"$tmper[0]"}=$tmper[1];			
+				if($count==0) {
+					@cudvnames[$cudvnames_count++]=$tmper[0];
+					if ($debug){
+                                        	print("@cudvnames[$cudvnames_count -1]\n");
+					}
+				}
+			}
+		}
+	}
+}
+
+
+
+sub set_odmlist_linux() {
+	local(@lines) = @_;
+	@cudvnames= ( "name","status","chgstatus","ddins","location","parent","connwhere","PdDvLn");
+        $count=-1;
+	foreach $line (@lines) {
+		#chop($line);
+		if($line ne "") {
+                                $count++;
+				$odmlist[$count]{"name"}=$line;
+				$odmlist[$count]{"status"}="1";
+				$odmlist[$count]{"chgstatus"}="";
+				$odmlist[$count]{"ddins"}="";
+				$odmlist[$count]{"location"}="";
+				$odmlist[$count]{"parent"}="";
+				$odmlist[$count]{"connwhere"}="";
+				$odmlist[$count]{"PdDvLn"}="22100020";
+		}
+	}
+}
+
+
+sub get_use_site() {
+	local($answer,$line);
+	if($prof) {
+		$line=&get_line_from_profile("use_site_ring");
+		if(!$line) {
+			print("The profile $prof, has no entry for use_site_ring\n");		
+			exit(0);
+		} else {
+			@tmper=split(/=/,$line);
+			$answer = $tmper[1];
+			if($answer !~ /y/i && $answer !~ /n/i ) {
+				print("use_site_ring entry is bad in profile. Fix the $prof profile.\n");
+				exit(0);
+			} 
+		}
+	} else {
+		while(1) {
+			print(" Are you using the site network for comnet? y or n\n");
+			$answer=<STDIN>;
+			if($answer =~ /y/i || $answer =~ /n/i) {last;}
+			print("$answer.. bad choice, choose y or n, try again\n");
+		}
+	}
+	print PROF_FILE ("use_site_ring=$answer");
+	print ("use_site_ring=$answer");
+	return($answer);
+}
+sub get_com_configured() {
+	local($answer,$line);
+	if($prof) {
+		$line=&get_line_from_profile("com_configured");
+		if(!$line) {
+			print("The profile $prof, has no entry for com_configured\n");		
+			exit(0);
+		} else {
+			@tmper=split(/=/,$line);
+			$answer = $tmper[1];
+			if($answer !~ /y/i && $answer !~ /n/i ) {
+				print("com_configured entry is bad in profile. Fix the $prof profile.\n");
+				exit(0);
+			} 
+		}
+	} else {
+		while(1) {
+			print(" Is the machine already configured on the site network? y or n\n");
+			$answer=<STDIN>;
+			if($answer =~ /y/i || $answer =~ /n/i) {last;}
+			print("$answer.. bad choice, choose y or n, try again\n");
+		}
+	}
+	print PROF_FILE ("com_configured=$answer");
+	print ("com_configured=$answer");
+	return($answer);
+}
+sub get_site_com_config_info() {
+	local($answer,$line);
+	if($prof) {
+		$line=&get_line_from_profile("comipaddr");
+		if(!$line) {
+			print("When com_configured is no you need these keywords in profile:\ncomipaddr=\ncomnameserver=\ncomgateway=\ncommask=\ncomdomain=\n");		
+			exit(0);
+		} else {
+			@tmper=split(/=/,$line);
+			$comipaddr = $tmper[1];
+			chop($comipaddr);
+			if($comipaddr !~ /\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}/ ) {
+				print("comipaddr entry is bad in profile. Fix the $prof profile.\n");
+				exit(0);
+			} 
+		}
+		$line=&get_line_from_profile("comnameserver");
+		if(!$line) {
+			print("When com_configured is no you need these keywords in profile:\ncomipaddr=\ncomnameserver=\ncomgateway=\ncommask=\ncomdomain=\n");		
+			exit(0);
+		} else {
+			@tmper=split(/=/,$line);
+			$comnameserver = $tmper[1];
+			chop($comnameserver);
+			if($comnameserver !~ /\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}/ ) {
+				print("comnameserver entry is bad in profile. Fix the $prof profile.\n");
+				exit(0);
+			} 
+		}
+		$line=&get_line_from_profile("comgateway");
+		if(!$line) {
+			print("When com_configured is no you need these keywords in profile:\ncomipaddr=\ncomnameserver=\ncomgateway=\ncommask=\ncomdomain=\n");		
+			exit(0);
+		} else {
+			@tmper=split(/=/,$line);
+			$comgateway = $tmper[1];
+			chop($comgateway);
+			if($comgateway !~ /\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}/ ) {
+				print("comgateway entry is bad in profile. Fix the $prof profile.\n");
+				exit(0);
+			} 
+		}
+		$line=&get_line_from_profile("commask");
+		if(!$line) {
+			print("When com_configured is no you need these keywords in profile:\ncomipaddr=\ncomnameserver=\ncomgateway=\ncommask=\ncomdomain=\n");		
+			exit(0);
+		} else {
+			@tmper=split(/=/,$line);
+			$commask = $tmper[1];
+			chop($commask);
+			if($commask !~ /\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}/ ) {
+				print("commask entry is bad in profile. Fix the $prof profile.\n");
+				exit(0);
+			} 
+		}
+		$line=&get_line_from_profile("comdomain");
+		if(!$line) {
+			print("When com_configured is no you need these keywords in profile:\ncomipaddr=\ncomnameserver=\ncomgateway=\ncommask=\ncomdomain=\n");		
+			exit(0);
+		} else {
+			@tmper=split(/=/,$line);
+			$comdomain = $tmper[1];
+			chop($comdomain);
+			if($comdomain eq "" ) {
+				print("comdomain entry is bad in profile. Fix the $prof profile.\n");
+				exit(0);
+			} 
+		}
+	} else {
+		print("What is the comnet hostname of this system?\n");
+		$comhostname=<STDIN>;
+		chop($comhostname);
+		print("What is the comnet ipaddr of this system? \n");
+		$comipaddr=<STDIN>;
+		chop($comipaddr);
+		print("What is the comnet name server ipaddress of this system?\n");
+		$comnameserver=<STDIN>;
+		chop($comnameserver);
+		print("What is the comnet gateway ipaddress of this system?\n");
+		$comgateway=<STDIN>;
+		chop($comgateway);
+		print("What is the comnet mask of this system?\n");
+		$commask=<STDIN>;
+		chop($commask);
+		print("What is the comnet domain of this system?\n");
+		$comdomain=<STDIN>;
+		chop($comdomain);
+	}
+	print PROF_FILE ("comipaddr=$comipaddr\n");
+	print PROF_FILE ("comnameserver=$comnameserver\n");
+	print PROF_FILE ("comgateway=$comgateway\n");
+	print PROF_FILE ("commask=$commask\n");
+	print PROF_FILE ("comdomain=$comdomain\n");
+}
+sub get_fddi_info( ) {
+	print PROF_FILE ("$nets[$net_count]{dev_name} $nets[$net_count]{net_id} $nets[$net_count]{device_type}\n"); 
+}
+sub get_eth_info( ) {
+	local($device_type,$line) = @_;
+    $devname="";
+	if($prof) {
+		@tmper = split(/\s+/,$line);
+		$devname=$tmper[0];
+		$devname =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+		if($device_type !~ /klickatat/ && $device_type !~ /galaxy_fibre/) {
+			$speed = $tmper[2];
+			$speed =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+			if($speed !~ /10/ && $speed !~ /100/ && $speed !~ /a/i) {
+				print("$speed is bad value in profile for speed on $devname, fix profile and rerun.\nShould be 10,100 or auto");
+				exit(0);
+			}
+		}
+
+		$duplex = $tmper[3];
+		$duplex =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+		$duplex =~ s/[^_0-9a-zA-Z\/\)+]*$//; 
+		if($duplex !~ /full/i && $duplex !~ /half/i) {
+			print("$duplex is bad value in profile for duplex on $devname, fix profile and rerun.\nShould be full or halt");
+			exit(0);
+		}
+		if($duplex =~ /full/i) {
+			$duplex = "y";
+		} else {
+			$duplex = "n";
+		}
+        $cable = $tmper[4];
+        $cable =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+        $nets[$net_count]{cable_type}=$cable;
+	} else {
+		if($device_type !~ /klickatat/ && $device_type !~ /galaxy_fibre/) {
+			while(1) {
+				print("Enter the ethernet speed.. 10 or 100 or auto\n");
+				print("NOTE: 100Mbps requires cat 5 cable\n");
+				$speed=<STDIN>;
+				chop($speed);
+				if($speed !~ /10/ && $speed !~ /100/ && $speed !~ /a/i) {
+					print("$speed is bad choice, try again.. 10 or 100 or auto\n");
+				} else { last;}
+			}
+		}
+		if($device_type !~ /galaxy_fibre/) {
+			while(1) {
+				print("Do you want full duplex... yes or no!\n");
+				print("NOTE: full duplex requires switch.!\n");
+				$duplex=<STDIN>;
+				chop($duplex);
+				if($duplex !~ /y/i && $duplex !~ /n/i) {
+					print("$duplex is bad choice, try again.. y or n\n");
+				} else { last;}
+			}
+	   
+			#/* now find out the cable type */
+			if($device_type !~ /galaxy_utp/) {
+				$nets[$net_count]{cable_type}="tp";
+			} elsif($device_type !~ /scurry/) {
+				$nets[$net_count]{cable_type}="tp";
+			} else {
+				while(1) {
+					print("Which cable type, N/A, bnc, dix, or tp?\n....");
+					$answer=<STDIN>;
+					chop($answer);
+					if($answer !~ /bnc/i && $answer !~ /dix/i &&
+							$answer !~ /tp/i && $answer !~ /N\/A/i) {
+						  print("Bad answer $answer, try again\n");
+					} else {last;}
+				}
+				$nets[$net_count]{cable_type}="$answer";
+			} 
+		} else {
+			$nets[$net_count]{cable_type}="N\\A";
+			$duplex="y";
+		}
+	}
+
+	if($duplex=~/y/i) {
+		$nets[$net_count]{full_duplex}="yes";
+	} else {
+		$nets[$net_count]{full_duplex}="no";
+	}
+	if($debug) {
+		print("Read speed as $speed\n");
+		print("Full duplex is set to $nets[$net_count]{full_duplex}\n");
+	}
+
+	#/* note you have to put the 100 compare first. */
+	#/* or use strcmp not strncmp */
+	if($device_type !~ /klickatat/ && $device_type !~ /galaxy_fibre/) {
+		if($device_type =~ /candlestick/) {
+			if($speed =~ /100/) {
+				$nets[$net_count]{media_type}="100BaseTX";
+			}
+			if($speed =~ /10/) {
+				$nets[$net_count]{media_type}="10BaseTX";
+			}
+			if($speed =~ /a/i) {
+				$nets[$net_count]{media_type}="Auto";
+			}
+		} else {
+			if($speed =~ /100/) {
+				if($duplex=~/y/i) {
+					$nets[$net_count]{media_type}="100_Full_Duplex";
+				} else {
+					$nets[$net_count]{media_type}="100_Half_Duplex";
+				}
+			} elsif($speed =~ /10/) {
+				if($duplex=~/y/i) {
+					$nets[$net_count]{media_type}="10_Full_Duplex";
+				} else {
+					$nets[$net_count]{media_type}="10_Half_Duplex";
+				}
+			} elsif($speed =~ /a/i) {
+				$nets[$net_count]{media_type}="Auto_Negotiation";
+			}
+		}
+		if($debug) {
+			print("The speed is set to $nets[$net_count]{media_type}\n");
+		}
+	} else {
+		$speed = "auto";
+	} 
+	if($duplex =~ /y/i) {
+		$duplex = "full";
+	} else {
+		$duplex = "half";
+	}
+	print PROF_FILE ("$nets[$net_count]{dev_name} $nets[$net_count]{net_id} $speed $duplex $nets[$net_count]{cable_type}\n");
+	print ("$nets[$net_count]{dev_name}  $nets[$net_count]{net_id} $speed $duplex $nets[$net_count]{cable_type} $nets[$net_count]{device_type}\n");
+
+}
+sub get_ent_info( ) {
+	local($device_type,$line) = @_;
+    $devname="";
+	if($prof) {
+		@tmper = split(/\s+/,$line);
+		$devname=$tmper[0];
+		$devname =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+		if($device_type !~ /klickatat/ && $device_type !~ /galaxy_fibre/) {
+			$speed = $tmper[2];
+			$speed =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+			if($speed !~ /10/ && $speed !~ /100/ && $speed !~ /a/i) {
+				print("$speed is bad value in profile for speed on $devname, fix profile and rerun.\nShould be 10,100 or auto");
+				exit(0);
+			}
+		}
+
+		$duplex = $tmper[3];
+		$duplex =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+		$duplex =~ s/[^_0-9a-zA-Z\/\)+]*$//; 
+		if($duplex !~ /full/i && $duplex !~ /half/i) {
+			print("$duplex is bad value in profile for duplex on $devname, fix profile and rerun.\nShould be full or halt");
+			exit(0);
+		}
+		if($duplex =~ /full/i) {
+			$duplex = "y";
+		} else {
+			$duplex = "n";
+		}
+        $cable = $tmper[4];
+        $cable =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+        $nets[$net_count]{cable_type}=$cable;
+	} else {
+		if($device_type !~ /klickatat/ && $device_type !~ /galaxy_fibre/) {
+			while(1) {
+				print("Enter the ethernet speed.. 10 or 100 or auto\n");
+				print("NOTE: 100Mbps requires cat 5 cable\n");
+				$speed=<STDIN>;
+				chop($speed);
+				if($speed !~ /10/ && $speed !~ /100/ && $speed !~ /a/i) {
+					print("$speed is bad choice, try again.. 10 or 100 or auto\n");
+				} else { last;}
+			}
+		}
+		if($device_type !~ /galaxy_fibre/) {
+			while(1) {
+				print("Do you want full duplex... yes or no!\n");
+				print("NOTE: full duplex requires switch.!\n");
+				$duplex=<STDIN>;
+				chop($duplex);
+				if($duplex !~ /y/i && $duplex !~ /n/i) {
+					print("$duplex is bad choice, try again.. y or n\n");
+				} else { last;}
+			}
+	   
+			#/* now find out the cable type */
+			if($device_type !~ /galaxy_utp/) {
+				$nets[$net_count]{cable_type}="tp";
+			} elsif($device_type !~ /scurry/) {
+				$nets[$net_count]{cable_type}="tp";
+			} else {
+				while(1) {
+					print("Which cable type, N/A, bnc, dix, or tp?\n....");
+					$answer=<STDIN>;
+					chop($answer);
+					if($answer !~ /bnc/i && $answer !~ /dix/i &&
+							$answer !~ /tp/i && $answer !~ /N\/A/i) {
+						  print("Bad answer $answer, try again\n");
+					} else {last;}
+				}
+				$nets[$net_count]{cable_type}="$answer";
+			} 
+		} else {
+			$nets[$net_count]{cable_type}="N\\A";
+			$duplex="y";
+		}
+	}
+
+	if($duplex=~/y/i) {
+		$nets[$net_count]{full_duplex}="yes";
+	} else {
+		$nets[$net_count]{full_duplex}="no";
+	}
+	if($debug) {
+		print("Read speed as $speed\n");
+		print("Full duplex is set to $nets[$net_count]{full_duplex}\n");
+	}
+
+	#/* note you have to put the 100 compare first. */
+	#/* or use strcmp not strncmp */
+	if($device_type !~ /klickatat/ && $device_type !~ /galaxy_fibre/) {
+		if($device_type =~ /candlestick/) {
+			if($speed =~ /100/) {
+				$nets[$net_count]{media_type}="100BaseTX";
+			}
+			if($speed =~ /10/) {
+				$nets[$net_count]{media_type}="10BaseTX";
+			}
+			if($speed =~ /a/i) {
+				$nets[$net_count]{media_type}="Auto";
+			}
+		} else {
+			if($speed =~ /100/) {
+				if($duplex=~/y/i) {
+					$nets[$net_count]{media_type}="100_Full_Duplex";
+				} else {
+					$nets[$net_count]{media_type}="100_Half_Duplex";
+				}
+			} elsif($speed =~ /10/) {
+				if($duplex=~/y/i) {
+					$nets[$net_count]{media_type}="10_Full_Duplex";
+				} else {
+					$nets[$net_count]{media_type}="10_Half_Duplex";
+				}
+			} elsif($speed =~ /a/i) {
+				$nets[$net_count]{media_type}="Auto_Negotiation";
+			}
+		}
+		if($debug) {
+			print("The speed is set to $nets[$net_count]{media_type}\n");
+		}
+	} else {
+		$speed = "auto";
+	} 
+	if($duplex =~ /y/i) {
+		$duplex = "full";
+	} else {
+		$duplex = "half";
+	}
+	print PROF_FILE ("$nets[$net_count]{dev_name} $nets[$net_count]{net_id} $speed $duplex $nets[$net_count]{cable_type}\n");
+	print ("$nets[$net_count]{dev_name}  $nets[$net_count]{net_id} $speed $duplex $nets[$net_count]{cable_type} $nets[$net_count]{device_type}\n");
+
+}
+sub get_tok_info( ) {
+	local($device_type,$line) = @_;
+
+	$devname="";
+
+	$recv_q="";
+	if($prof) {
+		@tmper = split(/\s+/,$line);
+		$devname=$tmper[0];
+		$devname =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+		if($device_type =~ /shen/i) {
+			$speed = $tmper[2];
+			$speed =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+			if($speed !~ /4/ && $speed !~ /16/ && $speed !~ /a/i) {
+				print("$speed is bad value in profile for speed on $devname,, fix profile and rerun.\nShould be 4,16 or auto");
+				exit(0);
+			}
+		}
+
+		$duplex = $tmper[3];
+		$duplex =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+		if($duplex !~ /full/i && $duplex !~ /half/i) {
+			print("$duplex is bad value in profile for duplex on $devname, fix profile and rerun.\nShould be y or n");
+			exit(0);
+		}
+		if($duplex =~ /full/i) {
+			$duplex = "y";
+		} else {
+			$duplex = "n";
+		}
+
+		$recv_q = $tmper[4];
+		$recv_q =~ s/[^_0-9a-zA-Z\/\)+]*$//; 
+		if($recv_q !~ /\d{1,3}/) {
+			print("$recv_q is bad value in profile for recv_q on $devname, fix profile and rerun.\nShould be 32-160");
+		}
+
+	} else {
+		if($device_type =~ /shen/i) {
+			while(1) {
+				print("Enter the tokenring speed.. 4 or 16 or auto\n");
+				$speed=<STDIN>;
+				chop($speed);
+				if($speed !~ /4/ && $speed !~ /16/ && $speed !~ /a/i) {
+					print("$speed is bad choice, try again.. 4 or 16 or auto\n");
+				} else { last;}
+			}
+		}
+		while(1) {
+			print("Do you want full duplex... yes or no!\n");
+			print("NOTE: full duplex requires switch.!\n");
+			$duplex=<STDIN>;
+			chop($duplex);
+			if($duplex !~ /y/i && $duplex !~ /n/i) {
+				print("$duplex is bad choice, try again.. y or n\n");
+			} else { last;}
+		}
+		if($device_type =~ /shen/i || $device_type =~ /cricket/i) {
+			while(1) {
+				print("Enter receive q size. 32 to 160. Enter 32 for default\n");
+				$recv_q=<STDIN>;
+				chop($recv_q);
+				if($recv_q < 32 || $recv_q >160) {
+					print("$recv_q is bad choice, try again.. 32 to 160\n");
+				} else { last;}
+			}
+		}
+	}
+	#/* note you have to put the 100 compare first. */
+    #/* or use strcmp not strncmp */
+	if($device_type =~ /shen/i) {
+		if($speed =~ /4/) {
+			$nets[$net_count]{media_type}="4";
+		}
+		if($speed =~ /16/) {
+			$nets[$net_count]{media_type}="16";
+		}
+		if($speed =~ /a/i) {
+			$nets[$net_count]{media_type}="autosense";
+		}
+		if($debug) {
+			print("The speed is set to $nets[$net_count]{media_type}\n");
+		}
+	}
+	if($duplex=~/y/i) {
+		$nets[$net_count]{full_duplex}="yes";
+	} else {
+		$nets[$net_count]{full_duplex}="no";
+	}
+	if($debug) {
+		print("Full duplex is set to $nets[$net_count]{full_duplex}\n");
+	}
+	if(!$recv_q) {
+		$recv_q=32;
+	}
+	$nets[$net_count]{tok_recv_q}=$recv_q;
+	
+	if($debug) {
+		print("Recv_Q size is set to $nets[$net_count]{tok_recv_q}\n");
+	}
+	if($duplex =~ /y/i) {
+		$duplex = "full";
+	} else {
+		$duplex = "half";
+	}
+	print PROF_FILE ("$nets[$net_count]{dev_name} $nets[$net_count]{net_id} $speed $duplex $recv_q\n");
+	print ("$nets[$net_count]{dev_name} $nets[$net_count]{net_id} $speed $duplex $recv_q $nets[$net_count]{device_type}\n");
+
+}
+sub get_atm_info( ) {
+	local($device_type,$line) = @_;
+
+	$devname="";
+	if($prof) {
+		@tmper = split(/\s+/,$line);
+		$devname=$tmper[0];
+		$devname =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+		$atm_connection = $tmper[2];
+		$atm_connection =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+		if($atm_connection !~ /pvc/ && $atm_connection !~ /svc_s/ && $atm_connection !~ /svc_c/) {
+				print("$atm_connection is bad value in profile for atm_connection on $devname, fix profile and rerun.\nShould be pvc,svc_s or svc_c");
+				exit(0);
+		}
+
+		if($atm_connection =~ /pvc/) {
+			$master = $tmper[3];
+			$master =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+			if($master !~ /y/i && $master !~ /n/i && $master !~ /m/i && $master !~ /s/i) {
+				print("$master is bad value in profile for master on $devname, fix profile and rerun.\nShould be y or n or m or s");
+				exit(0);
+			}
+		}
+
+		if($atm_connection =~ /svc_c/) {
+			$server_addr = $tmper[4];
+			$server_addr =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+			if($server_addr eq "") {
+				print("$server_addr is bad value in profile for server_addr on $devname, fix profile and rerun.\nShould be address of atm card acting as server.. lscfg -vl atmX to find this address.");
+				exit(0);
+			}
+			$switch_addr = $tmper[5];
+			$switch_addr =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+			if($switch_addr eq "") {
+				print("$switch_addr is bad value in profile for switch_addr on $devname, fix profile and rerun.\n");
+				exit(0);
+			}
+			$server_atm = $tmper[6];
+			$server_atm =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+			$server_atm =~ s/[^_0-9a-zA-Z\/\)+]*$//; 
+			if($server_atm !~ /\d{1,2}/) {
+				print("$server_atm is bad value in profile for server_atm on $devname, fix profile and rerun.\n");
+				exit(0);
+			}
+		}
+
+	} else {
+		while(1) {
+			print("For point to point (PVC) atm set one master and the other slave, to set the card that provides the clock\n");
+			print("Enter 'master(m)' or 'slave(s)'\n.....");
+			$master=<STDIN>;
+			chop($master);
+			if($master !~ /m/i && $master !~ /s/i) {
+				print("$master is bad choice, try again.. m or s\n");
+			} else { last;}
+		}
+		while(1) {
+			print("If you are using an atm switch for this test,\nselect the first system you run build net on as the\nas the server.\n");
+			print("Enter 'pvc' if point to point connection! \n");
+			print("Enter 'svc_s' if switched connection and this is to be the arp server! \n");
+			print("        NOTE: At least one system in your network must be selected as the arp server \n");
+			print("Enter 'svc_c' if switched connection and this is to be an arp client! \n");
+
+			$atm_connection=<STDIN>;
+			chop($atm_connection);
+			if($atm_connection !~ /pvc/ && $atm_connection !~ /svc_s/ && $atm_connection !~ /svc_c/) {
+				print("$atm_connection is bad choice, try again.. pvc,svc_s  or svc_c\n");
+			} else { last;}
+		}
+		if($atm_connection =~ /svc_s/) {
+			$res = `lscfg -vl $nets[$net_count]{dev_name}`;
+			print("$res");
+			print("\n\n !!!!!Write down the network address listed.\n");
+			print("       You will need it for the clients.\n");
+						#/* pause for user */
+			print("\n Enter 'c' to continue.\n");
+			$res = <STDIN>;
+		}
+		if($atm_connection =~ /svc_c/) {
+			print("\n Enter the first 13 nibbles of the ATM switch address like this 39.99.99.99.99.99.99.0.0.99.99.1.1. \nor d for default\nMake sure to remove leading 0's from the address");
+			$switch_addr = <STDIN>;
+			chop($switch_addr);
+			if($switch_addr =~ /d/i) {
+				$switch_addr = "39.99.99.99.99.99.99.0.0.99.99.1.1.";
+			}
+			print("\n Enter the network address you wrote down from the server machine\n");
+		    $server_addr = <STDIN>;
+			chop($server_addr);
+			print("\n Enter the number (IN HEX) of the atm adapter that is acting as the server (0,1,2,...a,b,c etc.. atm0 means 0, atm1 means 1, etc. \n");
+			$server_atm = <STDIN>;
+			chop($server_atm);
+		}
+	}
+
+	#now I have all the info ..  process as needed..
+	$nets[$net_count]{atm_connection} = $atm_connection;
+	if($atm_connection =~ /pvc/) {
+		if($master=~/y/i || $master=~/m/i) {
+			$nets[$net_count]{atm_clock}=1;
+		} else {
+			$nets[$net_count]{atm_clock}=0;
+		}
+	} else {
+		$nets[$net_count]{atm_clock}=0;
+	}
+
+	if($atm_connection =~ /svc_s/) {
+		$nets[$net_count]{atm_server_address} = "Server";
+	}		
+	if($atm_connection =~ /svc_c/) {
+		$nets[$net_count]{atm_server_address} = "$switch_addr";
+		$x=0;
+		while(1) {
+			$sub = substr ($server_addr,$x,2);
+			if($sub !~ /\d{1,2}/) {
+				last;
+			}
+			$nets[$net_count]{atm_server_address} = "$nets[$net_count]{atm_server_address}" . "$sub" . ".";
+			$x=$x+2;
+		}	
+		
+		$nets[$net_count]{atm_server_address} = "$nets[$net_count]{atm_server_address}" . "$server_atm";
+	}
+
+	print PROF_FILE ("$nets[$net_count]{dev_name} $nets[$net_count]{net_id} $atm_connection $master $server_addr $switch_addr $server_atm\n");
+	print ("$nets[$net_count]{dev_name} $nets[$net_count]{net_id} $atm_connection $master $server_addr $switch_addr $server_atm $nets[$net_count]{device_type}\n");
+
+}
+
+sub init_mdt() {
+
+    unless (open (MDT_FILE,">$mdtname")) {
+        die ("Can't open $mdtname file!\n");
+    }
+
+    print MDT_FILE ("default:\n");
+    print MDT_FILE ("         HE_name = \"\"\n");
+    print MDT_FILE ("         adapt_desc = \"\"\n");
+    print MDT_FILE ("         device_desc = \"\"\n");
+    print MDT_FILE ("         reg_rules = \"\"\n");
+    print MDT_FILE ("         emc_rules = \"\"\n");
+    print MDT_FILE ("         dma_chan = \"0\"\n");
+    print MDT_FILE ("         idle_time = \"0\"\n");
+    print MDT_FILE ("         load_seq = \"32768\"\n");
+    print MDT_FILE ("         max_run_tm = \"7200\"\n");
+    print MDT_FILE ("         port = \"0\"\n");
+    print MDT_FILE ("         priority = \"1\"\n");
+    print MDT_FILE ("         slot = \"0\"\n");
+    print MDT_FILE ("         max_cycles = \"0\"\n");
+    print MDT_FILE ("         hft = \"0\"\n");
+    print MDT_FILE ("         cont_on_err = \"YES\"\n");
+    print MDT_FILE ("         halt_level = \"1\"\n");
+    print MDT_FILE ("         start_halted = \"n\"\n");
+    print MDT_FILE ("\n");
+
+    close(MDT_FILE);
+
+}
+sub make_rule()
+{
+	local($this_net) = @_;
+	$second="";
+
+    if($debug){
+	 print("Set up rules file for $nets[$this_net]{dev_name}, rule $nets[$this_net]{rule_name}\n");
+    }
+
+    $rules_file = "/usr/lpp/htx/rules/reg/hxecom/$nets[$this_net]{rule_name}";
+
+    if($rules_file =~ /nets/) {
+        $second = 1;
+    }
+
+    &make_new_rule($rules_file,$this_net);
+
+    return;
+}
+sub make_new_rule() {
+	local($rules_file,$this_net) = @_;
+    $reps = 1;
+    $bufmin = 5000;
+    $bufmax = 5000;
+    $bufinc = 1;
+    $ioAlarm = 900;
+    $numOper = 1000;
+
+    if($stresslevel==1) {
+            #/* leave default settings */
+    } elsif ($stresslevel==2) {
+            $bufmax = 6500;
+            $bufmin = 6500;
+            $numOper = 1500;
+            $ioAlarm = 1200;
+    } elsif ($stresslevel==3) {
+            $bufmax = 8000;
+            $bufmin = 5000;
+            $bufinc = 999;
+            $numOper = 2000;
+            $reps = 2;
+            $ioAlarm = 1400;
+    } elsif ($stresslevel==4) {
+            $bufmax = 15000;
+            $bufmin = 15000;
+            $bufinc = 1;
+            if($nets[$this_net]{PdDvLn} =~/14105e01/ || $nets[$this_net]{PdDvLn} =~/14100401/ ) {
+                $reps = 3;
+                $numOper = 2000;
+            } else {
+                $reps = 1;
+            }
+            $ioAlarm = 600;
+    } elsif ($stresslevel==5) {
+            $bufmax = 20000;
+            $bufmin = 20000;
+            $bufinc = 1;
+            if($nets[$this_net]{PdDvLn} =~/14105e01/ || $nets[$this_net]{PdDvLn} =~/14100401/ ) {
+                $reps = 5;
+                $numOper = 2000;
+            } else {
+                $reps = 2;
+            }
+            $ioAlarm = 2000;
+    }
+
+    unless (open (RULE_FILE,">$rules_file")) {
+        die ("Can't open $rules_file file!\n");
+    }
+	# /* create a rules file for hxecom */
+	print RULE_FILE ("* rule file for $nets[$this_net]{rule_name}\n");
+	print RULE_FILE ("RULE_ID=00000000\n");
+	print RULE_FILE ("PATTERN_ID=HEX255\n");
+	if(!$onesys) {
+		print RULE_FILE ("COMNET_NAME=$comhostname\n");
+		print RULE_FILE ("TESTNET_NAME=$nets[$this_net]{rule_name}$this_host_number\n");
+	} else {
+		if($nets[$this_net]{rule_name} =~ /nets/) {
+			print RULE_FILE ("COMNET_NAME=$nets[$this_net]{net_id}" . "net$next_host_number\n");
+			print RULE_FILE ("TESTNET_NAME=$nets[$this_net]{net_id}" . "net$next_host_number\n");
+		} else {
+			print RULE_FILE ("COMNET_NAME=$nets[$this_net]{net_id}" . "net$this_host_number\n");
+			print RULE_FILE ("TESTNET_NAME=$nets[$this_net]{net_id}" . "net$this_host_number\n");
+		}
+	}
+	$com_port = &get_com_port($nets[$this_net]{net_id});
+
+	print RULE_FILE ("COM_STREAM_PORT=$com_port\n");
+	$next_port = $com_port+1;
+	print RULE_FILE ("COM_DGRAM_PORT=$next_port\n");
+
+	print RULE_FILE ("BUFMIN=$bufmin\n");
+	print RULE_FILE ("BUFMAX=$bufmax\n");
+	print RULE_FILE ("BUFINC=$bufinc\n");
+	print RULE_FILE ("OPER=RW\n");
+	print RULE_FILE ("MASTER=Y\n");
+	print RULE_FILE ("LAYER=TCP\n");
+	print RULE_FILE ("IO_ALARM_TIME=$ioAlarm\n");
+	print RULE_FILE ("SHUTDOWN_FLAGS=0x00ff\n");
+	print RULE_FILE ("WRITE_SLEEP=0\n");
+	print RULE_FILE ("REPLICATES=$reps\n");
+	print RULE_FILE ("NUM_OPER=$numOper\n");
+	if($onesys) {
+		print RULE_FILE ("ONESYS=1\n");
+	} else {
+		print RULE_FILE ("ONESYS=0\n");
+	}
+	print RULE_FILE ("\n");
+
+	if($stresslevel == 1) {
+		print RULE_FILE ("BUFMIN=100\n");
+		print RULE_FILE ("BUFMAX=1000\n");
+		print RULE_FILE ("BUFINC=100\n");
+		print RULE_FILE ("NUM_OPER=100\n");
+	}
+
+	close(RULE_FILE);
+    #/* now do chmod on file to get the right permissions */
+    $res = `chmod 755 $rules_file`;
+    return;
+}
+
+sub get_com_port() {
+	local($netid) = @_;
+	
+    $base200 = 5103;
+    $base100 = 5145;
+
+    if($netid =~ /com/) {
+        return(5101);
+    }
+    if($netid < 100 || $netid > 220) {
+        print("get_com_port does not support net_id $netid\n");
+        exit(0);
+    }
+    if($netid < 200) {   #  /* use base100 */
+        $port = (2* ($netid - 100)) + $base100;
+    } else {           # /* use base200 */
+        $port = (2* ($netid - 200)) + $base200;
+    }
+
+    return($port);
+}
+
+sub make_mdt() {
+    local($this_net) = @_;
+
+    unless (open (MDT_FILE,">>$mdtname")) {
+        die ("Can't open $mdtname file!\n");
+    }
+
+   if($debug) {
+	print("add mdt entry for $nets[$this_net]{dev_name}, rule $nets[$this_net]{rule_name}\n");
+    }
+
+    print MDT_FILE ("$nets[$this_net]{dev_name}:\n");
+    print MDT_FILE ("        HE_name = \"hxecom\"\n");
+    print MDT_FILE ("        adapt_desc = \"\"\n");   
+    print MDT_FILE ("        device_desc = \"\"\n");  
+    print MDT_FILE ("        reg_rules = \"hxecom/$nets[$this_net]{rule_name}\"\n");
+    print MDT_FILE ("        emc_rules = \"hxecom/$nets[$this_net]{rule_name}\"\n");
+    print MDT_FILE ("        slot = \"$nets[$this_net]{slot}\"\n");       
+    print MDT_FILE ("\n");
+
+    close(MDT_FILE);
+   if($debug) {
+	print("make_mdt done\n");
+    }
+}
+sub get_hostid_from_config() {
+	local($id);
+	@res = `ping -c 1 $comhostname`;
+	$line1 = $res[0];
+	@sline = split(/\s+/,$line1);
+	$ip = $sline[2];
+# strip off front and back whitespace
+	$ip =~ s/[^_0-9a-zA-Z\/+]*$//;
+	$ip =~ s/^[^_0-9a-zA-Z\/+]*//;
+	@it = split(/\./,$ip);
+	$id = $it[3];
+	print("Your host id is set to $id\n");
+	return($id);
+}
+sub	make_temp("/bpt") {
+    local($file_name) = @_;
+    unless (open (TPRO_FILE,">$file_name")) {
+        die ("Can't open $file_name file!\n");
+    }
+
+	$onesys=&get_onesys();
+	if($onesys eq "") {
+		$onesys="n";
+	}
+	$comhostname = `hostname`;
+	chop($comhostname);
+	print("Creating profile template... /bpt\n"); 
+	print TPRO_FILE ("onesys=$onesys\n");
+	$id=get_hostid_from_config();
+	print TPRO_FILE ("thishostid=$id\n");
+	if($onesys !~ /y/) {
+		print TPRO_FILE ("other_ids=$id:\n");
+	}
+	print TPRO_FILE ("stresslevel=1\n");
+	print TPRO_FILE ("comhostname=$comhostname\n");
+	if($onesys !~ /y/) {
+		print TPRO_FILE ("use_site_ring=y\n");
+		print TPRO_FILE ("com_configured=y\n");
+	}
+	if($onesys !~ /y/) {
+		print TPRO_FILE ("#If com_configured=n and use_site_ring=y\n");
+		print TPRO_FILE ("comipaddr=xxx.xxx.xxx.xxx\n");
+		print TPRO_FILE ("comnameserver=xxx.xxx.xxx.xxx\n");
+		print TPRO_FILE ("comgateway=xxx.xxx.xxx.xxx\n");
+		print TPRO_FILE ("commask=xxx.xxx.xxx.xxx\n");
+		print TPRO_FILE ("comdomain=austin.ibm.com\n");
+	}
+
+	@devs="";
+	$devs[0]="tok";
+	if ($linux){
+		$devs[1]="eth";
+	}else{
+		$devs[1]="ent";
+	}
+	$devs[2]="atm";
+	$devs[3]="fddi";
+
+	foreach $dev (@devs) {
+		$targ = "$dev" . "*";
+		@res="";
+		if ($linux){
+                	@res = ("eth0","eth1");
+		}else{
+			@res = `odmget -q"name like $targ" CuDv`; 
+                }
+		if($res[1] eq "") {
+			next;
+		}
+		$allcount=0;
+		while($odmlist[$allcount]{"name"} ne "") {
+			++$allcount;
+		}
+		if($allcount > 0) {
+			for($listcount=0; $listcount<$allcount; ++$listcount) {
+			delete($odmlist[$listcount]{"name"});
+			}
+		}
+                if($linux){
+		&set_odmlist_linux(@res);	
+                } else {
+                &set_odmlist(@res);
+                }
+		
+		$allcount=0;
+		while($odmlist[$allcount]{"name"} ne "") {
+			++$allcount;
+		}
+		if($dev =~ /eth/) {
+			$line="#dev  net         speed       duplex     cable_type ";
+			print TPRO_FILE ("$line\n");
+			$line="#ethX XXX/n/com   10/100/auto  full/half  bnc/dix/tp/N/A/n";
+			print TPRO_FILE ("$line\n");
+		}elsif($dev =~ /ent/) {
+			$line="#dev  net         speed       duplex     cable_type ";
+			print TPRO_FILE ("$line\n");
+			$line="#entX XXX/n/com   10/100/auto  full/half  bnc/dix/tp/N/A/n";
+			print TPRO_FILE ("$line\n");
+		} elsif($dev =~ /tok/) {
+			$line="#dev  net       speed     duplex     recv_q";
+			print TPRO_FILE ("$line\n");
+			$line="#tokX XXX/n/com 4/16/auto full/half  32-160";
+			print TPRO_FILE ("$line\n");
+		} elsif($dev =~ /fddi/) {
+			$line="#dev   net";
+			$line="#fddiX XXX/n/com";
+		} elsif($dev =~ /atm/) {
+			$line="#dev  net  atm_connection  master  server_addr switch_addr  server_atm";
+			print TPRO_FILE ("$line\n");
+			$line="#atmX XXX/n pvc/svc_s/svc_c m/s     xxxxxxxxxxx xx.xx.xx.etc  0/1/2/etc";
+			print TPRO_FILE ("$line\n");
+		}
+
+		for($listcount=0; $listcount<$allcount; ++$listcount) {
+			$sline = `lsslot -cpci | grep \"$odmlist[$listcount]{name} \" `; 
+			chop($sline);
+			$sline = "#     " . "$sline";
+			$line="";
+			$line="$odmlist[$listcount]{name} n";
+			if($dev =~ /eth/) {
+				$line="$line" . " 100 full tp";
+			}elsif($dev =~ /ent/) {
+				$line="$line" . " 100 full tp";
+			} elsif($dev =~ /tok/) {
+				$line="$line" . " 16  full 32";
+			} elsif($dev =~ /atm/) {
+				$line="$line" . " pvc  m"; 
+			}
+			$locline = `lsdev -C | grep \"$odmlist[$listcount]{name} \"`;
+			@tmpit = "";
+			@tmpit = split(/\s+/,$locline);
+			
+			$line = ("$line" . "   #$tmpit[2]");
+			print TPRO_FILE ("$line\n");
+		}
+
+	}
+	close(TPRO_FILE);	
+	return(0);
+}

@@ -1,0 +1,20 @@
+* @(#)28	1.1  src/htx/usr/lpp/htx/rules/reg/hxestorage/rule.4K_seq_read, exer_storage, htxubuntu 9/21/15 23:37:36 *
+* hxestorage rule file doing 4K sequential reads
+*******************************************************************
+* TEMPLATE 1
+*******************************************************************
+template_id = seq_r
+oper = r
+transfer_size = 4K 
+
+************************************************************************
+* STANZA 1 : Reads Only. creates num_threads same as queue depth.  
+************************************************************************
+rule_id = rule_1
+pattern_id = HEX255
+mode = performance
+num_threads = 1qd(seq_r)
+num_oper = 200000
+seek_breakup_prcnt = 0
+align = 4096
+

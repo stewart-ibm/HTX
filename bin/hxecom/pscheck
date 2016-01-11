@@ -1,0 +1,68 @@
+#!/bin/ksh
+# @(#)02	1.1  src/htx/usr/lpp/htx/bin/hxecom/pscheck.sh, exer_com, htx53A 3/25/94 06:44:32
+#
+#   COMPONENT_NAME: exer_com
+#
+#   FUNCTIONS: none
+#
+#   ORIGINS: 27
+#
+#   IBM CONFIDENTIAL -- (IBM Confidential Restricted when
+#   combined with the aggregated modules for this product)
+#   OBJECT CODE ONLY SOURCE MATERIALS
+#
+#   (C) COPYRIGHT International Business Machines Corp. 1994
+#   All Rights Reserved
+#   US Government Users Restricted Rights - Use, duplication or
+#   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+#
+# 
+#  Removes all ecom.runcleanup script to kill all hxecom processes and
+#  rm all shared mem and semaphors.
+
+PARENT_PID=$1;
+CHECK_PID=$2;
+
+
+if [ "$PARENT_PID" = "bootme" ]
+then
+	if [ -f /usr/lpp/htx/.autostart* ]
+	then
+		exit 1;
+	else
+		exit 0;
+	fi
+else
+
+	#FNAME="hxefile$PARENT_PID"
+
+	#DT=`date`;
+	#echo "remove all hxecoms for pid $PARENT_PID..$DT" > /tmp/$FNAME
+
+	#get a list of parent and all children of this PARENT_PID
+	data=`ps -ef | grep hxecom | grep $PARENT_PID | awk '{print $2}'`
+
+	for item in $data
+	do
+		if [ "$PARENT_PID" = "$item" ]
+		then
+					if [ "$CHECK_PID" != "" ]
+					then
+							exit 1;
+					else
+							nothing="";
+						   #echo "skip the parent, $item >> /tmp/$FNAME";
+					fi
+		else
+			if [ "$CHECK_PID" = "" ]
+			then
+				#echo "Removing child process " $item >> /tmp/$FNAME
+				kill -2 $item  > /dev/null 2>&1
+			fi
+		fi
+	done
+
+fi
+exit 0;
+
+

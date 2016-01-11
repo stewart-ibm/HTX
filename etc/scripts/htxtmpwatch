@@ -1,0 +1,5 @@
+# @(#)02	1.2  src/htx/usr/lpp/htx/etc/scripts/htxtmpwatch, htxconf, htxubuntu 4/16/04 07:37:51
+# Change the time stamps of htxstats htxmsg and htxerr everyday
+# So that it cant be deleted by tmpwatch scripts
+59 23 * * * root touch -a /tmp/htx*
+

@@ -1,0 +1,197 @@
+#!/usr/bin/perl
+# @(#)77        1.3     src/htx/usr/lpp/htx/bin/hxecom/set_linux_nets, exer_com, htxubuntu 10/29/03 22:34:54
+
+#ON linux machines this goes in /bin dir and is called by build_net
+
+$debug="";
+$dfile = "/tmp/net_config";
+unless (open (D_FILE,">$dfile")) {
+	die ("Can't open $dfile file!\n");
+}
+
+@lines = `lspci`;
+
+@dev_lines="";
+@mod_commad="";
+$line_count = 0;
+foreach $line (@lines) {
+	#note the 3com card 3c905 does not have a driver in
+	#/lib/modules/2.4.19-4GB/kernel/drivers/net  dir.
+	# there is 3c90x but it will not load with the 3c905 card.
+	# so I ignore this card.
+	if($line =~ /Ethernet controller/i || $line =~ /Token ring/i) {
+		if($line =~ /3c905/) {
+		} else {
+			$line =~ s/[^_0-9a-zA-Z\/+]*$//;
+			$line =~ s/^[^_0-9a-zA-Z\/+]*//;
+			$dev_lines[$line_count++] = "$line";
+		}
+	}
+}
+$no_of_devs = @dev_lines;
+if($debug) { print("no lines = $no_of_devs\n");}
+
+$count = 0;
+$eth_count = 0;
+$tok_count = 0;
+$mod_count = 0;
+$unique_mod = 0;
+@used_mods="";
+$used_mods_count = 0;
+$dev_count=0;
+@devs=0;
+while($count < $no_of_devs) {
+	$line = "$dev_lines[$count]";
+	$conwhere = "";
+	if($line =~ /82557/) {
+		$ddins = "e100";
+		$conwhere = "82557";
+	} elsif ($line =~ /79c970/) {
+		$ddins = "pcnet32";
+		$conwhere = "79c970";
+	} elsif ($line =~ /82545/) {
+		$ddins = "e1000";
+		$conwhere = "82545";
+	} elsif ($line =~ /AceNIC/i) {
+		$ddins = "acenic";
+		$conwhere = "AceNIC";
+	} elsif ($line =~ /3c905/i) {
+		$ddins = "3c905";
+		$conwhere = "3c905";
+	} elsif ($line =~ /IBM 16/i) {
+		$ddins = "olympic";
+		$conwhere = "IBM";
+	} elsif ($line =~ /IBM TR/i) {
+		$ddins = "lanstreamer";
+		$conwhere = "IBM";
+        } elsif ($line =~ /Broadcom/) {
+                $ddins = "bcm5700";
+                $conwhere = "Broadcom"
+	} else {
+		print D_FILE ("Unknown device line: \n$line\n");
+		eout(1);
+	}
+	$unique_mod = &isunique($ddins);
+	if($unique_mod) {
+		if($debug) { print("new mod..$ddins\n");}
+		$mod_commad[$mod_count++] = "/sbin/modprobe -a $ddins";
+		$use_mods[$used_mods_count++]="$ddins";
+		$unique_mod=0;
+		foreach $item (@dev_lines) {
+			if($item =~ /$conwhere/i) {
+				@tmper="";
+				@tmper=split(/ +/,$item);
+				$loc = $tmper[2];
+				$newline = "$item";
+				$newtarg = "";
+				if($newline =~ /82557/) {
+					$ddins = "e100";
+					#NOTE: you need _ to get all of name in build_net
+					$PdDvLn = "1410ff01_scurry";
+					$thisdev="eth";
+				} elsif ($newline =~ /79c970/) {
+					$ddins = "pcnet32";
+					$PdDvLn = "23100020_phoenix/clover";
+					$thisdev="eth";
+				} elsif ($newline =~ /82545/) {
+					$ddins = "e1000";
+					$PdDvLn = "14106902_goliad";
+					$thisdev="eth";
+				} elsif ($newline =~ /3c905/) {
+					$ddins = "3c905";
+					$PdDvLn = "14106902_3Com";
+					$thisdev="eth";
+				} elsif ($newline =~ /AceNIC/i) {
+					$ddins = "acenic";
+					$PdDvLn = "14100401_galaxy";
+					$thisdev="eth";
+                                } elsif ($newline =~ /Broadcom/) {
+                                        $ddins = "bcm5700";
+					$PdDvLn = "dummy_broadcom";
+					$thisdev="eth";
+				} elsif ($line =~ /IBM 16/i && $line =~ /Token ring/i) {
+					$ddins = "olympic";
+					$PdDvLn = "14103e00_shenendoah";
+					$thisdev="tr";
+				} elsif ($line =~ /IBM TR/i && $line =~ /Token ring/i) {
+					$ddins = "lanstreamer";
+					$PdDvLn = "14103e00_lanstreamer";
+					$thisdev="tr";
+				} else {
+					print D_FILE ("Unknown Ethernet controller: \n$newline\n");
+					eout(1);
+				}
+				if($thisdev =~ /eth/i) {
+					$devname = "$thisdev" . $eth_count;
+					++$eth_count;
+				} elsif ($thisdev =~ /tr/i) {
+					$devname = "$thisdev" . $tok_count;
+					++$tok_count;
+				}
+				$devs[$dev_count++] = "$devname";
+				print D_FILE ("$devname $ddins $loc $conwhere $PdDvLn\n");
+				if($debug) { print ("$devname $ddins $loc $conwhere $PdDvLn\n");}
+			}
+		}
+	}
+	++$count;
+}
+
+
+# ok now do the modprobe commands..
+foreach $cmd (@mod_commad) {
+	if($debug) {
+		print("$cmd\n");
+	}
+	$res = `$cmd`;
+	if($debug) {
+		print("$res\n");
+	}
+}
+
+# now use the @devs array values to check the list of ifcfg- files
+# in /etc/sysconfig/network
+
+@files="";
+$cfiles = "/etc/sysconfig/network/ifcfg-*";
+@files = `ls $cfiles`;
+
+
+foreach $file (@files) {
+	if($file =~ /-eth/ || $file =~ /-tr/ || $file =~ /-atm/ || $file =~ /-fddi/) {
+		$keep_file=0;
+		foreach $device (@devs) {
+			if($file =~ /$device/) {
+				$keep_file=1;
+				last;
+			}
+		} 
+		if(!$keep_file) {
+			if($debug) {
+				print("rm $file\n");
+			}
+			$res = `rm $file`;
+		} 
+	#	else {    not needed since normal boot will run the ifcfg-xxx files
+	#		$res = `ifup $file`;
+	#	}
+	}
+}
+
+eout(0);
+
+sub isunique {
+	local($driver) = @_;
+	foreach $item (@use_mods) {
+		if($driver eq $item) {
+			return(0);
+		}
+	}
+	return(1);
+}
+sub eout {
+	local($rc) = @_;
+	close(D_FILE);
+	exit($rc);
+}
+

@@ -1,0 +1,141 @@
+#!/bin/sh
+
+# @(#)44  1.1  src/htx/usr/lpp/htx/etc/scripts/collect_shift_logs, htxconf, htxubuntu 3/28/13 05:07:46
+
+# This script collects all files and LPAR configuration details needed for 
+# offline debug of any shift failure. It collect below details -
+# Output of various commands.
+# /proc files.
+# /var files.
+# tar all files present in /tmp dir.
+
+function collect_cmd_op {
+	echo "CMD# uptime"
+	uptime; echo
+	echo "CMD# uname -a"
+	uname -a; echo 
+	echo "CMD# ver noclear"
+	ver noclear; echo 
+	echo "CMD# vmstat"
+	vmstat; echo
+	echo "CMD# lsmod"
+	lsmod; echo
+	echo "CMD# ifconfig"
+	ifconfig; echo
+	echo "CMD# ifconfig -a"
+	ifconfig -a; echo
+	echo "CMD# vmstat"
+	vmstat; echo
+	echo "CMD# lspci"
+	lspci; echo
+	echo "CMD# lsusb"
+	lsusb; echo
+	echo "CMD# dmesg"
+	dmesg; echo
+	echo "CMD# ps -el"
+	ps -ef; echo
+	echo "CMD# ps -eLF"
+	ps -eLF; echo
+	echo "CMD# ps auxf"
+	ps auxf; echo
+}
+
+function collect_proc_files {
+	proc=/tmp/proc
+	mkdir -p $proc
+	cat /proc/cpuinfo > $proc/cpuinfo
+	cat /proc/meminfo > $proc/meminfo
+	cat /proc/devices > $proc/devices
+	cat /proc/mounts  > $proc/mounts
+	cat /proc/interrupts > $proc/interrupts
+	cat /proc/loadavg > $proc/loadavg
+	cat /proc/partitions > $proc/partitions
+	cat /proc/stat > $proc/stat
+	cat /proc/slabinfo > $proc/slabinfo
+}
+
+function collect_var_files {
+	var_log=/tmp/var/log/
+	mkdir -p $var_log
+	cat /var/log/messages > $var_log/messages
+	cat /var/log/dmesg > $var_log/dmesg
+}
+
+echo "Collecting shift logs."
+date
+
+# Check for a file in /tmp used to signify shift log collection status.
+# Exit if file is already present, informing logs have already been collected.
+if [ -f $SHIFT_LOG_DONE_FILE ]
+then
+	ls -l $SHIFT_LOG_DONE_FILE
+	echo "$SHIFT_LOG_DONE_FILE is present."
+	echo "Logs have already been completed, exiting."
+	exit
+fi
+
+touch $SHIFT_LOG_DONE_FILE
+
+# Copy mdt file to /tmp so that it can be archived later.
+if [ -f $MDT ] 
+then 
+	echo "Copying $MDT in /tmp"
+	cp $MDT /tmp/mdt 
+fi
+
+# Collect outout of various commands in /tmp.
+echo "Collecting output of various commands."
+collect_cmd_op >/tmp/cmd_op.txt
+
+# Collect /proc files
+echo "Collecting /proc files."
+collect_proc_files
+
+# Collect /var files
+echo "Collecting /var files."
+collect_var_files
+
+# Report shift and exerciser status.
+stx_status=`cat $STATUS_FILE`
+
+if [ $stx_status -ne 0 ]
+then
+	echo "Exerciser stats as below."
+	esrv -sut localhost -status -ecg $MDT
+	echo
+	echo -n "CYCLES: "
+	for dev in $(cat /tmp/mdt_devices)
+	do
+        	cycles=`cat /tmp/shift/${dev}_cycles`
+        	echo -n "$dev = $cycles, "
+	done
+	echo
+
+	echo "MDT = `cat $MDT_NAME_FILE`,  RUN_TIME = `cat $RUN_TIME_FILE` minutes,  LAST_UPDATE_TIME = `cat $LAST_UPDATE_TIME_FILE`" ;
+fi
+
+# Report shift status. 
+# It will be passed as argument to this script.
+shift_status=$1
+if [ "$shift_status" = $ERROR ]
+then
+        echo; echo "SHIFT STATUS = FAIL."
+	echo "Archiving all shift log files in /shift_log.tar.gz file."
+	date
+	# tar all /tmp files.
+	tar -zcf /shift_log.tar.gz /tmp/
+else
+	echo "Archiving important log files in /shift_log.tar.gz file."
+	date
+        echo; echo "SHIFT STATUS = PASS."
+	# tar important /tmp files.
+	tar -zcf /shift_log.tar.gz /tmp/proc/* /tmp/htx* /tmp/shift /tmp/mdt /tmp/mdt_devices /tmp/cmd_op.txt 
+fi
+echo
+
+echo "Creating $SHIFT_LOG_DONE_FILE file"
+date
+touch $SHIFT_LOG_DONE_FILE
+echo "Done with shift log collection."
+
+

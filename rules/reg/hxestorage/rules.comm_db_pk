@@ -1,0 +1,25 @@
+* @(#)50	1.2  src/htx/usr/lpp/htx/rules/reg/hxestorage/rules.comm_db_pk, exer_storage, htxubuntu 12/2/14 00:54:50 *
+* hxestorage rules file for creating customer like load environment.
+* Commercial database peak load
+* Requirements:
+*
+*  75/25: Read/Write ratio
+*  80/20: Random/sequential access
+*  4K-256K(random) : transfer size
+*  number of threads: 0.5QD
+*
+*---------------------------------------------------------------------------*
+*- STANZA 1: creates 0.5QD  threads doing 80/20 random/seq access. Transfer  -*
+*-           size being between 4k to 256K.                                -*
+*---------------------------------------------------------------------------*
+rule_id = rule_1
+pattern_id = #003
+num_oper = 50000
+num_threads = 0.5QD 
+oper = w[1]r[3]c 
+seek_breakup_prcnt = 80
+transfer_size = [4K-256K,-1]
+direction = UP DOWN 
+starting_block = BOT TOP
+num_mallocs = 4
+

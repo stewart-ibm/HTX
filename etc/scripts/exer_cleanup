@@ -1,0 +1,61 @@
+#!/bin/ksh
+# @(#)09  1.6.3.2  src/htx/usr/lpp/htx/etc/scripts/exer_cleanup, htxconf, htxubuntu 2/5/15 02:41:28
+
+# Exerciser cleanup after running runsup only
+# If device is in chosen mdt, run exerciser runcleanup scripts
+
+  if [[ -n $(grep "hxepit" $1 2>/dev/null) ]]
+     then echo "Cleaning Cricketstick token ring"
+          ${HTXRUNCLEANUP}crick.runcleanup
+  fi
+
+  if [[ -n $(grep "hxeglx" $1 2>/dev/null) ]]
+     then echo "Cleaning Galaxy ethernet"
+          ${HTXRUNCLEANUP}glx.runcleanup
+  fi
+
+  if [[ -n $(grep "hxeskfp" $1 2>/dev/null) ]]
+     then echo "Cleaning Honeycomb (SysKonnect) fddi"
+          ${HTXRUNCLEANUP}honeycomb.runcleanup
+  fi
+
+  if [[ -n $(grep "hxesct"  $1 2>/dev/null) ]]
+     then echo "Cleaning SCT environment"
+          ${HTXRUNCLEANUP}sct.runcleanup
+  fi
+
+
+  if [[ -n $(grep "hxesky" $1 2>/dev/null) ]]
+     then echo "Cleaning Skyline token ring"
+          ${HTXRUNCLEANUP}skyline.runcleanup
+  fi
+
+  if [[ -n $(grep "hxecom" $1 2>/dev/null) ]]
+     then echo "Cleaning hxecom "
+          ${HTXRUNCLEANUP}hxecom.runcleanup
+  fi
+
+  if [[ -n $(grep "hxevmx64" $1 2>/dev/null) ]]
+       then echo "Cleaning hxevmx64 "
+            ${HTXRUNCLEANUP}hxevmx64.runcleanup
+  fi
+  
+  if [[ -n $(grep "hxedfp" $1 2>/dev/null) ]]
+       then echo "Cleaning hxedfp "
+            ${HTXRUNCLEANUP}hxedfp.runcleanup
+  fi  
+  
+  if [[ -n $(grep "hxesysben" $1 2>/dev/null) ]]
+       then echo "Cleaning Hxesysben "
+            ${HTXRUNCLEANUP}sysben.runcleanup
+  fi
+  
+  if [[ -n $(grep "hxemmioi" $1 2>/dev/null) ]]
+       then echo "Cleaning Hxemmioi "
+            ${HTXRUNCLEANUP}mmioi.runcleanup
+  fi
+
+if [[ -n $(grep "hxediag" $1 2>/dev/null) ]]
+       then echo "Cleaning hxediag "
+            ${HTXRUNCLEANUP}hxediag.runcleanup
+fi

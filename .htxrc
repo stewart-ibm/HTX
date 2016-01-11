@@ -1,0 +1,114 @@
+
+# @(#)17        1.14.1.25  src/htx/usr/lpp/htx/.htxrc, htxbringup, htxubuntu 7/28/15 01:09:29
+
+  export HTXLPP=/usr/lpp/htx/
+  export HTXPATH=/usr/lpp/htx
+  export HTXLINUXLEVEL=${HTXLPP}htxlinuxlevel
+  export HTXPATTERNS=${HTXLPP}pattern/
+  export HTXRULES=${HTXLPP}rules/
+  export HTXREGRULES=${HTXRULES}/reg/
+  export HTXEMCRULES=${HTXRULES}/emc/
+  export HTXECG=${HTXLPP}ecg/
+  export HTXMDT=${HTXLPP}mdt/
+  export HTXOBJREPOS=${HTXLPP}etc/objrepos/
+  export HTXFORMATS=${HTXLPP}etc/
+  export HTXKERNEXT=${HTXLPP}bin/
+  export HTXSCREENS=${HTXLPP}etc/screens/
+  export STXSCREENS=${HTXLPP}etc/screens_stx/
+  export HTXMISC=${HTXLPP}etc/misc/
+  export HTXMICROCODE=${HTXLPP}etc/microcode/
+  export HTXTMP=/tmp/
+  export HTXSETUP=${HTXLPP}setup/
+  export HTXRUNSETUP=${HTXLPP}runsetup/
+  export HTXRUNCLEANUP=${HTXLPP}runcleanup/
+  export HTXCLEANUP=${HTXLPP}cleanup/
+  export HTXPROCESSORS=1
+  export HTXOWNERS=${HTXLPP}exerowners/
+  export HTXINFO=${HTXLPP}exerinfo/
+  export HTXFORMATS=${HTXLPP}etc/formats/
+  export HTXSCRIPTS=${HTXLPP}etc/scripts/
+  export HTXKERNEXT=${HTXLPP}etc/kernext/
+
+    if [[ "$HTXD_STARTUP_MODE" = "ON" ]] ; then
+	HTXD_STARTUP_MODE=OFF
+	return
+    fi
+
+    if [ -f ${HTXLPP}.autostart ] && [ -f /tmp/mpath_parts ] ; then
+      if [ `cat /tmp/mpath_parts | wc -l` != 0 ] ; then
+	echo "sleeping 120 seconds for bootme with multipath"
+	sleep 120
+      fi
+    fi
+
+  # To execute post boot commands for bootme
+	if [ -f ${HTXLPP}.autostart ] ; then
+		BOOT_POST=$(grep "^BOOT_POST:" ${HTXREGRULES}bootme/default | head -n1 | awk '{ print $2 }')
+		[ -f ${BOOT_POST} ] && . ${BOOT_POST}
+	fi
+
+  if [ -f /usr/lpp/htx/etc/scripts/map.sh ]; then 
+		echo " Creating pmap.txt ...." | tee -a $HTXNoise
+		/usr/lpp/htx/etc/scripts/map.sh 2 > /dev/null | tee -a $HTXNoise
+   fi
+  
+  # Run htx.setup script which loads miscex kernel extension. Miscex kernel
+  # extension is required to be loaded before any setup is done.
+
+  if [ -f ${HTXPATH}/setup/htx.setup ]; then
+    ${HTXPATH}/setup/htx.setup 2>/dev/null | tee -a $HTXNoise
+  fi
+
+  echo "Collecting LPAR configuration details ..." | tee -a $HTXNoise
+  /usr/lpp/htx/bin/show_syscfg >/tmp/htx_syscfg 2>/dev/null
+  
+  for file in `/bin/ls $HTXSETUP[a-zA-Z]*.setup 2>/dev/null| sort | grep -v mem.setup | grep -v "htx\.setup"`
+  do
+    . $file  | tee -a $HTXNoise
+  done
+
+  # Now run mem.setup
+  . /usr/lpp/htx/setup/mem.setup | tee -a $HTXNoise
+
+# create new ecg.bu if configuration has changed from last time
+# (htxcfg file is created by the htxconfig script)
+# configure ttys and other devices, create ecg.bu
+  cd ${HTXLPP}etc/scripts
+
+  #if [ ! -f ${HTXLPP}.autostart ]; then
+	./devconfig | tee -a $HTXNoise
+  #else
+  # 	./part.pl > /dev/null
+  #fi
+  
+  cd ${HTXLPP}
+  #[ ! -f $HTXLPP/ecg/ecg ] && cp $HTXLPP/ecg/ecg.bu $HTXLPP/ecg/ecg
+  [ ! -f $HTXLPP/mdt/mdt ] && cp $HTXLPP/mdt/mdt.all $HTXLPP/mdt/mdt
+  
+  cat /tmp/devlist_warning 2>/dev/null
+
+# Work-around for autostartup problems
+  [ -f ${HTXLPP}.autostart ] && sleep 20
+  [ -f ${HTXLPP}.autostart ] && ${HTXSCRIPTS}runsup
+
+  alias logout=". ${HTXSCRIPTS}htxlogout"
+  alias exit=". ${HTXSCRIPTS}htxlogout"
+  set -o ignoreeof
+  alias htx=". runsup"
+  alias stx="/usr/lpp/htx/etc/scripts_stx/runstx"
+  alias stopstx="/usr/lpp/htx/etc/scripts_stx/stopstx"
+
+# Export ZLIB variables to start testing corsa hardware.
+export ZLIB_DEFLATE_IMPL=1; export ZLIB_INFLATE_IMPL=1; export ZLIB_CARD=0; export ZLIB_INFLATE_THRESHOLD=0;
+
+# Reset virtual mem ulimit, to unlimited.
+ulimit -v unlimited
+
+# Increase open files limit.
+num_proc=`cat /proc/cpuinfo  | grep -i processor | wc -l`
+open_files_limit=`expr $num_proc \* 4`
+if [[ $num_proc -lt 1024 ]]
+then
+    open_files_limit=1024
+fi
+ulimit -n $open_files_limit

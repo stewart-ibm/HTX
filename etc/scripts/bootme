@@ -1,0 +1,309 @@
+#!/bin/ksh
+# @(#)73        1.14.3.15     src/htx/usr/lpp/htx/etc/scripts/bootme, htx_bootme, htxubuntu 7/26/15 20:29:41
+#
+# COMPONENT_NAME: htx_bootme
+#
+# ORIGINS: 27
+#
+###############################################################################
+###############################################################################
+##
+##  bootme:  setup AIX system to automatically load and run htx on reboot
+##
+###############################################################################
+
+
+# THERE IS NOTHING TO EDIT IN THIS FILE
+# GO TO: /usr/lpp/htx/rules/reg/bootme/default
+
+
+###############################################################################
+###############################################################################
+bootme_on ()
+{
+  [ "$HTXLPP" ] || {
+     echo "you must be logged in as htx to start bootme";
+     exit 1;
+  }
+
+  # Check for free space in directories likely to cause problems if full
+    check_space "/tmp" 10
+    check_space "/var" 10
+
+  # create crontab entry
+  # Add crontab entry to cause system to run bootmeStuff
+    CRONENTRY="`cat /etc/crontab | grep bootme`"
+    if [ "$CRONENTRY" == "" ]
+    then
+      cp /etc/crontab /etc/crontab.ORIG
+      bootmeStuff=/usr/lpp/htx/etc/scripts/bootmeStuff
+      echo "$REBOOT * * *  root $bootmeStuff >/dev/null 2>&1 &" >>/etc/crontab
+    else
+      echo "Crontab entry for bootme exists"
+      exit
+    fi
+
+
+  # initialize HTX autostart
+    echo "Setting up HTX autostart"
+ 
+    # Disable console
+ 	if [ "$CMVC_RELEASE" = "htxrhel6" ]
+	then
+		echo "start on runlevel [1235]" > /etc/init/htx.conf
+	   	echo "exec /bin/su - htx </dev/console >/dev/console 2>&1" >> /etc/init/htx.conf
+		[ -e /etc/init/serial.conf ] && mv /etc/init/serial.conf /etc/init/serial.conf.bootme
+
+	elif [  "$CMVC_RELEASE" = "htxubuntu" ] 
+	then
+		cd /etc/default
+		cp /etc/default/rcS /etc/default/rcS.bootme
+		sed -i.bootme 's/.*TMPTIME.*/TMPTIME=-1/' /etc/default/rcS	
+		cd -
+
+		mkdir -p /etc/tmpfiles.d
+		[ -e /etc/tmpfiles.d/tmp.conf ] && mv /etc/tmpfiles.d/tmp.conf /etc/tmpfiles.d/tmp.conf.bootme
+		echo "d /tmp 1777 root root -" > /etc/tmpfiles.d/tmp.conf
+
+		if [ -f /lib/systemd/system/serial-getty@.service ] ; then
+			sed 's|-/sbin/agetty|-/sbin/agetty  --autologin htx |' <  /lib/systemd/system/serial-getty@.service >  /lib/systemd/system/serial-getty@hvc0.service
+		else
+		    cd /etc/init
+			sed -i.bootme 's/^exec .*/exec \/sbin\/getty -a htx -L hvc0 9600 vt100/' hvc0.conf
+			cd -
+		fi
+
+	elif [  "$CMVC_RELEASE" = "htxsles11" ] || [ "$CMVC_RELEASE" = "htxltsbml" ] 
+	then
+		cp /etc/inittab /etc/inittab.bootme
+		cat /etc/inittab | grep -v agetty >/etc/inittab.htx
+		cat /etc/inittab.htx  | grep -v ahtx >/etc/inittab
+		# Add inittab entry to start HTX at boot time
+		echo "ahtx:1235:once:/bin/su - htx </dev/console >/dev/console 2>&1" >>/etc/inittab
+
+	else 
+		awk -F '--' '{if(/ExecStart=/) printf("ExecStart=-/sbin/agetty --autologin htx --%s\n", $2); else print}' /usr/lib/systemd/system/serial-getty@.service > /usr/lib/systemd/system/serial-getty@hvc0.service
+	fi
+  
+ 
+        # Check for non-zero '.htx_profile'; exit if not
+        [ -s /usr/lpp/htx/.htx_profile ] || { echo "ERROR: .htx_profile not found or zero-length"; exit; }
+        cp /usr/lpp/htx/.htx_profile /usr/lpp/htx/OLD.htx_profile
+
+        # Change keyword "autostart" in .htx_profile to appropriate value
+        # This controls whether the HTX exercisers beginning running or not
+        if [ "$1" != "nostart" ]
+       		then cat /usr/lpp/htx/OLD.htx_profile | \
+                sed 's/htx_autostart\ .*/htx_autostart = "yes"/' > /usr/lpp/htx/.htx_profile
+               	else cat /usr/lpp/htx/OLD.htx_profile | \
+                sed 's/htx_autostart\ .*/htx_autostart = "no"/' > /usr/lpp/htx/.htx_profile
+        fi
+
+        # Causes .profile to run HTX (hxssup)
+        touch /usr/lpp/htx/.autostart
+
+        # Create a hidden "yes" file to pipe into the shutdown -t command
+        echo "yes" > /tmp/.bootme
+
+        # Echo usage comments to tester
+        echo
+        echo "HTX will start automatically the next time the system is booted."
+        echo
+        echo "To stop HTX from auto starting, wait until OS has booted completely"
+        echo "and HTX has resumed running.  Then use option 11 to open a shell and"
+        echo "type \"bootme off\".  bootme will prompt you to press enter to reboot"
+        echo "the system.  Press Ctrl-C to resume using the shell to run any data"
+        echo "saving program(s) as needed and then type \"shutdown -r\" to reset"
+        echo "the test system for normal testing."
+        echo
+
+    # Log bootme on
+    echo >> $BM_LOG
+    echo "`date +\"%D %T\"`: bootme on" >> $BM_LOG
+    echo "`date +\"%D %T\"`: bootme session started" >> $BM_LOG
+    echo "crontab: $REBOOT * * * $bootmeStuff" >> $BM_LOG
+
+}
+
+
+###############################################################################
+###############################################################################
+bootme_off ()
+{
+  #  Check for crontab entry
+    CRONENTRY="`cat /etc/crontab | grep bootme`"
+    if [ "$CRONENTRY" == "" ]
+    then
+  	echo "Bootme is already off."
+  	exit
+    fi
+    
+    # remove crontab entry
+    cp /etc/crontab.ORIG /etc/crontab 
+
+    echo
+    echo "Crontab entry removed"
+    echo
+
+  # de-initialize HTX autostart
+    echo "Disabling HTX autostart"
+
+    if [  "$CMVC_RELEASE" = "htxubuntu" ] 
+    then
+		if [ -f /etc/default/rcS.bootme ] ; then
+			cp /etc/default/rcS.bootme /etc/default/rcS
+		fi
+
+		if [ -f /etc/tmpfiles.d/tmp.conf.bootme ] ; then
+			cp /etc/tmpfiles.d/tmp.conf.bootme /etc/tmpfiles.d/tmp.conf
+		else
+			rm /etc/tmpfiles.d/tmp.conf
+		fi
+
+		if [ -f /lib/systemd/system/serial-getty@hvc0.service ] ; then
+    			rm /lib/systemd/system/serial-getty@hvc0.service
+		else
+			if [ -f /etc/init/hvc0.conf.bootme ] ; then
+				cp /etc/init/hvc0.conf.bootme /etc/init/hvc0.conf
+			fi
+		fi
+    else
+	if [ -e /etc/init/htx.conf ]
+    	then
+    		rm /etc/init/htx.conf
+    		mv /etc/init/serial.conf.bootme /etc/init/serial.conf
+    	else
+     		if [ -e /usr/lib/systemd/system/serial-getty@hvc0.service ]
+     		then
+     			rm /usr/lib/systemd/system/serial-getty@hvc0.service
+     		else
+    	 		# remove inittab entry
+     			cp /etc/inittab.bootme /etc/inittab
+		fi
+    	fi
+    fi
+              
+    # restore HTX profile to manual start
+    [ -e /usr/lpp/htx/OLD.htx_profile ] || cp "/usr/lpp/htx/.htx_profile" "/usr/lpp/htx/OLD.htx_profile"
+    cat /usr/lpp/htx/OLD.htx_profile | sed 's/htx_autostart\ .*/htx_autostart = "no"/' > /usr/lpp/htx/.htx_profile
+
+    # cause .profile to not run hxssup
+    [ -e /usr/lpp/htx/.autostart ] && rm -f /usr/lpp/htx/.autostart
+
+    # Remove the hidden "yes" file for the shutdown -t command
+    [ -e /tmp/.bootme ] && rm /tmp/.bootme
+  
+  # Remove copies of htxerr.bootme
+    [ -e /tmp/htxerr.bootme1 ] && rm /tmp/htxerr.bootme1
+    [ -e /tmp/htxerr.bootme2 ] && rm /tmp/htxerr.bootme2
+
+  # Remove the touched bootme.bypass file - if it exists
+    [ -e /usr/lpp/htx/bootme.bypass ] && rm /usr/lpp/htx/bootme.bypass
+
+  # Remove the previous run file information
+    [ -e /usr/lpp/htx/mdt/.run_mdt_name ] && rm /usr/lpp/htx/mdt/.run_mdt_name
+
+  # Log bootme off
+    echo "`date +\"%D %T\"`: bootme off" >> $BM_LOG
+    echo "`date +\"%D %T\"`: bootme session ended" >> $BM_LOG
+    echo >> $BM_LOG
+
+    echo
+    echo "HTX will no longer start automatically when the system is rebooted."
+    echo "This system must be rebooted before resuming normal use."
+    echo
+    echo "Press Enter or "y" to issue a \"reboot \" command - any other"
+    echo "key to continue in this shell."
+    echo
+
+    echo -e "Reboot? (Y/n): \c"
+    read yn
+    typeset -i ynn=$(echo $yn | wc -w)
+    typeset -u yn=$yn
+    if [[ $ynn = "0" || $yn = "Y" ]]
+       then reboot
+       else echo -e "\nReminder: When you are finished in this shell, type shutdown -r"
+            echo "          in order to complete resetting the test environment."
+    fi
+}
+
+
+###############################################################################
+###############################################################################
+usage ()
+{
+  echo "bootme v1.14.3.15"
+  echo
+  echo "Usage: bootme [on | off]"
+  echo "       bootme [on]       [nostart]"
+  echo
+  echo "bootme  on: cause HTX to automatically load and run on next reboot."
+  echo "bootme off: restores normal system operation"
+  echo
+  echo "bootme [on] nostart: bootme will log into HTX, but will not start."
+  echo
+  echo "Default settings for bootme can be changed in the following file:"
+  echo "/usr/lpp/htx/rules/reg/bootme/default"
+  echo
+
+  exit 0
+}
+
+
+###############################################################################
+###############################################################################
+check_space ()
+{
+  SpaceAvail=`df -P -k $1 | tail -1 | awk '{print $4}'`
+  SpaceAvail=$((SpaceAvail/1024))
+  [ $SpaceAvail -lt $2 ] && { echo "Insufficient space in $1 (needed $2 MB, have $SpaceAvail MB"; exit 1; }
+}
+
+
+###############################################################################
+###############################################################################
+#
+# main
+#
+###############################################################################
+###############################################################################
+
+  echo
+  echo "bootme v1.14.3.15"
+
+  BM_LOG=/tmp/bootme.log
+
+# If the second command line arguement is bypass, only execute crontab functions
+  [ "$2" = "bypass" ] && { CRONSET_ONLY="yes"; touch /usr/lpp/htx/bootme.bypass; }
+
+# pulls REBOOT statement from /usr/lpp/htx/rules/reg/bootme/default
+  rules=/usr/lpp/htx/rules/reg/bootme/default
+  REBOOT=$(grep "^REBOOT:" $rules | head -n1)
+  REBOOT=${REBOOT##*: }
+  [ -z "$REBOOT" ] && { echo "Please check the value of REBOOT in: $rules"; exit; }
+
+# checks BOOT_CMD statement from $rules
+  BOOT_CMD=$(grep "^BOOT_CMD:" $rules | head -n1)
+  BOOT_CMD=${BOOT_CMD##*: }
+  [ -z "$BOOT_CMD" ] && { echo "Please check the value of BOOT_CMD in: $rules"; exit; }
+
+# checks BOOT_WAIT statement from $rules
+  BOOT_WAIT=$(grep "^BOOT_WAIT:" $rules | head -n1 | awk '{ print $2 }')
+  [ -z "$BOOT_WAIT" ] && { echo "Please check the value of BOOT_WAIT in: $rules"; exit; }
+
+
+# select action
+  case $1 in
+
+      on|ON) bootme_on $2  ;;
+
+    off|OFF) bootme_off ;;
+
+          *) usage ;;
+
+  esac
+
+  sync; sync
+
+  exit 0
+

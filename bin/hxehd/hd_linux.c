@@ -1,0 +1,75 @@
+
+/* @(#)84	1.4.4.3  src/htx/usr/lpp/htx/bin/hxehd/hd_linux.c, exer_hd, htxubuntu 8/7/13 06:00:53 */
+
+#include <stdio.h>
+#include <string.h>
+#include <limits.h>
+#include "devinfo.h"
+#include "hxehd_common.h"
+
+
+#ifdef	__HTX_LINUX__
+
+#include <sys/ioctl.h>
+#include <linux/hdreg.h>
+#include <linux/fs.h>
+/* #include <sys/mount.h> */ 
+#include <sys/param.h>
+#include <errno.h>
+
+int	htx_ioctl(int d, int request, struct devinfo *info)
+{
+	unsigned long long disk_size = 0; 
+	unsigned int  sect_sz = 0;
+	unsigned long long  no_of_blks = 0;
+	int	retval = 0;
+	
+
+	if(info == NULL)  {
+		fprintf(stderr, "Unable to access memory, or parameter NULL !\n");
+		return	EINVAL;
+	}
+
+	/*
+	 * Only one request, none others are implemented
+	 */
+	switch(request)  {
+		case IOCINFO:
+			retval = ioctl(d, BLKSSZGET, &sect_sz);
+            if(retval < 0)  {
+                 return -1;
+            }
+			if(sect_sz == 0) { 
+				errno = EINVAL;  
+				return(-1); 
+			} 
+			retval = ioctl(d, BLKGETSIZE64, &disk_size); 
+			if(retval < 0)  {
+				return -1;
+			} 
+			no_of_blks = (disk_size / sect_sz);
+			if(no_of_blks & 0x01)
+				no_of_blks-- ; 
+
+			printf("sect_sz = %#x, no_of_blks = %#llx \n", sect_sz, no_of_blks); 	
+			info->devtype = DD_SCDISK;
+			info->un.scdk.blksize = (unsigned int) sect_sz;
+			info->un.scdk.numblks = (unsigned long long ) no_of_blks;
+			info->un.scdk.max_request = 0;
+			info->un.scdk.segment_size = 0;
+			info->un.scdk.segment_count = 0;
+			info->un.scdk.byte_count = 0;
+			break;
+
+		default:
+			return -1;
+			break;
+	}
+
+	return 0;
+}
+
+
+#endif	/* __HTX_LINUX__ */
+
+

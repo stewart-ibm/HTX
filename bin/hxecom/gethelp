@@ -1,0 +1,89 @@
+#!/usr/bin/perl
+# @(#)66	1.2  src/htx/usr/lpp/htx/bin/hxecom/gethelp, exer_com, htxubuntu 5/24/04 10:14:38
+#########################################################################
+
+$topic = $ARGV[0];
+
+$thishost = `hostname`;
+if($thishost =~ /iofnim/) {
+	$helpdir = "/nim/build_net/help";
+} else {
+	if(!(-e "/gethelp")) {
+		$res = `mkdir /gethelp`;
+	}
+	$res = `mount iofnim.austin.ibm.com:/nim/build_net /gethelp >/dev/null 2>&1`;
+
+	$helpdir = "/gethelp/help";
+}
+
+$editfile = "";
+
+if(!$topic) {
+	&show_help_files;
+	goto OUT;
+} else {
+	#see how many matches there are to *$topic* in the topics file.
+	# see if the topic file exists.. 
+	@list = `grep $topic $helpdir/topics`;
+	if($list[0] eq "") {
+		print("No match for you topic search\n");
+		&show_help_files;
+		goto OUT;
+	} elsif($list[1] ne "") {
+		print("Multiple matches found for you topic search\n");
+		foreach $item (@list) {
+			@tmpit = "";
+			@tmpit = split(/:/,$item);
+			print("$tmpit[0]\n");
+		}
+		print("Enter the exact topic you want to see.\n");
+		$targ = <STDIN>;	
+		$targ =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+	} else {
+		@tmpit = "";
+		@tmpit = split(/:/,$list[0]);
+		$targ = $tmpit[0];
+		$targ =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+	}
+	$res = `grep $targ: $helpdir/topics`;
+	print("Found $res\n");
+	#now were are down to an exact pattern, check to make sure.
+	$res =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+	@tmpit = "";
+	@tmpit = split(/:/,$res);
+	$editfile = "$tmpit[1]";
+
+	print("Found $topic, vi the file\n");
+	#show the user the topic file..
+	exec("vi", "$editfile");
+
+}
+OUT:
+if($thishost !~ /iofnim/) {
+	$res = `umount /gethelp`;
+}
+exit(0);
+
+sub show_help_files {
+	#print out the list of topics. 
+	print("Here is a current list of the help topics available.\n");
+	@lines = `cat $helpdir/topics`;
+	$writeline="";
+	$count =0;
+	foreach $line (@lines) {
+		@tmp="";
+		@tmp=split(/:/,$line);
+		$writeline = "$writeline" . " $tmp[0]";
+		if(++$count == 5) {
+			print("$writeline\n");
+			$writeline = "";
+			$count=0;
+		}
+	}
+	if($count > 0) {
+			print("$writeline\n");
+	}
+	
+	print("To see a help topic, enter gethelp topic_name\n");
+}
+

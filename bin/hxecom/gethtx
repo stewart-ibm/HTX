@@ -1,0 +1,162 @@
+#!/usr/bin/perl
+# @(#)67	1.2  src/htx/usr/lpp/htx/bin/hxecom/gethtx, exer_com, htxubuntu 5/24/04 10:14:59
+#########################################################################
+
+$port = 2003;
+$nimserver = "iofnim.austin.ibm.com";
+$cpback = "";
+
+$htx = $ARGV[0];
+if($htx =~ /htx43\w/i) {
+	  $htx =~ s/htx43\w/43X/i; 
+}
+if($htx) {
+	 $htx =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+}
+
+# see if I need dfs.. is htx in /nim/htx
+$res = `mkdir -p /nim/htx >/dev/null 2>&1`;
+$res = `mount $nimserver:/nim/htx /nim/htx >/dev/null 2>&1`;
+$res = `ls /nim/htx/$htx 2>/dev/null`;
+if($res && $htx) {
+	 print("$htx already in /nim/htx on $nimserver: do install\n");
+	$res = &doinstall();
+} else {
+
+	#*****************************************************************
+	#make sure this system is in the .rhosts file of the nim server.
+	#*****************************************************************
+	&send_command($nimserver,"ADD_HOST");
+
+	if(!$htx) {
+		#get the list of available htx levels. 
+		$res = `rsh $nimserver -l root "/nim/build_net/tools/listhtx dummy" 2>/dev/null`;
+		print("$res\n");
+		print("Enter one of the aixlevels listed above.\n");
+		$aixlevel = <STDIN>;
+	    $aixlevel =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+		$res = `rsh $nimserver -l root "/nim/build_net/tools/listhtx $aixlevel" 2>/dev/null`;
+		print("$res\n");
+		print("Enter one of the htxlevels listed above.\n");
+		$htx = <STDIN>;
+		$htx =~ s/[^_0-9a-zA-Z\/\)+]*$//;
+	}
+	print("Do you want to install $htx? y or n\n");
+	$ans = <STDIN>;
+	if($ans =~ /n/i) {
+		exit(0);
+	}
+
+	$res = `ls /nim/htx/$htx 2>/dev/null`;
+	if($res) {
+		 print("$htx already in /nim/htx on $nimserver: do install\n");
+		$res = &doinstall();
+	} else {
+		print("$htx not in /nim/htx on $nimserver: call findhtx\n");
+		print("Please be patient, I have to copy this from dfs to /nim/htx before it can be installed\n");
+		#this code will see if the htx level is in /nim/htx, if not it will
+		# try to find it.
+		$res = `rsh $nimserver -l root "/nim/build_net/tools/findhtx $htx" 2>/dev/null`;
+		if($res) {
+			print("$res\n");
+			exit(0);
+		} else {
+			print("do install after finding $htx\n");
+			$res = &doinstall();
+			$res = `rsh $nimserver -l root "rm /nim/htx/$htx 2>/dev/null"`;
+		}
+	}
+}
+$res = `umount /nim/htx`;
+
+exit(0);
+
+sub doinstall {
+		chdir("/nim/htx");
+		print("Do you want to uninstall the current htx level? y or n\n");
+		$ans = <STDIN>;
+		if($ans =~ /y/i) {
+			#save of the patch.level and  aixlevel and README.patch
+			if(-e "/usr/lpp/htx/aixlevel") {
+				$res = `cp /usr/lpp/htx/aixlevel /tmp/aixlevel`;
+			}
+			if(-e "/usr/lpp/htx/README.patch") {
+				$res = `cp /usr/lpp/htx/README.patch /tmp/README.patch`;
+			}
+			if(-e "/usr/lpp/htx/patch.level") {
+				$res = `cp /usr/lpp/htx/patch.level /tmp/patch.level`;
+			}
+			if(-e "/usr/lpp/htx/.netrc") {
+				$res = `cp /usr/lpp/htx/.netrc /tmp/.netrc`;
+			}
+			if(-e "/usr/lpp/htx/fixmdt") {
+				$res = `cp /usr/lpp/htx/fixmdt /tmp/fixmdt`;
+			}
+			$cpback = "yes";
+			print("Removing old version of htx\n\n");
+			$res = `installp -u htx`;
+			print("$res\n");
+		}
+		print("Are you sure you want to install the new level? y or n\n");
+		$ans = <STDIN>;
+		if($ans =~ /y/i) {
+			print("Installing new version $htx\n\n");
+			$res = `installp -qacd $htx -X -F all`;
+			print("$res\n");
+			#get newest build_net and jtricks..
+			$res = `/etc/getnet >/dev/null 2>&1`;
+			$res = `/etc/getjack >/dev/null 2>&1`;
+			#save of the patch.level and  aixlevel and README.patch
+			if($cpback) {
+					$res = `cp /tmp/aixlevel /usr/lpp/htx/aixlevel`;
+					$res = `cp /tmp/README.patch /usr/lpp/htx/README.patch`;
+					$res = `cp /tmp/patch.level /usr/lpp/htx/patch.level`;
+					$res = `cp /tmp/fixmdt /usr/lpp/htx`;
+					$res = `cp /tmp/.netrc /usr/lpp/htx`;
+					$cpback="";
+					
+			}
+			$res = `cp /usr/lpp/htx/etc/scripts/ver /etc`;
+		}
+		chdir("/");
+        return("");
+}
+
+ 
+sub send_command() {
+    local($nimserver,$cmd) = @_;
+    local($me);
+    $AF_INET = 2;	# set the domain family  internetwork: UDP, TCP, etc.
+    $SOCK_STREAM = 1; # set the type for socket to stream..
+
+    ($d1,$d2,$prototype) = getprotobyname("tcp");
+
+    $me = `hostname`;
+    chop($me);
+    ($d1,$d2,$d3,$d4,$rawclient) = gethostbyname($me);
+    $clientaddr = pack("Sna4x8",2,$port,$rawclient);
+
+    socket(SOCKET,$AF_INET,$SOCK_STREAM,$prototype) || die ("Failed to create socket");
+
+    bind(SOCKET,$clientaddr) || die ("Bind failed");
+
+    ($d1,$d2,$d3,$d4,$rawserver) = gethostbyname($nimserver);
+
+    $serveraddr = pack("Sna4x8",2,$port,$rawserver);
+
+	print("Connect to $nimserver\n");	
+    select(STDOUT);
+    connect(SOCKET,$serveraddr);
+
+    #WRITE
+    select(SOCKET);
+    $| = 1;
+    print SOCKET ("$cmd\n");
+
+    #READ
+    $ack = <SOCKET>;
+    close(SOCKET);
+
+    select(STDOUT);
+    return;
+}

@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# @(#)34	1.17.3.6  src/htx/usr/lpp/htx/setup/pdiagex.setup, htxbringup, htxubuntu 2/27/12 03:56:25
+
+
+# loading pdiagex kernel extension
+if [ "$CMVC_RELEASE" = "htxltsbml" ] 
+  then
+    modprobe pdiagex  > /dev/null 2>&1
+  else
+    lsmod | grep pdiagex >/dev/null 2>&1 || {
+      if [ -f /usr/lpp/htx/etc/kernext/pdiagex.ko ];
+      then
+        echo "Setting up pdiagex.ko"
+        insmod -f /usr/lpp/htx/etc/kernext/pdiagex.ko
+        rm -f /dev/pdiagchar
+        major=`cat /proc/devices | awk '/pdiagex/ {print $1}'`
+        mknod /dev/pdiagchar c $major 0
+      else
+        echo "/usr/lpp/htx/etc/kernext/pdiagex.ko not found"
+      fi
+    }
+  fi  
+

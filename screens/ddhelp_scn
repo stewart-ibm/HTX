@@ -1,0 +1,128 @@
+--------------------------------------------------
+| HELP Screen Table of Contents    Page  1 of  8 |
+|                                                |
+|                                                |
+| Table of Contents........................... 1 |
+| Paging the Screen........................... 2 |
+| Refreshing the Screen....................... 3 |
+| Acknowledging an Error...................... 4 |
+| Turning On/Off the Sound (beeping).......... 5 |
+| Exiting the DST Screen...................... 6 |
+| DST Status Codes............................ 7 |
+| Toggle between time last error and cycles... 8 |
+|                                                |
+|                                                |
+|        F = Foward       Q = Quit               |
+--------------------------------------------------
+--------------------------------------------------
+|                                  Page  2 of  8 |
+|                                                |
+| I. Paging the Screen:                          |
+|                                                |
+|     To page foward in the device status screen |
+|   or this help screen, keyin the letter 'f'.   |
+|                                                |
+|     To page back in the device status screen   |
+|   or this help screen, keyin the letter 'b'.   |
+|                                                |
+|                                                |
+|                                                |
+|                                                |
+|  F = Foward     B = Back     Q = Quit          |
+--------------------------------------------------
+--------------------------------------------------
+|                                  Page  3 of  8 |
+|                                                |
+| II. Refreshing the Screen:                     |
+|                                                |
+|     Sometimes due to noise on the line or      |
+|   operator error the screen can become messed  |
+|   up.  When this occurs, you can get a new     |
+|   "refreshed" screen by entering the letter    |
+|   'r'.                                         |
+|                                                |
+|                                                |
+|                                                |
+|                                                |
+|  F = Foward     B = Back     Q = Quit          |
+--------------------------------------------------
+--------------------------------------------------
+|                                  Page  4 of  8 |
+|                                                |
+| III. Acknowledging an Error:                   |
+|                                                |
+|     When a new error from a Hardware Exerciser |
+|   is detected, the ERROR indicator is shown    |
+|   in the upper left hand corner of the screen  |
+|   and an annoying beep is repeated about every |
+|   two seconds.                                 |
+|     To erase the ERROR indicator and stop that |
+|   #@*?!! beeping, type the letter 'a'.         |
+|                                                |
+|                                                |
+|  F = Foward     B = Back     Q = Quit          |
+--------------------------------------------------
+--------------------------------------------------
+|                                  Page  5 of  8 |
+|                                                |
+| IV. Turning Off/On the Sound (Beeping):        |
+|                                                |
+|     When errors are occuring frequently you    |
+|   will probably want to turn off the beeping.  |
+|                                                |
+|     To turn off the beeping, press the letter  |
+|   's'.  A message will appear at the bottom    |
+|   of the screen to let you know that the       |
+|   beeping has been disabled.                   |
+|                                                |
+|                                                |
+|  F = Foward     B = Back     Q = Quit          |
+--------------------------------------------------
+--------------------------------------------------
+|                                  Page  6 of  8 |
+|                                                |
+|     To turn the beeping back on, just press    |
+|   the letter 's' again.                        |
+|                                                |
+| V. Exiting the DST Screen:                     |
+|                                                |
+|     To exit the DST screen and go back to the  |
+|   main menu.  Just type the letter 'q' for     |
+|   quit.                                        |
+|                                                |
+|                                                |
+|                                                |
+|  F = Foward     B = Back     Q = Quit          |
+--------------------------------------------------
+--------------------------------------------------
+|                                  Page  7 of  8 |
+|                                                |
+| VI. DST Status Codes:                          |
+|                                                |
+|     The definitions of the HE status codes     |
+|     are:                                       |
+|                                                |
+|        "  " = HE program not yet started.      |
+|        "DD" = HE program is dead.              |
+|        "HG" = HE program is hung.              |
+|        "RN" = HE program is running.           |
+|        "ST" = HE program has been stopped.     |
+|                                                |
+|  F = Foward     B = Back     Q = Quit          |
+--------------------------------------------------
+--------------------------------------------------
+|                                  Page  8 of  8 |
+|                                                |
+| VII.  To toggle between the date/time of last  |
+|       error and the cycle count type the       |
+|       letter 'c'.                              |
+|                                                |
+|                                                |
+|                                                |
+|                                                |
+|                                                |
+|                                                |
+|                                                |
+|                                                |
+|                 B = Back     Q = Quit          |
+--------------------------------------------------
