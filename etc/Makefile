@@ -8,15 +8,15 @@ LOCAL_CLEAN=$(patsubst %,%.cleanl,${TARGET})
 .PHONY: all ${SUBDIRS} clean ${SUBDIRS_CLEAN} clean_local ${LOCAL_CLEAN}
 
 all: ${SUBDIRS}
-	${MKDIR} ${SHIPDIR}/etc/
-	${CP} ${TARGET} ${SHIPDIR}/etc/
+	${CP} ${TARGET} ${ETC}
 
 ${SUBDIRS}:
-	${MKDIR} ${SHIPDIR}/etc/
+	@echo "making dir - "${ETC}
+	${MKDIR} ${ETC}
 	make -C $@
 
 clean: ${SUBDIRS_CLEAN}
-	${RM} -f ${SHIPDIR}/etc/version
+	${RM} -f ${ETC}/version
 
 ${SUBDIRS_CLEAN}:
 	@make -C $(@:.clean=) clean

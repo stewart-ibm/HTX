@@ -46,8 +46,9 @@ TARGET= AD_scn \
 .PHONY: all clean ${TARGET}
 
 all: ${TARGET}
-	${MKDIR} ${SHIPDIR}/etc/screens_stx/
-	${CP} ${TARGET} ${SHIPDIR}/etc/screens_stx/
+	@echo "making dir - "${SCREENS_STX}
+	${MKDIR} ${SCREENS_STX}
+	${CP} ${TARGET} ${SCREENS_STX}/
 
 clean:
-	${RM} -rf ${SHIPDIR}/etc/screens_stx/*
+	${RM} -f ${SCREENS_STX}/*

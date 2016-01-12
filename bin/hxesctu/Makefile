@@ -32,8 +32,8 @@ all: ${OBJECTS}
 	${CP} ${TARGET} ${SHIPBIN}
 
 
-#%.o: ../hxefpu64/%.s
-#	${AS} -c $< -o $@
+%.o: ../hxefpu64/%.s
+	${AS} -c $< -o $@
 
 clean:
 	${RM} -f *.o ${TARGET} ${SHIPBIN}/${TARGET}

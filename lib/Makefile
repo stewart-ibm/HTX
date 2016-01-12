@@ -9,6 +9,7 @@ all: ${SUBDIRS}
 	${MKDIR} ${EXPLIB}
 
 ${SUBDIRS}:
+	@echo "making dir - "${EXPLIB}
 	${MKDIR} ${EXPLIB}
 	make -C $@
 

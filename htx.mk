@@ -1,4 +1,9 @@
 HTX_RELEASE="htxubuntu"
+ifeq ($(HTX_RELEASE), $(filter ${HTX_RELEASE},"htxubuntu" "htxsles12" "htxrhel7LE"))
+ARCH=ppc64le
+else
+ARCH=ppc64
+endif
 MKDIR=/bin/mkdir -p
 CC=/usr/bin/gcc -m64
 CPP=/usr/bin/g++ -m64
@@ -6,29 +11,31 @@ RM=/bin/rm
 CP=/bin/cp
 AR=/usr/bin/ar
 LD=/usr/bin/ld
-ifeq ($(HTX_RELEASE), $(filter ${HTX_RELEASE},"htxubuntu","htxsles12","htxrhel7LE"))
-	CFLAGS=-D__HTX_LINUX__ -DTRUE=1 -DFALSE=0 -D__HTX_LE__ -D__64BIT__
-else
-	CFLAGS=-D__HTX_LINUX__ -DTRUE=1 -DFALSE=0 -D__64BIT__
-endif
 LDFLAGS=
-
-#Define TOPDIR as source top
-TOPDIR=
+CFLAGS=-D__HTX_LINUX__ -DTRUE=1 -DFALSE=0 -D__64BIT__
+ifeq ($(HTX_RELEASE), $(filter ${HTX_RELEASE},"htxubuntu" "htxsles12" "htxrhel7LE"))
+	CFLAGS+= -D__HTX_LE__
+endif
+#Set the TOPDIR 
+TOPDIR=/home/mehpatel/test_tree/HTX/
+SHIPDIR=${TOPDIR}/install/${ARCH}/
+SHIPTOPDIR=${SHIPDIR}/usr/lpp/htx/
 INCLUDES=-I./ -I/usr/include/ -I${EXPINC}
-SHIPDIR=${TOPDIR}/inst.images/ppc64_linux_2/
-SCRIPTS=${SHIPDIR}/usr/lpp/htx/etc/scripts/
-RUNCLEANUP=${SHIPDIR}/usr/lpp/htx/runcleanup/
-RUNSETUP=${SHIPDIR}/usr/lpp/htx/runsetup/
-EXPORT=${TOPDIR}/export/ppc64_linux_2/
+EXPORT=${TOPDIR}/export/${ARCH}/
 EXPINC=${EXPORT}/include/
 EXPLIB=${EXPORT}/lib/
 LIBPATH=-L${EXPLIB}/
-SHIPBIN=${SHIPDIR}/usr/lpp/htx/bin/
-CLEANUP=${SHIPDIR}/usr/lpp/htx/cleanup/
-PATTERN=${SHIPDIR}/usr/lpp/htx/pattern/
-REGRULES=${SHIPDIR}/usr/lpp/htx/rules/reg/
-SETUP=${SHIPDIR}/usr/lpp/htx/setup/
-MDT=${SHIPDIR}/usr/lpp/htx/mdt/
-SCREENS=${SHIPDIR}/usr/lpp/htx/screens/
-DOCUMENTATION=${SHIPDIR}/usr/lpp/htx/Documentation/
+SHIPBIN=${SHIPTOPDIR}/bin/
+RUNCLEANUP=${SHIPTOPDIR}/runcleanup/
+RUNSETUP=${SHIPTOPDIR}/runsetup/
+CLEANUP=${SHIPTOPDIR}/cleanup
+PATTERN=${SHIPTOPDIR}/pattern
+REGRULES=${SHIPTOPDIR}/rules/reg/
+SETUP=${SHIPTOPDIR}/setup/
+MDT=${SHIPTOPDIR}/mdt/
+ETC=${SHIPTOPDIR}/etc/
+SCRIPTS=${ETC}/scripts/
+SCRIPTS_STX=${ETC}/scripts_stx/
+SCREENS=${ETC}/screens/
+SCREENS_STX=${ETC}/screens_stx/
+
