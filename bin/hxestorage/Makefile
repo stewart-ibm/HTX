@@ -29,7 +29,7 @@ SRCS = $(patsubst %.o, %.c, $(OBJECTS))
 
 all: ${OBJECTS}
 	${CC} ${LDFLAGS} ${LIBPATH} ${OBJECTS} ${LIBS} -o ${TARGET}
-	${CP} ${TARGET} ${SHIPDIR}/${IDIR}
+	${CP} ${TARGET} ${SHIPBIN}/
 
 %.o: %.c
 	${CC} ${CFLAGS} ${INCLUDES} -c $< -o $@

@@ -36,11 +36,10 @@ ${SUBDIRS}:
 	make -C $@
 
 clean: ${SUBDIRS_CLEAN}
-	${RM} -f *.o  ${SHIPBIN}/${TARGET}
+	${RM} -f *.o ${TARGET} ${SHIPBIN}/${TARGET}
 
 ${SUBDIRS_CLEAN}:
 	@make -C $(@:.clean=) clean
 
 %.clean: %
 	@make -C $< clean
-

@@ -12,8 +12,9 @@ TARGET= eMerge.pl \
 .PHONY: all clean
 
 all: ${TARGET}
-	${MKDIR} ${SHIPDIR}/etc/scripts_stx/
-	${CP} ${TARGET} ${SHIPDIR}/etc/scripts_stx/
+	@echo "making dir - "${SCRIPTS_STX}
+	${MKDIR} ${SCRIPTS_STX}
+	${CP} ${TARGET} ${SCRIPTS_STX}
 
 clean:
-	${RM} -rf ${SHIPDIR}/etc/scripts_stx/*
+	${RM} -f ${SCRIPTS_STX}/*

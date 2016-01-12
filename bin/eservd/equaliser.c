@@ -31,7 +31,7 @@ test_config_struct test_config;
 int equaliser_debug_flag;
 extern char HTXPATH[];
 extern char cfg_file[];
-extern volatile int system_call;
+extern int system_call;
 
 int num_tests = 0, total_tests=0;
 int pattern_length = UTILIZATION_QUEUE_LENGTH;

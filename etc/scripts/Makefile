@@ -10,7 +10,6 @@ TARGET = \
 	devconfig    \
 	htx.cleanup  \
 	heconf   \
-	htxconfig        \
 	htxinfo.pl \
 	htxselect.pl \
 	stx.cleanup \
@@ -63,7 +62,7 @@ TARGET = \
 	stx_shift_framework.readme \
 	create_all_mdt_with_powermixer
 
-ifeq ($(HTX_RELEASE), $(filter ${HTX_RELEASE}, "htxfedora", "htxltsbml"))
+ifeq ($(HTX_RELEASE), $(filter ${HTX_RELEASE}, "htxfedoraBE" "htxltsbml"))
 	TARGET += create_mdt_mpp
 endif
  
@@ -78,5 +77,6 @@ ifeq (${HTX_RELEASE}, "htxltsbml")
 endif
 
 all: ${TARGET}
+	@echo "making dir - "${SCRIPTS}
 	${MKDIR} ${SCRIPTS}
 	${CP} ${TARGET} ${SCRIPTS}

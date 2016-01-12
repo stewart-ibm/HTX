@@ -16,7 +16,7 @@ LIBS =-lpthread -lhtx64 -lmisc64
 
 all: ${OBJECTS}
 	${CC} ${LDFLAGS} ${LIBPATH} ${OBJECTS} ${LIBS} -o ${TARGET}
-	${CP} ${TARGET} ${SHIPDIR}/${IDIR}
+	${CP} ${TARGET} ${SHIPBIN}/
 
 %.o: %.c
 	${CC} ${CFLAGS} ${INCLUDES} -c $< -o $@

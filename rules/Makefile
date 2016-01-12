@@ -6,6 +6,7 @@ SUBDIRS_CLEAN = $(patsubst %,%.clean,$(SUBDIRS))
 .PHONY: all ${SUBDIRS} clean ${SUBDIRS_CLEAN}
 
 all: ${SUBDIRS}
+	@echo "making dir - "${REGRULES}
 	${MKDIR} ${REGRULES} 
 
 ${SUBDIRS}:

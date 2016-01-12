@@ -19,12 +19,15 @@ ${SUBDIRS}:
 	make -C $@
 
 all: ${SUBDIRS}
-	${MKDIR} ${SHIPDIR}/usr/lpp/htx/
-	${CP} ${TARGET} ${SHIPDIR}/usr/lpp/htx/
+	@echo "making dir - "${SHIPTOPDIR}
+	${MKDIR} ${SHIPTOPDIR}
+	${CP} ${TARGET} ${SHIPTOPDIR}
 
 .PHONY: clean ${SUBDIRS_CLEAN} clean_local
 
 clean: ${SUBDIRS_CLEAN} clean_local
+	@echo "Removing dir - "${SHIPDIR}
+	${RM} -rf ${SHIPDIR}
 
 ${SUBDIRS_CLEAN}:
 	@make -C $(@:.clean=) clean
