@@ -21,6 +21,7 @@ TARGET = \
 	boot_pre   \
 	stx_bootme    \
 	stx_bootmeStuff  \
+	gen_sysdata \
 	gen_vpd   \
 	exer_setup \
 	create.trial.log.linux	\
