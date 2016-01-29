@@ -32,13 +32,6 @@
   fi
 
 
-  if [ $CMVC_RELEASE = "htxltsbml" ];
-  then
-      echo "Creating mdt.ptsall ....."
-      cat /dev/null | ./ptsconf.awk > ${HTXMDT}mdt.ptsall
-      ln -sf ${HTXMDT}mdt.ptsall ${HTXECG}ptsall.bu
-  fi
-  
   cat ${HTXMDT}mdt.all | create_mdt_with_devices.awk  sctu > ${HTXMDT}mdt.sctu
   cat ${HTXMDT}mdt.all | create_mdt_with_devices.awk  fpscr fpu cache cpu rng tlbie > ${HTXMDT}mdt.cpu
   cat ${HTXMDT}mdt.all | create_mdt_without_devices.awk sctu fpscr mem tlbie fpu cache cpu rng > ${HTXMDT}mdt.io
@@ -56,7 +49,7 @@
 	then
 		create_my_mdt rng:rules.default > ${HTXMDT}mdt.rng
 		cp ${HTXMDT}mdt.io ${HTXMDT}mdt.ci
-        cat ${HTXMDT}/mdt.rng | create_mdt_without_devices.awk default >> ${HTXMDT}mdt.ci
+		cat ${HTXMDT}/mdt.rng | create_mdt_without_devices.awk default >> ${HTXMDT}mdt.ci
 	fi
 
 	# Set cache rulefile based on architecture. 
@@ -291,8 +284,6 @@
 	create_ab_mem_mdt 2>/dev/null
 	create_mdt_ab 2>/dev/null
 	create_mdt_xyz 2>/dev/null
-	create_mdt_powermixer.sh 2>/dev/null
-	create_mdt_ewm 2>/dev/null
   fi
   
   # Create mdt mdt.eq_cpu_mem_100 for 90% mem and 100% cpu usage.
@@ -306,17 +297,6 @@
     ln -sf ${HTXMDT}mdt.mem_nest ${HTXECG}ecg.mem_nest
   fi
 
-# Create mdt.bsr
-  #if [ $proc_ver_dec -lt 75 ]; # Do not create bsr in P8.
-  #then
-    #create_mdt_bsr
-  #fi
-  
-  # calling TPSM mdt creating script.
-  #if [[ $CMVC_RELEASE == "htxltsbml" || $CMVC_RELEASE == "htxsles11"  || $CMVC_RELEASE == "htxrhel6" || $CMVC_RELEASE == "htxrhel7" || $CMVC_RELEASE == "htxfedora" ]];
-  #then
-    /usr/lpp/htx/etc/scripts/create_mdt_tpsm_new 2> /dev/null
-  #fi
  
 # Append hxecom stanza's if possible to IO mdt's.
 # First Check if Netperf module is present.
@@ -344,12 +324,6 @@ then
 
 			echo  >> ${HTXMDT}/mdt.nest.io
 			cat /tmp/mdt.nets >> ${HTXMDT}/mdt.nest.io
-
-			#if [ $proc_ver_dec -lt 75 ]; # Do not create bsr in P8.
-			#then
-				#echo  >> ${HTXMDT}/mdt.bsr.mem.io 
-				#cat /tmp/mdt.nets >> ${HTXMDT}/mdt.bsr.mem.io
-			#fi
 		fi
 	fi
 else 
@@ -360,79 +334,16 @@ else
 	fi
 fi	
 
-
-  	
-if [ $proc_ver_dec -ge 75 ]
-then
-	[ $CMVC_RELEASE = "htxltsbml" ] && create_mdt_mpp
-
-	kvm_host=`grep platform /proc/cpuinfo | grep -c PowerNV`
-	[ $CMVC_RELEASE = "htxfedora" -a $kvm_host -ne 0 ] && create_mdt_mpp
-fi
-
-if [[ $CMVC_RELEASE == "htxltsbml" ]];
-then
-  if [ $proc_ver_dec -ge 75 ]; 
-  then
-	create_mdt_fastipi
-  fi
-fi
-
-if [[ $CMVC_RELEASE == "htxubuntu"  ]];
-then
-
-	create_my_mdt afu[0-9].[0-9]d:default > ${HTXMDT}/mdt.memcopy
-
-	# Create surelock stanza's 
-	surelock_default=`cat /tmp/cflash_parts | awk  '{sub(/ *$/, "", $0)} /./ { printf("%s.*: ",$0)}'`	
-	if [ "$surelock_default" != "" ];
-	then
-		create_my_mdt $surelock_default >  ${HTXMDT}/mdt.surelock
-	fi
-
-fi 
-
-if [[ $CMVC_RELEASE == "htxrhel72le" ]];
-then
-	/usr/lpp/htx/etc/scripts/create_surelock_mdt
-fi
-
-if [[ $CMVC_RELEASE == "htxrhel72le" || $CMVC_RELEASE == "htxubuntu" ]];
-then
-	
-	# Create mdt.nvidia here
-	create_my_mdt nvidia:default > ${HTXMDT}/mdt.nvidia
-	
-	create_my_mdt nvidia:rules.BW_test > /usr/lpp/htx/mdt/mdt.nest_GPU_BW_char
-	cat /usr/lpp/htx/mdt/mdt.nest | create_mdt_without_devices.awk default >> /usr/lpp/htx/mdt/mdt.nest_GPU_BW_char
-
-	create_my_mdt nvidia:rules.BW_test > /usr/lpp/htx/mdt/mdt.mem_nest_GPU_BW_char
-	cat /usr/lpp/htx/mdt/mdt.mem_nest | create_mdt_without_devices.awk default >> /usr/lpp/htx/mdt/mdt.mem_nest_GPU_BW_char
-fi
-
 # Feature#938362. Adding cpu-fpu combo rule for characterization.
 create_my_mdt fpu:fpu_cpu_combo.p8 >  ${HTXMDT}/mdt.bu_combo_char
 cat ${HTXMDT}mdt.all | create_mdt_without_devices.awk default cpu fpu sctu >> ${HTXMDT}/mdt.bu_combo_char
 create_my_sctu_stanzas.awk CHARACTERIZATION >> ${HTXMDT}mdt.bu_combo_char
 
+if [[ -f /usr/lpp/htx/.internal ]];
+then
+	/usr/lpp/htx/etc/scripts/devconfig_internal
+fi
 
-#For all lancer Ports: mdt.nic
-#mdt.st = mdt.bu + mdt.nic - mdt.com
-#mdt.xxx.ioX.st = mdt.xxx.ioX + mdt.nic - mdt.com
-#create_mdt_io_st
-
-# Please keep the call to script create_all_mdt_with_tpsm at the end, when all mdt's have
-# been created.
-#if [[ $CMVC_RELEASE == "htxltsbml" || $CMVC_RELEASE == "htxsles11"  || $CMVC_RELEASE == "htxrhel6" || $CMVC_RELEASE == "htxrhel7" || $CMVC_RELEASE == "htxfedora" ]];
-#then
-  #/usr/lpp/htx/etc/scripts/create_all_mdt_with_tpsm -pallmdt 1 -pattern _tpsm -mdt mdt.tpsm
-  /usr/lpp/htx/etc/scripts/create_all_mdt_with_tpsm 2> /dev/null
-#fi
-
-# Please keep the call to script create_all_mdt_with_powermixer at the end, when all mdt's have
-# been created.
-
-/usr/lpp/htx/etc/scripts/add_mdts
 if [[ $BTF_SHIFT_ENV -ne 1 ]];
 then
 	mv ${HTXMDT}/mdt.everything ${HTXMDT}/mdt.all    

@@ -85,7 +85,7 @@ BEGIN {
     system("./htxinfo.pl > ../../htxlinuxlevel ");
     system("(echo 1 > /proc/sys/kernel/kdb) 2> /dev/null");
     system("mkdir /tmp/htxraw 2> /dev/null ");
-    system("lspci -v -D 2> /dev/null | ./devlist.awk > /tmp/devlist.txt"); 
+    system("lspci -v -D 2> /dev/null | ./devlist.awk > /tmp/devlist.txt 2> /dev/null"); 
     system("lsusb -v 2> /dev/null | /usr/lpp/htx/etc/scripts/rem_usb_floppy.awk");
  
 ######################## MDTs CREATION LOGIC START ############################
@@ -130,8 +130,6 @@ BEGIN {
 	num_mp_lines = snarf("cat /tmp/mpath_parts  2> /dev/null | wc | awk 'NR==1 {print $1}'");	
 	num_lines_lv = ""; 
 	num_lines_lv = snarf("cat /tmp/lvpart 2> /dev/null | wc | awk 'NR==1 {print $1}'"); 
-	num_cflsh_lines = "";
-	num_cflsh_lines = snarf("cat /tmp/cflash_parts | wc | awk 'NR==1 {print $1}'");
 	
 	tmp = ""; 
 	dev = ""; 
@@ -265,41 +263,6 @@ BEGIN {
 	    }
 	} 
  
-	if(num_cflsh_lines) { 
-
-		if(system("test -f /tmp/test_phylun") == 0) {
-			rules="default.phy" ;
-		} else {  	
-			rules="default"; 
-		}
-
-		for(i=1; i <(num_cflsh_lines +1); i++) { 
-			tmp=sprintf("cat /tmp/cflash_parts 2> /dev/null | awk 'NR==%d {print $1}'",i);
-        	dev=snarf(tmp);
-			dev_path=sprintf("/dev/%s",dev); 
-			tmp=sprintf("sg_readcap -b %s | awk ' { print strtonum($1)} ' ", dev_path); 
-			size=snarf(tmp); 
-			tmp = sprintf("cat /usr/lpp/htx/rules/reg/hxesurelock/%s | awk -F= '/chunk_size/  {print $2}'", rules); 
-			chunk_blks= snarf(tmp); 
-			if(chunk_blks == 0) { 
-					num_instances = 1; 
-			} else { 
-					num_instances = (size / (chunk_blks));  
-			}
-			# printf("dev = %s, num_instances=%d, size=%s chunk_blks=%s\n", dev_path, num_instances, size,  chunk_blks); 
-			
-			if(num_instances > 64) { 
-				num_instances = 64
-			}
-			# printf("dev = %s, num_instances=%d, size=%s chunk_blks=%s\n", dev_path, num_instances, size,  chunk_blks); 
-		
-			for(count=0; count < num_instances; count ++) { 
-				dev_instnace=sprintf("%s.%s",dev,count); 
-				mkstanza("hxesurelock", "CAPI FLASH", "LUN",dev_instnace, "hxestorage",rules, rules)
-			}
-		}
-	}
-
 	command = ""; 
 	result = ""; 
 	devname = ""; 
@@ -433,99 +396,6 @@ BEGIN {
             }
 	} 
 
-	if(CMVC_RELEASE == "htxubuntu") {
-
-		cmd = "";
-		temp_cmd = "";
-		cmd = "ls /dev/cxl/ | awk '/afu[0-9].[0-9]d/ { print $1 }'";
-
-		while(cmd | getline afu_device) {
-			temp_cmd = sprintf("cat /sys/class/cxl/%s/device/mode",afu_device); 	
-			if(snarf(temp_cmd) == "dedicated_process") { 	
-				mkstanza("hxecapi", "AFU MEMCOPY", "Corsa A5", afu_device, "hxecapi", "default","default");
-			}		
-		}
-        close(cmd);
-
-		#Hxediag stanza enabled only on HTX ubuntu Release 
-		ip=snarf("hostname -i"); 
-		split(ip, ip_array, " "); 
-		for (cnt in ip_array) { 
-			dev=sprintf("ip -o -4 addr show | awk ' /%s/ { print $2 }' ", ip_array[cnt]);
-			primary_iface[cnt]=snarf(dev); 	
-		}
-
-		cmd="ip link show | cut -d : -f 2 | awk '/eth[0-9]/ || /en[aA-zA]/' |tr -d ' '";
-		while( cmd | getline intface ) {
-			found = 0; 
-			for(cnt in primary_iface) { 
-				if(intface ~ primary_iface[cnt]) { 
-					found = 1; 
-					break; 
-				} 
-			} 
-			if(found == 0) { 
-				cmd1=sprintf("ethtool -i %s | awk -F : ' {print $2}' \n", intface);
-				driver=snarf(cmd1);
-				if(driver ~ /tg3/ || driver ~ /bnx2x/) {
-					mkstanza("hxediag", "Broadcom Ethernet","NIC",intface,"hxediag", "default", "default" );   
-				}
-				if(driver ~ /mlx4_en/) { 
-					mkstanza("hxediag", "Mellanox RoCE", "NIC",intface,"hxediag", "default", "default" );
-				}
-			}
-		}
-		close(cmd);
-
-	
-		#Enable hydepark diag test for ubuntu only right now .. 
-		cmd="ls /sys/class/infiniband/ 2>/dev/null | awk ' /mlx[0-9]_[0-9]/'";	
-		rules="default.ib"; 
-		adaptdesc="IB";
-		devicedesc="";
-		gp_dev = 0;
-		while( cmd | getline ib_dev ) {
-			# Gather some info about this device. 
-			cmd1=sprintf("cat /sys/class/infiniband/%s/board_id \n", ib_dev); 
-			dev_name=snarf(cmd1);
-			close(cmd1); 
-			cmd1=sprintf("ls /sys/class/infiniband/%s/device/net/ | awk '/eth[0-9]/' \n", ib_dev);
-			roce=snarf(cmd1); 
-			close(cmd1);
-			cmd1=sprintf("ls /sys/class/infiniband/%s/device/net/ | awk '/ib[0-9]/' \n", ib_dev);
-			ipoib=snarf(cmd1); 
-			close(cmd1); 
-            if(dev_name ~/IBM2190110032/) { # Glacier Park
-                rules="default.ib_gp";
-				devicedesc="Glacier Park";	
-				gp_dev += 1; 
-            } else if(dev_name ~/IBM1210111019/) { # Hyde Park
-                rules="default.ib";
-				devicedesc="Hyde Park";
-			} else if(dev_name ~/IBM2180110032/) { # GP 1 Port 
-				rules="ib_gp1p"; 
-				devicedesc="GP 1Port"; 
-            } else {
-                continue;
-            }
-			# printf("ib_dev=%s, devicedesc=%s, roce=%s, ipoib=%s, dev_name=%s, rules = %s\n",ib_dev, devicedesc, roce, ipoib, dev_name, rules);
-			if(roce) continue;  
-			if(devicedesc ~ /Glacier Park$/ && ((gp_dev % 2 ) == 0)) continue; 
-			mkstanza("hxediag", adaptdesc, devicedesc, ib_dev, "hxediag", rules, rules); 
-		} 
-		close(cmd);  
-	}
-	
-	if((CMVC_RELEASE == "htxrhel72le") || (CMVC_RELEASE == "htxubuntu")) {
-		gpu_present = snarf("nvidia-smi -L  2>/dev/null | grep -i GPU | wc -l");
-		if(gpu_present) { 
-			for(gpu=0;gpu < gpu_present; gpu ++) { 
-				device=sprintf("nvidia%d",gpu); 
-				mkstanza("hxenvidia", "NVIDIA GPU", "TeslaK40",device, "hxenvidia", "default","default"); 
-				cont_on_err("NO");
-			} 
-		} 
-	}
 
 # SCTU Stanza creation.  
 # Create SCTU Stanzas for lpars with dedicated cpus.
@@ -671,6 +541,12 @@ BEGIN {
 		if((CMVC_RELEASE == "htxrhel72le") || (CMVC_RELEASE == "htxrhel7") || (CMVC_RELEASE == "htxrhel6" )) {
 			mkstanza("hxecorsa", "chip", "Misc", "genwqe0_card", "hxecorsa", "default", "");
 		}
+    }
+
+
+    ibm_internal = snarf("ls -l /usr/lpp/htx/.internal 2> /dev/null | wc -l");
+    if (ibm_internal) {
+        system("/usr/lpp/htx/etc/scripts/htxconf_internal.awk");
     }
 }
 
