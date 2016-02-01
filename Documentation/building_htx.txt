@@ -1,0 +1,10 @@
+Steps to build HTX:
+1. Download the source from git
+2. Edit htx.mk file to point TOPDIR to downloaded HTX source.
+   Also set HTX_RELEASE variable to appropriate distro for which you 
+   are building HTX source for. Possible values are:
+   htxubuntu, htxrhel72le, htxrhel7, htxsles12, htxfedora, htxfedorale
+3. To compile: make all
+4. To make deb package: make deb
+5. To clean: make clean
+6. To make rpm package: work in progress
