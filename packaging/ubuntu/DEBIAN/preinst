@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -e
+
+case "$1" in
+	install)
+		if ! id -g htx > /dev/null 2>&1 ; then groupadd htx -o -g 0 ; fi
+		sync
+		sleep 1
+		if ! id htx > /dev/null 2>&1 ; then useradd -g htx -d /usr/lpp/htx -s /bin/bash -u 0 -o htx ; fi
+		rm -rf /usr/lpp/htx 2>/dev/null	
+	;;
+
+	abort-upgrade|abort-remove|abort-deconfigure)
+		echo "$1"
+	;;
+
+	*)
+		echo "postinst called with unknown argument \`\$1'" >&2
+		exit 0
+	;;
+esac
+
+exit 0
