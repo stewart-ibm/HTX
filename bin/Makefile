@@ -4,6 +4,10 @@ SUBDIRS= hxssup hxsmsg hxstats eservd eserv_cmd stxclient htxd hxesamp show_sysc
 	hxestorage hxecom hxedapl hxemem64 hxetape hxehd hxesctu hxefpu64 hxecd  \
 	hxecache hxerng bufdisp hxeasy hxefpscr hxefabricbus
 
+ifeq ($(HTX_RELEASE), $(filter ${HTX_RELEASE},"htxrhel72le" "htxrhel7"))
+	SUBDIRS+=hxecorsa
+endif
+
 SUBDIRS_CLEAN = $(patsubst %,%.clean,$(SUBDIRS))
 
 .PHONY: all clean ${SUBDIRS} ${SUBDIRS_CLEAN}

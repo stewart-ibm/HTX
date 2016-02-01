@@ -1,0 +1,7 @@
+Package: htxubuntu
+Version:
+Section: base
+Priority: optional
+Architecture: ppc64el
+Maintainer: Please see Maintainer file in source tree. 
+Description: HTX [Hardware Test eXecutive] is a hardware validation suite for POWER processor based server. HTX is used by various IBM power system validation labs to verify the System hardware design. It is used during system bringup, integration, characterization, I/O Verification and manufacturing. The goal of HTX is to stress test the system by exercising all hardware components concurrently in order to uncover any hardware design flaws and hardware-hardware or hardware-software interaction issues.  HTX runs on top of operating system.

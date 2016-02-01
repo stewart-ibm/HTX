@@ -1,0 +1,11 @@
+HTX is maintained by following developers. If you have any contribution to existing code
+do send it to one of the HTX developers. 
+
+mehul.patel@in.ibm.com - Mehulkumar Patel
+preedhir@in.ibm.com - Preeti Dhir
+manishmukul@in.ibm.com - Manish Mukul
+kalok@in.ibm.com - Alok Kumar
+avkuttan@in.ibm.com - Avinash Kuttan
+veeresh.jumanal@in.ibm.com - Veeresh Jumanal
+shchand9@in.ibm.com - Shilpa Chandrappa
+vishnur1@in.ibm.com - Vishnupriya R
