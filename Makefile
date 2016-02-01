@@ -1,29 +1,41 @@
-include ../htx.mk
+include htx.mk
 
-SUBDIRS= hxssup hxsmsg hxstats eservd eserv_cmd stxclient htxd hxesamp show_syscfg \
-	hxestorage hxecom hxedapl hxemem64 hxetape hxehd hxesctu hxefpu64 hxecd  \
-	hxecache hxerng bufdisp hxeasy hxefpscr hxefabricbus
-
-ifeq ($(HTX_RELEASE), $(filter ${HTX_RELEASE},"htxrhel72le" "htxrhel7"))
-	SUBDIRS+=hxecorsa
-endif
-
+SUBDIRS= inc lib bin rules etc mdt cleanup pattern setup runsetup
 SUBDIRS_CLEAN = $(patsubst %,%.clean,$(SUBDIRS))
 
-.PHONY: all clean ${SUBDIRS} ${SUBDIRS_CLEAN}
+TARGET= .htx_profile \
+        .htxrc \
+        .bash_profile \
+        .bashrc \
+        .exrc \
+        htx_eq.cfg \
+        equaliser.readme \
+	run_htx_cmdline.sh \
+        hxsscripts
 
-all: ${SUBDIRS}
-	${MKDIR} ${SHIPBIN}
+.PHONY: all ${SUBDIRS} deb
 
 ${SUBDIRS}:
-	@echo "making dir - "${SHIPBIN}
-	${MKDIR} ${SHIPBIN}
 	make -C $@
 
-clean: ${SUBDIRS_CLEAN}
+all: ${SUBDIRS}
+	@echo "making dir - "${SHIPTOPDIR}
+	${MKDIR} ${SHIPTOPDIR}
+	${CP} ${TARGET} ${SHIPTOPDIR}
+
+.PHONY: clean ${SUBDIRS_CLEAN} clean_local
+
+clean: ${SUBDIRS_CLEAN} clean_local
+	@echo "Removing dir - "${SHIPDIR}
+	${RM} -rf ${SHIPDIR}
 
 ${SUBDIRS_CLEAN}:
 	@make -C $(@:.clean=) clean
 
 %.clean: %
 	@make -C $< clean
+
+deb:
+	@echo "Making Debian package..."
+	cp -r $(PACKAGINGDIR)/ubuntu/* $(SHIPDIR)/usr/
+	dpkg-deb -b $(SHIPDIR)/usr  $(TOPDIR)/htxubuntu.deb
