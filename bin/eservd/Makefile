@@ -31,7 +31,7 @@ OBJECTS = misc${OBJ_SUFF}         \
  
 SRCS = $(patsubst %.o, %.c, $(OBJECTS))
 
-LIBS += -Wl,--start-group -lcfgc64 -lhtx64 -lmisc64 -lhtxsyscfg64 -lpthread -lncurses -Wl,--end-group
+LIBS += -Wl,--start-group -lcfgc64 -lhtx64 -lpthread -lncurses -Wl,--end-group
 
 .PHONY: all clean
 

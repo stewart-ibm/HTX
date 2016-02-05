@@ -13,7 +13,7 @@
 /*                                                                        */
 /* IBM_PROLOG_END_TAG                                                     */
 #include "hxemem64.h"
-#include <htxsyscfg64_new.h>
+#include <htxsyscfg64.h>
 #define PAGE_SIZE 			(16 * MB)
 #define MAX_CPUS_PER_CHIP 	128
 #define MCS_MASK			0

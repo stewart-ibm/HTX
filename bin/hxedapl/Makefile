@@ -24,7 +24,7 @@ SRCS = $(patsubst %.o, %.c, $(OBJECTS))
 
 CFLAGS += -D__RDMA_SUPPORTED__ -D__HTX_LINUX__ -D_64BIT_ 
 
-LIBS += -ldat2 -lrt -lhtx64 -lmisc64 -lpthread
+LIBS += -ldat2 -lrt -lhtx64 -lpthread
 
 .PHONY: all clean
 

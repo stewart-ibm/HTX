@@ -15,7 +15,7 @@ SRCS = $(patsubst %.o, %.c, $(OBJECTS))
 
 CFLAGS += -DFALSE=0 -DTRUE=1
  
-LIBS = -lhtx64 -lpthread -lncurses -lmisc64 -lgr64 
+LIBS = -lhtx64 -lpthread -lncurses -lgr64 
 
 .PHONY: all clean
 

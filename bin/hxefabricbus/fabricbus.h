@@ -34,7 +34,7 @@
 #include "hxihtx64.h"
 #include "hxihtxmp.h"
 #include <strings.h>
-#include <htxsyscfg64_new.h> 
+#include <htxsyscfg64.h> 
 #ifdef _DR_HTX_
     #include <sys/types.h>
     #include <sys/dr.h>

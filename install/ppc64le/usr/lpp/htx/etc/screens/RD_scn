@@ -1,0 +1,23 @@
+--------------------------------------------------------------------------------
+|                           Restart Device Exerciser                           |
+|      (CP = Complete, DD = Dead Device, ER = Halted on Error, HG = Hung)      |
+|      (SG = Term Pending, ST = Halted, TM = Terminated, RN = Activated)       |
+|                                                                              |
+|      Status | Slot | Port | /dev/id | Adapt Desc  | Device Desc              |
+|     -------------------------------------------------------------------      |
+|  XX         |      |      |         |             |                          |
+|  XX         |      |      |         |             |                          |
+|  XX         |      |      |         |             |                          |
+|  XX         |      |      |         |             |                          |
+|  XX         |      |      |         |             |                          |
+|  XX         |      |      |         |             |                          |
+|  XX         |      |      |         |             |                          |
+|  XX         |      |      |         |             |                          |
+|  XX         |      |      |         |             |                          |
+|  XX         |      |      |         |             |                          |
+|  XX         |      |      |         |             |                          |
+|  XX         |      |      |         |             |                          |
+|  XX         |      |      |         |             |                          |
+|                                                                              |
+|        Restart:           d = refresh             q = quit                   |
+--------------------------------------------------------------------------------

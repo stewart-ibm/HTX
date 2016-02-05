@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# @(#)43  1.1  src/htx/usr/lpp/htx/etc/scripts/stop_shift, htxconf, htxubuntu 3/28/13 05:07:43
+
+{
+echo "Stop shift called."; date
+start_stx_lpar_pid=`ps -ef | grep -v awk | awk '/start_stx_lpar/ {print $2}'`
+
+if [ -z $start_stx_lpar_pid ] 
+then
+	echo "start_stx_lpar script not running on LPAR"; echo
+	exit
+fi
+
+echo "Sending SIGTERM to start_stx_lpar script, PID = $start_stx_lpar_pid"; date
+kill -15 $start_stx_lpar_pid
+
+# Kill child processes of 'start_stx_lpar' script so that it processes SIGTERM soon.
+ps -ef | grep $start_stx_lpar_pid | grep -v start_stx_lpar | grep -v grep | grep -v awk | awk '{print $2}' | xargs kill -15
+
+echo "Done."; echo
+} | tee -a /tmp/shift/stop_shift_log.txt
+

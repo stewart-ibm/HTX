@@ -1,0 +1,36 @@
+#!/bin/bash
+
+
+unset NOSAVE ECGFILE g_flag save_flag warning_flag STRESS shutdown_flag is_running run_flag no_stxclient
+
+export HTXD_STARTUP_MODE=ON
+export HTX_EEH_OFF=TRUE
+export HTXKDBLEVEL=1
+export PATH=$PATH:/usr/lpp/htx/bin:/usr/lpp/htx/etc/scripts_stx:/usr/lpp/htx/etc/scripts
+
+unset NOSAVE ECGFILE g_flag save_flag warning_flag STRESS shutdown_flag run_flag no_stxclient
+
+ulimit -c unlimited
+          
+. /usr/lpp/htx/.bash_profile
+
+/bin/bash /usr/lpp/htx/etc/scripts_stx/runsyslogd
+
+
+cd ${HTXLPP}/bin
+#pwd
+
+sync; sync
+     
+NSEM_WANTED=25000
+PROC_SEM_FILE=/proc/sys/kernel/sem
+NSEM=`cat $PROC_SEM_FILE | cut -f1`
+if [ $NSEM -lt $NSEM_WANTED ]; then
+	echo $NSEM_WANTED > $PROC_SEM_FILE
+fi
+     
+echo "Starting HTX Daemon... "
+echo "/usr/lpp/htx/bin/htxd > /tmp/daemon_log 2>&1"
+	/usr/lpp/htx/bin/htxd 
+sleep 2
+

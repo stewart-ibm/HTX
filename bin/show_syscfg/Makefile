@@ -12,7 +12,7 @@ CFLAGS += -D__64_LINUX__ -D_GNU_SOURCE -DKERNEL_2_6 -D_REENTRANT -D__HTX_LINUX__
 
 CFLAGS += -DLOG_TO_PHY_NEEDED
 
-LIBS = -Wl,--start-group -lhtx64 -lhtxsyscfg64 -lmisc64 -lpthread -Wl,--end-group 
+LIBS = -Wl,--start-group -lhtx64 -lpthread -Wl,--end-group 
 
 .PHONY: all clean
 

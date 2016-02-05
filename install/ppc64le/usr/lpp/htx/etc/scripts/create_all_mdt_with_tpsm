@@ -1,0 +1,121 @@
+#!/usr/bin/perl -w
+
+use Getopt::Long;
+
+###############################################################################
+#Name: create_all_mdt_with_tpsm
+#Purpose: All mdt's are copied to new mdt file (name ending with _tpsm). The new 
+#         mdt's will have tpsm stanza concatenated in them.
+#Arguments: None. 
+###############################################################################
+
+sub parseOptions
+{
+	#All arguments are passed by reference
+	my($patch_all, $suffix, $in_mdt) = @_;
+	my $help = 0;
+
+	GetOptions('help|?' => \$help, 'pallmdt=i' => $patch_all, 'pattern=s' => $suffix, 'mdt=s' => $in_mdt) || die;
+
+	if( $help )
+	{
+		print "Name:".$0."\n";
+	   print "Purpose: Add given MDT stanzas to all or subset of other MDTs.\n";
+	   print "         The script creates new files and do not patch existing MDTs.\n";
+		print "Arguments:\n";
+		print "    help => Print this help\n";
+		print "    pallmdt => Patch all MDTs or a subset of MDTs\n";
+		print "    pattern => Text to append to new MDT names\n";
+		print "    mdt => MDT whose staza is to be copied to other MDTs\n";
+		exit 0;
+	}
+	if($$suffix eq "")
+	{
+		 $$suffix = "_tpsm";
+	}
+	if($$in_mdt eq "")
+	{
+		 $$in_mdt = "mdt.tpsm";
+	}
+	chomp($$suffix);
+	chomp($$in_mdt);
+}
+
+#Search if MDT passed as argument is present in exclude list.
+#Return 0 if found else 1.
+sub avail_exclude_list
+{
+	 my ($mdt, @list) = @_;
+	 my $i;
+
+	 chomp($mdt);
+    #print("TO search: $mdt\n");
+
+	 for($i=0; $i<@list; $i++)
+	 {
+		  chomp($list[$i]);
+        #print("comparing $mdt with $list[$i]\n");
+		  if($mdt eq $list[$i])
+		  {
+				return 0;
+		  }
+	 }
+	 return 1;
+}
+
+my $PATCH_ALL = 0;
+my $SUFFIX = '';
+my $IN_MDT = '';
+
+parseOptions(\$PATCH_ALL, \$SUFFIX, \$IN_MDT);
+
+#print "PATCH_ALL = $PATCH_ALL\n";
+#print "SUFFIX = $SUFFIX\n";
+#print "IN_MDT = $IN_MDT\n";
+
+my $SCRIPTPATH = "/usr/lpp/htx/etc/scripts/";
+my $MDTPATH = "/usr/lpp/htx/mdt/";
+my @EXCLUDE_MDT_LIST = ("$IN_MDT", "mdt.readme");
+my @ALLMDT = `find $MDTPATH -name \"*\" -prune -exec ls -1 \{\} \\;`;
+my @INCLUDE_MDT_LIST;
+if($PATCH_ALL == 1)
+{
+	 @INCLUDE_MDT_LIST = @ALLMDT;
+}
+else
+{
+	 @INCLUDE_MDT_LIST = ("mdt.bu", "mdt.prefetch_n_sync", "mdt.cpu.branch", "mdt.fpu.multi", "mdt.mem", "mdt.mem.io", "mdt.nest.io", "mdt.tlbie", "mdt.larx_stcx", "mdt.mem_tlbie", "mdt.xyzlink", "mdt.mem_nest");
+}
+
+#Check validity of input MDT
+if( avail_exclude_list("$IN_MDT", @ALLMDT) != 0 )
+{
+	 print "ERROR in $0: Input MDT not found. Exiting.\n";
+	 exit(0);
+}
+
+my $i;
+my $MDT;
+my $MDT_NEW;
+
+print "Creating all mdt's with TPSM stanza\n";
+
+for($i=0; $i<@INCLUDE_MDT_LIST; $i++)
+{
+	 $MDT = $INCLUDE_MDT_LIST[$i];
+	 chomp($MDT);
+	 
+	 if($MDT =~ /$SUFFIX$/)
+	 {
+        #print "MDT ALREADY CREATED: $MDT\n";
+		  next;
+	 }
+
+	 if( (avail_exclude_list("$MDT"), @EXCLUDE_MDT_LIST) != 0) #Not in exclude list
+	 {
+		  $MDT_NEW = "$MDT"."$SUFFIX";
+		  system("cp $MDTPATH/$IN_MDT $MDTPATH/$MDT_NEW");
+		  system("cat $MDTPATH/$MDT | $SCRIPTPATH/create_mdt_without_devices.awk default >> $MDTPATH/$MDT_NEW");
+	 }
+}
+

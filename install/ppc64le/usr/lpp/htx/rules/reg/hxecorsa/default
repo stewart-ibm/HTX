@@ -1,0 +1,47 @@
+rule_id = corsa_cdc1
+oper = corsa
+nx_mem_operations = [CDC:100:65536:8388608:*]
+pattern_id = RANDOM
+compare = YES
+num_oper = 500
+num_threads = 8
+switch_pat_per_seg = all
+bind_proc = yes
+width = 8
+debug_level = 0
+nx_reminder_threads_flag = no
+nx_performance_data = no
+startup_delay = 0
+
+rule_id = corsa_conly2
+oper = corsa
+nx_mem_operations = [C-ONLY:100:65536:8388608:*]
+pattern_id = RANDOM
+compare = YES
+num_oper = 500
+num_threads = 8
+switch_pat_per_seg = all
+bind_proc = yes
+width = 8
+debug_level = 0
+nx_reminder_threads_flag = no
+nx_performance_data = no
+startup_delay = 0
+
+rule_id = corsa_bypass3
+oper = corsa
+nx_mem_operations = [BYPASS:100:65536:8388608:*]
+pattern_id = RANDOM
+compare = YES
+num_oper = 500
+num_threads = 8
+switch_pat_per_seg = all
+bind_proc = yes
+width = 8
+debug_level = 0
+nx_reminder_threads_flag = no
+nx_performance_data = no
+startup_delay = 0
+
+
+

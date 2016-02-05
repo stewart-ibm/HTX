@@ -1,0 +1,361 @@
+#!/bin/ksh 
+# @(#)25	1.4  src/htx/usr/lpp/htx/etc/scripts/heload, htxconf, htxubuntu 6/4/04 14:33:33
+#
+#########################################################################
+#   FUNCTIONS:	files
+#		origin
+#
+
+[ "$HTXLPP" ] || { echo "you must be logged in as htx to execute this command" && exit
+}
+
+RET=-1
+#####################################################
+#       Usage function
+#####################################################
+function usage
+{
+	echo "	usage: heload -[pd]"
+	echo "	Use \"p\" flag or no options to activate prompt mode ."
+	echo "	Use \"d\" flag for defaults.\n"
+}
+#####################################################
+#       Function used to check the parameters
+#####################################################
+function parameter_check
+{
+        if [ ${parameter:="-p"} != "-p" ] && [ ${parameter:="-p"} != "-d" ] 
+        then
+                usage
+                exit
+        fi
+}
+#####################################################
+#       Function to Main display                   
+#####################################################
+function main_disp
+{
+        clear
+        rowcol=$cont
+        (( row = ${rowcol} / 4 ))
+        (( lastcol = ${rowcol} % 4 ))
+        let cont2=1
+	{
+        echo "Devices available in your machine"
+        while [ $row -gt 0 ]; do
+                let cont3=$cont2+1
+                let cont4=$cont2+2
+                let cont5=$cont2+3
+                print "  $cont2) ${COMPONENT_NAME[$cont2]}\t  $cont3) ${COMPONENT_NAME[$cont3]}\t  $cont4) ${COMPONENT_NAME[$cont4]}\t  $cont5) ${COMPONENT_NAME[$cont5]} "
+
+                let row=$row-1
+                let cont2=$cont2+4
+        done
+        while [ $lastcol -gt 0 ]; do
+                print -n "  $cont2) ${COMPONENT_NAME[$cont2]}\t"
+                let cont2=$cont2+1
+                let lastcol=$lastcol-1
+        done
+	} | more 
+        print "  "
+}
+#####################################################
+#               REMOVE TEMPORARY FILES
+#####################################################
+function remove_tmp_files
+{
+                rm /tmp/htx.information_file /tmp/htx.device_description \
+                /tmp/htx.devices /tmp/htx.rules_file /tmp/htx.rules_directory \
+                /tmp/htx.exerciser_name
+		ps -ef|grep tail|awk '{print $2}'|xargs kill -9 >/dev/null 2>&1
+}
+#####################################################
+#       Temporary file for needed information
+#####################################################
+function create_files
+{
+egrep ':|HE_name|desc|rules' ${HTXMDT}mdt.all | egrep -v 'default:|\"\"' \
+        > /tmp/htx.information_file
+grep device_desc /tmp/htx.information_file | awk '{printf("%s\n",$3)}' \
+        | awk -F\" '{printf("%s\n",$2)}'> /tmp/htx.device_description
+grep : /tmp/htx.information_file | awk -F: '{printf("%s\n",$1)}'  \
+        > /tmp/htx.devices
+grep reg_rules /tmp/htx.information_file | awk '{printf("%s\n",$3)}' \
+        | awk -F\" '{printf("%s\n",$2)}' | awk -F/ '{printf("%s\n",$2)}' \
+        > /tmp/htx.rules_file
+grep reg_rules /tmp/htx.information_file | awk '{printf("%s\n",$3)}' \
+        | awk -F\" '{printf("%s\n",$2)}' | awk -F/ '{printf("%s\n",$1)}' \
+        > /tmp/htx.rules_directory
+grep HE_name /tmp/htx.information_file | awk '{printf("%s\n",$3)}' \
+        | awk -F\" '{printf("%s\n",$2)}'> /tmp/htx.exerciser_name
+}
+###############################################################
+#        Array creation
+###############################################################
+function array_creation
+{
+########  Array for exerciser names
+        for x in `grep '.*' /tmp/htx.exerciser_name`;
+        do
+                let cont=$cont+1
+                HE_NAME[$cont]=$x
+        done
+        let cont=0
+########  Array for rule directory
+        for x in `grep '.*' /tmp/htx.rules_directory`;
+        do
+                let cont=$cont+1
+                RULE_DIR_VARIABLE[$cont]=$x
+        done
+        let cont=0
+########  Array for rule files
+        for x in `grep '.*' /tmp/htx.rules_file`;
+        do
+                let cont=$cont+1
+                RULE_FILE_VARIABLE[$cont]=$x
+        done
+        let cont=0
+########  Array for device description
+        for x in `grep '.*' /tmp/htx.device_description`;
+        do
+                let cont=$cont+1
+                DEVICE_DESCRIPTION[$cont]=$x
+        done
+        let cont=0
+########  Array for device names
+        for i in `grep '.*' /tmp/htx.devices`;
+        do
+                let cont=$cont+1
+		i=`echo "$i" | cut -c1-8`
+                COMPONENT_NAME[$cont]=$i
+        done
+        let cont=0
+########  Array for device names without the "/" extension,
+########  so it can be used to name the output files.
+        for i in `grep '.*' /tmp/htx.devices|awk -F/ '{printf("%s\n",$1)}'`;
+        do
+                let cont=$cont+1
+                COMPONENT_NAME2[$cont]=$i
+        done
+}
+#####################################################
+#		SELECTION SCREEN
+#####################################################
+function selection_option
+{
+   while [ ${dummy1:="y"} = "y" ]; do
+        main_disp
+        print -n "Type your option (<enter> or 0 to exit) > "
+        read option junk
+	OUTFILE="/tmp/htx.heload.out.${COMPONENT_NAME2[$option]}"
+	ERRFILE="/tmp/htx.heload.err.${COMPONENT_NAME2[$option]}"
+        if [ option -eq 0 ]; then
+                remove_tmp_files
+                exit
+	else
+                if [ $parameter = "-p" ]; then
+                        if [ option -gt $cont ]; then
+                                echo "Your option is incorrect, try again"
+                        else
+echo "${COMPONENT_NAME[$option]}"|grep rmt >/dev/null 2>&1;[ "$?" = "0" ] && echo -n "Enter device id (${COMPONENT_NAME[$option]}.0):" && read TAPE_ID junk && [ "$TAPE_ID" != "" ]  && COMPONENT_NAME[$option]=$TAPE_ID
+                                print -n "Your selection is ${COMPONENT_NAME[$option]}, is this correct (y)? "
+                                read verify1 junk
+                                if [ ${verify1:="y"} = "y" ] \
+                                || [ ${verify1:="y"} = "Y" ]; then
+                                        dummy1="nooooooo"
+                                fi
+                        fi
+                else
+                        dummy1="nooooooo"
+                fi
+        fi
+   done
+}
+####################################################
+#       Selection of rules file origin (REG or EMC)
+####################################################
+function select_rules_type
+{
+   while [ ${dummy2:="y"} = "y" ]; do
+        if [ $parameter = "-p" ]; then
+                clear
+                echo "Select EMC or REG rules file ( REG ) > "
+                print -n "1) REG        2) EMC   "
+                read mode junk
+        fi
+        if [ ${mode:="1"} != "1" ] && [ ${mode:="1"} != "2"  ]; then
+                echo "\nYour option is incorrect, try again"
+        else
+                if [ $mode = "1" ]; then
+                        modo="reg"                      #modo=run mode variable
+                else
+                        modo="emc"
+                fi
+                dummy2="noooooooo"
+        fi
+   done
+}
+####################################################
+#       Selection of rules file
+####################################################
+function select_rules_file
+{
+cd $HTXRULES${modo}/${RULE_DIR_VARIABLE[$option]}
+if [ $parameter = "-p" ]; then
+   while [ ${dummy3:="y"} = "y" ]; do
+        clear
+        ls
+        print -n "\nPlease enter one of the options shown ( ${RULE_FILE_VARIABLE[$option]} ) > "
+        read file junk
+        print -n "File name = ${file:="${RULE_FILE_VARIABLE[$option]}"}, is this correct (y)?. "
+        read verify2 junk
+        if [ ${verify2:="y"} = "y" ]; then
+                dummy3="noooooo"
+        fi
+   done
+else
+        file=${RULE_FILE_VARIABLE[$option]}
+fi
+}
+####################################################
+#       Option to modify the rules file
+####################################################
+function modify_file
+{
+if [ $parameter = "-p" ]; then
+        print -n "Do you want to modify the file ( n ) > "
+        read modi junk
+        if [ ${modi:="n"} = "y" ]; then
+                vi $HTXRULES${modo}/${RULE_DIR_VARIABLE[$option]}/${file}
+        fi
+fi
+}
+####################################################
+#       Cycles to run the exerciser
+####################################################
+function ciclos_choice
+{
+if [ $parameter = "-p" ]; then
+   while [ ${dummy4:="y"} = "y" ]; do
+        clear
+        print -n "Enter exerciser cycles ( 1 ) > "
+        read cycles junk
+        if [ ${cycles} -eq 0 ]; then
+                let cycles=1
+        fi
+        print -n "Exerciser cycles = $cycles, is this correct (y)? "
+        read verify3 junk
+        if [ ${verify3:="y"} = "y" ]; then
+                dummy4="noooooooo"
+        fi
+   done
+else
+        let cycles=1
+fi
+}
+####################################################
+#       User want output on the screen or not
+####################################################
+function output_select
+{
+if [ $parameter = "-p" ]; then
+        print "\nInformation messages (1)? "
+        print "  1) File & Screen "
+        print "  2) File "
+        print "  3) None"
+        print -n "Enter your option > "
+        read message junk
+else
+        let message="1"
+fi
+}
+####################################################
+#       Starting the exerciser
+####################################################
+function start_exerciser
+{
+if [ $parameter = "-p" ]; then
+        clear
+        print -n "Do you want to start the exerciser? ( y ) > "
+        read action junk
+else
+        action="y"
+fi
+        cd $HTXLPP/bin   #This directory is needed for "pattern" directory location
+if [ -f $OUTFILE ] || [ -f $ERRFILE ]; then
+        rm $OUTFILE $ERRFILE
+fi
+        if [ ${action:="y"} = "y" ] || [ ${action:="y"} = "yes" ]; then
+                clear
+                echo "RUNNING EXERCISER \"${HE_NAME[$option]}\" on host \"`hostname`\".\n"
+                touch $ERRFILE
+                touch $OUTFILE
+                if [ ${message:="1"} = "1" ]; then
+                        tail -f $ERRFILE >> $OUTFILE &
+                        tail -f $OUTFILE &
+                elif [ $message = "2" ]; then
+                        tail -f $ERRFILE &
+                else
+                        rm $OUTFILE
+                        OUTFILE="/dev/null"
+                        tail -f $ERRFILE &
+                fi
+                while [ ${cycles} -ne 0 ]; do
+                        ${HE_NAME[$option]} /dev/${COMPONENT_NAME[$option]} OTH \
+                        $HTXRULES${modo}/${RULE_DIR_VARIABLE[$option]}/${file}   \
+                        1>> $OUTFILE 2>> $ERRFILE
+                        RET=$? 
+
+                        let cycles=$cycles-1
+                        sleep 1
+                done
+                sleep 2
+                echo "\nEXERCISER EXECUTION FINISHED"
+                if [ $message != "3" ]; then
+                print "Information Messages are in $OUTFILE"
+                fi
+                print "Error messages are in $ERRFILE"
+        fi
+}
+####################################################
+#       User wants to terminate session or not?
+####################################################
+function final_act
+{
+        print -n "\nDo you want to run another exerciser ( no )? "
+        read runex junk
+        if [ ${runex:="n"} = "n" ]; then
+                quit="yes"
+                remove_tmp_files
+        else
+                dummy1="y"; dummy2="y"; dummy3="y"; dummy4="y"; message="1"
+                let cont2=1
+        fi
+                ps | grep tail|awk '{printf("%s\n",$1)}'| xargs kill -9  \
+                > /dev/null 2>&1
+}
+#####################################################
+#               MAIN FUNCTION
+#####################################################
+[ -z "$COLUMNS" ] && COLUMNS=80
+integer option cycles cont2
+let cont=0
+trap "remove_tmp_files >/dev/null 2>&1; exit " 2
+parameter=$1
+
+echo -n "Creating heload device table..."
+parameter_check $parameter	# Check parameters (-p, -d,...)
+create_files			# Temporary files (data from mdt.all) 
+array_creation			# Arrays for faster data management
+while [ ${quit:="n"} = "n" ] || [ ${quit:="n"} = "no" ]
+do
+ 	selection_option
+	select_rules_type 	# Selection of rules file origin (REG or EMC)
+	select_rules_file 	# Selection of rules file
+	modify_file 		# Option to modify the rules file
+	ciclos_choice 		# Cycles to run the exerciser
+	output_select 		# User want output on the screen or not
+	start_exerciser 	# Starting the exerciser
+	final_act 		# User wants to terminate session or not?
+done
+exit $RET

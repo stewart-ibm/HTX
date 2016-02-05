@@ -1,0 +1,23 @@
+--------------------------------------------------------------------------------
+|                         Add New Device Exerciser(s)                          |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|  1. ECG in which the device to be added  :                                   |
+|  2. *AIX Device Name (rhdisk0, fp1 etc)  :                                   |
+|  3. Start Device Exerciser Immediately   :                                   |
+|  4. Force Redefinition of Device         :                                   |
+|  5. Number of Copies to Run (dup_device) :                                   |
+|                                                                              |
+|  6. Add New Device Exerciser                                                 |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|                                                                              |
+|  Specify parameters and Select Option 6                                      |
+|                                                                              |
+|  Please enter the number of the desired option :                             |
+--------------------------------------------------------------------------------
+|  h = help               r = refresh screen             q = quit              |
+--------------------------------------------------------------------------------

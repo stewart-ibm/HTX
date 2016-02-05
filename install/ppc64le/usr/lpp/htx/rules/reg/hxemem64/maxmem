@@ -1,0 +1,94 @@
+* @(#)00        1.10  src/htx/usr/lpp/htx/rules/reg/hxemem64/maxmem, exer_mem64, htx61Q 12/26/07 04:37:28
+****************************************************************************
+* 	16MB and 16GB pages are always pinned memory. 
+* 	16 MB pages may not be enabled by default on system. You may have to run
+* 	'vmo' command to enable 16 MB large pages.
+*
+*	vmo -p -o lgpg_regions=<no of pages> -o lgpg_size=<page size>
+*
+*	You will also need to run bosboot -a after executing vmo command.
+*	You can verify with svmon -G command if large page pool is enabled.
+*	64K page size is supported by processor version GSDD2.0 and later 
+*	processors based hardware and AIX53E or later.
+*
+*   Sample Stanza for AIX
+* write out all zeros to memory...
+* rule_id = mem_0xdb
+* pattern_id = HEXZEROS(8)
+* mem_percent = 75
+* mode = concurrent/normal
+* num_threads = 2 ( > 1 and <= num of logical processors)
+* max_mem = yes
+* compare = yes
+* num_oper = 1
+* oper = mem
+* seg_size_4k =  4096 
+* seg_size_64k = 65536
+* seg_size_16m = 16777216 
+* seg_size_16g = 17179869184
+* num_seg_4k = 1
+* num_seg_64k = 1
+* num_seg_16m = 1
+* num_seg_16g = 1
+* debug_level = 2
+* width = 8
+*
+* For more details on the rules file stanza parameters and configuration
+* please go through the file /usr/lpp/htx/rules/reg/hxemem64/README
+* 
+*****************************************************************************
+rule_id = CON8_MEM1
+mode = concurrent
+pattern_id = ADDRESS HEXZEROS(8) HEXFF(8) HEXAA(8) HEX55(8) RANDOM
+switch_pat_per_seg = all
+messages = no
+max_mem = yes
+compare = yes
+num_oper = 1
+oper = mem
+width = 8
+
+rule_id = CON4_MEM2
+mode = concurrent
+pattern_id = ADDRESS HEXZEROS(8) HEXFF(8) HEXAA(8) HEX55(8) RANDOM
+switch_pat_per_seg = yes
+messages = no
+max_mem = yes
+compare = yes
+num_oper = 1
+oper = mem
+width = 4
+
+rule_id = CON1_MEM3
+mode = concurrent
+pattern_id = ADDRESS HEXZEROS(8) HEXFF(8) HEXAA(8) HEX55(8) RANDOM
+switch_pat_per_seg = yes
+messages = no
+max_mem = yes
+compare = yes
+num_oper = 1
+oper = mem
+width = 1
+
+* write out all zeros to memory from disk
+rule_id = dma_4
+mode = concurrent
+pattern_id = HEXZEROS(4096)
+messages = no
+max_mem = yes
+compare = yes
+num_oper = 1
+oper = dma
+width = 8
+mem_percent = 5
+
+*Enhanced RIM operation 
+rule_id = WRFR_5
+mode = concurrent
+pattern_id = HEXFF(8) 
+messages = no
+max_mem = yes
+compare = yes
+num_oper = 1
+oper = rim
+width = 8

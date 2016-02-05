@@ -1,0 +1,357 @@
+#!/bin/bash
+#
+# @(#)33        1.8.2.20     src/htx/usr/lpp/htx/etc/scripts/runsup, htxconf, htxubuntu 7/17/15 06:21:36
+#
+# COMPONENT_NAME: htx_conf_lx
+#
+#############################################################################
+
+usage(){
+        BASENAME=$(basename $0)
+        echo "htx: Run HTX supervisor."
+        echo "     Prompts for Master Device Table file and whether to save previous run."
+        echo " usage: htx [[-n] [-s] [-S] [-f mdt file [...]] "
+        echo "        htx [-h] | [-g] [-S] [-k] [-b mdt file] "
+        echo "	-h - help\n\t-? - usage"
+        echo "	-g - go! Use mdt.all and don't save. no hxecom (same as \"-n -f mdt.all\")"
+        echo "	-n - nosave"
+        echo "	-b mdtfile - buildnet with mdt file"
+        echo "	-s - save"
+        echo "	-S - Use stress exercisers on galaxy adapters."
+		echo "	-k - Disables HTXKDBLEVEL,for hxestorage,hxefd,hxemem64,hxeflp,hxetape,hxecd"
+		echo "	-f file - name of mdt file in $HOME/mdt directory to use"
+}
+
+
+### Main ###################################
+
+# enable HTXKDBLEVEL
+export HTXKDBLEVEL=1
+
+
+# Check for prerequisites
+
+# Go through this only if autostart is off
+if [  -f ${HTXLPP}.autostart ]
+	then
+		cp ${HTXMDT}mdt ${HTXMDT}bootme_prev_mdt
+
+     	if [ -e ${HTXMDT}.run_mdt_name ] 
+     	then
+			BOOTME_MDT=`cat ${HTXMDT}.run_mdt_name`
+			if [ -e ${BOOTME_MDT} ] ; then
+				cp ${BOOTME_MDT} ${HTXMDT}mdt
+			else
+				cp ${HTXMDT}mdt.all ${HTXMDT}mdt
+			fi
+     	else
+        	cp ${HTXMDT}mdt.all ${HTXMDT}mdt
+     	fi
+
+		# if previous bootme MDT contains any hxecom device append those devices into current bootme mdt  
+		hxecom_present=`grep "hxecom" ${HTXMDT}bootme_prev_mdt | wc -l`
+		if [ ${hxecom_present} -ne 0 ]
+		then
+			/usr/lpp/htx/mdt/mdt_net mdt
+		fi	
+		
+        MDTFILE=mdt
+else
+  	[ "$HTXLPP" ] || { echo "you must be logged in as htx to execute this command" | tee -a $HTXNoise && exit
+  	}
+  
+	unset NOSAVE MDTFILE g_flag save_flag STRESS COMOPT ADDMDT ONESYS
+
+	OPTIND=1;
+	while getopts hgnb:sSf:k ARG; do             # parse options
+		case $ARG in
+    		g)                  # nosave, use mdt.all
+        		g_flag=1
+        		NOSAVE=1
+        		MDTFILE="mdt.all";;
+    		n)                  # don't prompt for save, don't save
+        		NOSAVE=1 ;;
+    		b)                  # run build_net to configure hxecom network devices
+				MDTFILE=$OPTARG
+				b_flag=1 ;;	
+    		s)                  # don't prompt for save, do save
+        		save_flag=1;;
+    		S)                  # Edit mdt file changing hxeglx to hxegxIO
+        		                #                    and hxebigb to hxebigbend
+        		STRESS=1;;
+	
+			k)
+    	    	#Disable HTXKDBLEVEL for hxestorage,hxefd,hxemem64,hxeflp,hxetape,hxecd
+        		export HTXKDBLEVEL=0;;
+
+			f)                 # mdt file to be loaded
+		 		MDTFILE=$OPTARG ;;
+
+   			h|?|*)                  # usage
+        		usage
+				return
+    	esac
+	done
+    shift $((OPTIND-1))
+
+	if [ $b_flag == 1 ]
+	then
+        /usr/bin/build_net bpt y n /tmp/networks 2> /dev/null
+		/usr/lpp/htx/mdt/mdt_net ${MDTFILE}
+	fi
+		
+    # If there are any more arguments assume that it is an MDT file.
+    # The -g and the MDT file argument are mutually exclusive.
+    if [ $# -gt 0 ]
+    then if [ -z "$g_flag" ]
+    		then MDTFILE=$1
+        	shift 1
+        else echo "Use of -g flag implies mdt.bu -"
+                 	echo "do not specify a file or use -n or -s instead."
+                   	exit 2
+        fi
+    fi
+
+	# check to see if there are any supervisor already running
+	[ -n "$(ps -ef|grep hxs|grep -v grep)" ] && { echo " Warning! HTX/STX is already running!"; echo " This copy exiting..."; sleep 2; exit 1; }
+
+
+	# Check to see if there are any exercisers running
+	ps -ef |grep "/htx/rules[/]" >/dev/null
+	rc=$?
+	if test $rc = 0
+	then
+      	echo "Warning!!! - HTX already running exercisers!" 2>&1 | tee -a $HTXNoise
+	fi
+
+	OLDPWD=pwd
+	cd ${HTXMDT}
+	if [ -z "$MDTFILE" ] 
+		then    # No MDT file argument, prompt for it.
+    	pwd 2>&1 | tee -a $HTXNoise
+    	ls -x 2>&1 | tee -a $HTXNoise
+    	while [ 1 ]
+    	do
+    		echo "Enter the desired mdt test file to copy to \"mdt\"." 2>&1 | tee -a $HTXNoise
+        	read dog
+        	if [ -f $dog ]
+        	then
+        		cp $dog mdt
+            	MDTFILE=$dog
+            	break
+         	fi
+    	done
+	else
+    	cp $MDTFILE mdt 
+	fi
+  	cd $OLDPWD
+	echo "${HTXMDT}${MDTFILE}" > ${HTXMDT}.run_mdt_name
+fi
+
+#export HTXCNTMDT=`grep : ${HTXMDT}mdt|grep -v default|wc -l`
+
+
+# Go through this only if autostart is off and no -n flag.
+# Prompt the user for the save option if there is no -s flag.
+
+rm -f /usr/lpp/htx/.run_save.default
+if [ ! -f ${HTXLPP}.autostart -a -z "${NOSAVE}" ]
+  then
+    if [ -n "$save_flag" ]
+      then
+        touch /usr/lpp/htx/.run_save.default 2>&1 | tee -a $HTXNoise
+      else
+        rm -f /usr/lpp/htx/.run_save.default
+        echo "Do you want to run save.default, which formats and compresses log files (y)?" 2>&1 | tee -a $HTXNoise
+        read save
+        [ "${save:="y"}" != "n" ] && touch /usr/lpp/htx/.run_save.default
+    fi
+fi
+
+sync;sync;
+
+
+# Updating HTX kernel modules
+
+cat /usr/lpp/htx/mdt/mdt | /usr/lpp/htx/etc/scripts/update_kernmod 
+
+# Run exerciser runsetup scripts
+#for file in `/bin/ls $HTXRUNSETUP[a-zA-Z]*.runsetup 2>/dev/null| sort`
+# do
+#    aa=`basename $file`
+#    echo Preparing ${aa%.runsetup} ....
+#    . $file
+# done
+
+# If device is in mdt, run exerciser runsetup scripts
+
+# if [[ -n $(grep "hxesystime" ${HTXMDT}$MDTFILE 2>/dev/null) ]]
+#     then [ -f ${HTXRUNSETUP}systime.runsetup ] && { . ${HTXRUNSETUP}systime.runsetup }
+
+if [[ $MDTFILE == "mdt.eq_th_trans_switch" || $MDTFILE == "mdt.eq_th_trans_mix" ]]
+then
+   if [ -f /proc/sys/kernel/powersave-nap ]
+   then
+      nap_enable="`cat /proc/sys/kernel/powersave-nap`"
+      if [[ $nap_enable == 0 ]]
+      then
+          echo "Could not run the mdt/ecg $MDTFILE. To run this, powersave mode should be enabled." 2>&1 | tee -a $HTXNoise
+          echo "Current value in /proc/sys/kernel/powersave-nap is 0." 2>&1 | tee -a $HTXNoise
+          echo "Please set it to non-zero value (1 - Nap, 2 - sleep)." 2>&1 | tee -a $HTXNoise
+          return
+      fi
+   else
+       echo "File /proc/sys/kernel/powersave-nap does not exist." 2>&1 | tee -a $HTXNoise
+       echo "Can not run mdt/ecg $MDTFILE." 2>&1 | tee -a $HTXNoise
+       return
+   fi
+fi
+
+export MDTFILE
+
+if [[ -n $(grep "hxecom" ${HTXMDT}$MDTFILE 2>/dev/null) ]]
+   then [ -f ${HTXRUNSETUP}hxecom.runsetup ] && { 
+	echo "Preparing hxecom environment..." 2>&1 | tee -a $HTXNoise
+	${HTXRUNSETUP}hxecom.runsetup 2>&1 | tee -a $HTXNoise
+   }
+fi
+
+if [[ -n $(grep "hxesct" ${HTXMDT}$MDTFILE 2>/dev/null) ]]
+   then [ -f ${HTXRUNSETUP}sct.runsetup ] && { 
+  	echo "Preparing SCT environment..." 2>&1 | tee -a $HTXNoise
+	${HTXRUNSETUP}sct.runsetup 2>&1 | tee -a $HTXNoise
+    }
+fi
+
+if [[ -n $(grep "hxefpu64" ${HTXMDT}$MDTFILE 2>/dev/null) ]]
+   then [ -f ${HTXRUNSETUP}fpu.runsetup ] && {
+    echo "Preparing FPU environment..." 2>&1 | tee -a $HTXNoise
+    ${HTXRUNSETUP}fpu.runsetup 2>&1 | tee -a $HTXNoise
+    }
+fi
+
+if [[ -n $(grep "hxecpu" ${HTXMDT}$MDTFILE 2>/dev/null) ]]
+   then [ -f ${HTXRUNSETUP}cpu.runsetup ] && {
+    echo "Preparing CPU environment..." 2>&1 | tee -a $HTXNoise
+    ${HTXRUNSETUP}cpu.runsetup 2>&1 | tee -a $HTXNoise
+    }
+fi
+
+if [[ -n $(grep "hxespu" ${HTXMDT}$MDTFILE 2>/dev/null) ]]
+   then [ -f ${HTXRUNSETUP}spu.runsetup ] && { 
+  	echo "Preparing  SPU environment..." 2>&1 | tee -a $HTXNoise
+	${HTXRUNSETUP}spu.runsetup 2>&1 | tee -a $HTXNoise
+    }
+fi
+
+if [[ -n $(grep "hxesystime" ${HTXMDT}$MDTFILE 2>/dev/null) ]]
+   then [ -f ${HTXRUNSETUP}systime.runsetup ] && {
+     	echo "Preparing systime..." 2>&1 | tee -a $HTXNoise
+     	${HTXRUNSETUP}systime.runsetup 2>&1 | tee -a $HTXNoise
+   }
+fi
+
+if [[ -n $(grep "hxemem64" ${HTXMDT}$MDTFILE 2>/dev/null) ]]
+   then [ -f ${HTXRUNSETUP}mem.runsetup ] && { 
+	echo "Preparing hxemem64 environment..." 2>&1 | tee -a $HTXNoise
+	${HTXRUNSETUP}mem.runsetup 2>&1 | tee -a $HTXNoise
+   }
+fi
+
+if [[ -n $(grep "hxevmx64" ${HTXMDT}$MDTFILE 2>/dev/null) ]]
+   then [ -f ${HTXRUNSETUP}hxevmx64.runsetup ]
+        ${HTXRUNSETUP}hxevmx64.runsetup 2>&1 | tee -a $HTXNoise
+fi
+
+if [[ -n $(grep "hxedfp" ${HTXMDT}$MDTFILE 2>/dev/null) ]]
+   then [ -f ${HTXRUNSETUP}hxedfp.runsetup ]
+        ${HTXRUNSETUP}hxedfp.runsetup 2>&1 | tee -a $HTXNoise
+fi
+
+if [[ -n $(grep "ablink" ${HTXMDT}$MDTFILE 2>/dev/null) ]]
+	then [ -f ${HTXRUNSETUP}ablink.runsetup ] && {
+	echo "Preparing ablink environment..." 2>&1 | tee -a $HTXNoise
+	${HTXRUNSETUP}ablink.runsetup 2>&1 | tee -a $HTXNoise
+	}
+fi
+
+if [[ -n $(grep "xyzlink" ${HTXMDT}$MDTFILE 2>/dev/null) ]]
+	then [ -f ${HTXRUNSETUP}xyzlink.runsetup ] && {
+	echo "Preparing XYZlink enviroment ..." 2>&1 | tee -a $HTXNoise
+	${HTXRUNSETUP}xyzlink.runsetup 2>&1 | tee -a $HTXNoise
+	}
+fi
+
+if [[ -n $(grep "hxediag" ${HTXMDT}$MDTFILE 2>/dev/null) ]]
+        then [ -f ${HTXRUNSETUP}hxediag.runsetup ] && {
+        echo "Preparing hxediag environment..." 2>&1 | tee -a $HTXNoise
+        ${HTXRUNSETUP}hxediag.runsetup 2>&1 | tee -a $HTXNoise
+        }
+fi
+
+
+if [[ -n $(grep "hxesysben" ${HTXMDT}$MDTFILE 2>/dev/null) ]]
+	then [ -f ${HTXRUNSETUP}sysben.runsetup ] && {
+	echo "Preparing hxesysben enviroment ..." 2>&1 | tee -a $HTXNoise
+	${HTXRUNSETUP}sysben.runsetup 2>&1 | tee -a $HTXNoise
+	}
+fi
+
+if [[ -n $(grep "hxemmioi" ${HTXMDT}$MDTFILE 2>/dev/null) ]]
+	then [ -f ${HTXRUNSETUP}mmioi.runsetup ] && {
+	echo "Preparing hxemmioi environment ..." 2>&1 | tee -a $HTXNoise
+	${HTXRUNSETUP}mmioi.runsetup 2>&1 | tee -a $HTXNoise
+	}
+fi
+
+if [[ -n $(grep "hxeehca" ${HTXMDT}$MDTFILE 2>/dev/null) ]]
+	then [ -f ${HTXRUNSETUP}hxeehca.runsetup ] && {
+	echo "Preparing hxeehca environment ..." 2>&1 | tee -a $HTXNoise
+	${HTXRUNSETUP}hxeehca.runsetup 2>&1 | tee -a $HTXNoise
+	}
+fi
+
+cd ${HTXLPP}/bin
+pwd
+date +"hxssup was started on %Y/%m/%d at %X %Z" > /tmp/htx.start.stop.time
+
+PROC_SEM_FILE=/proc/sys/kernel/sem
+DEVICES=`cat ${HTXMDT}$MDTFILE | awk '/.*:/' | wc -l`
+HXE_SCTU=`cat ${HTXMDT}$MDTFILE | awk '/sctu.*/' | wc -l`
+HXE_CPU=`cat ${HTXMDT}$MDTFILE | awk '/cpu.*:/' | wc -l`
+
+#200 semaphores are added as a guard.
+#64 more semaphores are required for sctu and cpu.
+#200+64+64= 328 rounded to 330 semaphores
+NUMBER_OF_SEMAPHORES=$((($DEVICES*3)+ $HXE_SCTU +$HXE_CPU + 330))
+SYS_SEMMSL=`cat $PROC_SEM_FILE | cut -f1`
+SYS_SEMMNS=`cat $PROC_SEM_FILE | cut -f2`
+SYS_SEMOPM=`cat $PROC_SEM_FILE | cut -f3`
+SYS_SEMMNI=`cat $PROC_SEM_FILE | cut -f4`
+NSEM_WANTED=25000
+
+if [ $SYS_SEMMSL -lt $NSEM_WANTED ]; then
+    NSEM_REQ=$NSEM_WANTED
+else
+    NSEM_REQ=$SYS_SEMMSL
+fi
+
+if [ $SYS_SEMMNI -lt $NUMBER_OF_SEMAPHORES ]; then
+    echo $NSEM_REQ  $((NSEM_WANTED*NUMBER_OF_SEMAPHORES)) $SYS_SEMOPM $NUMBER_OF_SEMAPHORES > $PROC_SEM_FILE
+else
+    echo $NSEM_REQ > $PROC_SEM_FILE
+fi
+
+
+# Change to overcome HTX screen clobbering during bootme
+  [ -f ${HTXLPP}.autostart ] && export TERM=vt100
+
+hxssup
+
+#Just to be sure, kill all the existing copies of hxssup
+ps -ef |grep hxssup |grep -v vi |grep -v grep | xargs kill -9 >/dev/null 2>&1
+
+date +"hxssup was stopped on %Y/%m/%d at %X %Z" >> /tmp/htx.start.stop.time
+
+#exit
+

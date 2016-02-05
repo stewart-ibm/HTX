@@ -13,7 +13,7 @@
 #include "htxd_profile.h"
 #include "htxd_instance.h"
 #define PARMS(x) x
-#include "htxsyscfg64_new.h"
+#include "htxsyscfg64.h"
 #include "cfgclibdef.h"
 #include "scr_info.h"
 

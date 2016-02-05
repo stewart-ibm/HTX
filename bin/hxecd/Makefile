@@ -21,7 +21,7 @@ SUBDIRS_CLEAN = $(patsubst %,%.clean,$(SUBDIRS))
 
 CFLAGS += -D__DEFINE_PAGE_MACROS__ -D_FILE_OFFSET_BITS=64 -DFALSE=0 -DTRUE=1
  
-LIBS = -lpthread -lc -lhtx64 -lmisc64
+LIBS = -lpthread -lc -lhtx64 
 
 .PHONY: all clean ${SUBDIRS} ${SUBDIRS_CLEAN}
 

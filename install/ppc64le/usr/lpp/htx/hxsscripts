@@ -1,0 +1,8 @@
+hxecom          setup/hxecom.setup
+hxecom          runsetup/hxecom.runsetup
+hxecom          runcleanup/hxecom.cleanup
+hxecom          cleanup/hxecom.runcleanup
+#
+hxecpu          runsetup/cpu.runsetup
+hxecpu          runcleanup/cpu.runcleanup
+#

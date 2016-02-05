@@ -128,7 +128,7 @@ read_hardware_config(SYS_CONF_TYP * scfg, unsigned int tot_cpus, unsigned int pv
              		return(-1);
         		}
 
-                l_p[lcpu] = getPir(lcpu);
+                l_p[lcpu] = get_cpu_id(lcpu);
 				rc = htx_unbind_process();
 				if(rc == -1) {
 					sprintf(msg, "\n bindprocessor failed with %d, unbinding th=%d, cpu=%d", errno, lcpu);

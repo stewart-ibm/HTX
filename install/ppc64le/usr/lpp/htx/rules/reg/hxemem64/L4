@@ -1,0 +1,10 @@
+************************************************************************
+*mcs_mask: target particular MCS, 
+*eg:mcs_mask = 0 ,target 0th centaur of the chip.
+*mcs_mask = -1 ,this is default value. Which targets all MCSs in the chip.
+************************************************************************
+rule_id = mem_l4_roll
+oper = l4_roll
+num_oper = 10000
+startup_delay = 0
+mcs_mask = -1

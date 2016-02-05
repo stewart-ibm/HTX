@@ -8,7 +8,7 @@
 #include "config.h"
 #include "eservd.h"
 #include "global.h"
-#include "htxsyscfg64_new.h"
+#include "htxsyscfg64.h"
 
 #define MAX_LINE_SIZE 		500
 #define MAX_PARAMS_IN_ROW	7

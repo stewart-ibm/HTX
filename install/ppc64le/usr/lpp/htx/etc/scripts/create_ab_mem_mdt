@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# @(#)13 1.7.3.1  src/htx/usr/lpp/htx/etc/scripts/create_ab_mem_mdt, exer_ablink, htxltsbml 10/6/10 00:28:31
+
+# Print the memory configure
+/usr/lpp/htx/bin/hxefabricbus  /dev/ablink OTH /usr/lpp/htx/rules/reg/hxefabricbus/default.ab query_memconf >/dev/null 2>&1
+
+proc_ver=`/usr/lpp/htx/bin/show_syscfg pvr | grep Version | awk -F: '{print $2}'`
+proc_ver_dec=`printf %d $proc_ver`
+P6Compatmode=`/usr/lpp/htx/bin/show_syscfg pvr | grep -i Power6Compatmode | awk -F: '{print $2}'|sed -e 's/^ *//' `
+
+echo "Creating mdt.ab_mem ..."
+if [[ $proc_ver_dec -ge 63 && $P6Compatmode = "False" ]] # Shifts for P7 & above
+then
+    create_my_mdt mem:memmfg 							> /usr/lpp/htx/mdt/mdt.ab_mem
+else
+    cat /usr/lpp/htx/mdt/mdt.mem  							> /usr/lpp/htx/mdt/mdt.ab_mem
+fi
+
+echo 											>> /usr/lpp/htx/mdt/mdt.ab_mem
+echo 'ablink:'										>> /usr/lpp/htx/mdt/mdt.ab_mem
+echo -e '\tHE_name = "hxefabricbus"                	'				>> /usr/lpp/htx/mdt/mdt.ab_mem
+echo -e '\tadapt_desc = "Node to Node"            	'				>> /usr/lpp/htx/mdt/mdt.ab_mem
+echo -e '\tdevice_desc = "Memory BW"              	'				>> /usr/lpp/htx/mdt/mdt.ab_mem
+echo -e '\treg_rules = "hxefabricbus/default.ab"        '                          	>> /usr/lpp/htx/mdt/mdt.ab_mem
+echo -e '\temc_rules = "hxefabricbus/default.ab"        '                          	>> /usr/lpp/htx/mdt/mdt.ab_mem
+echo -e '\tcont_on_err = "NO" 	'						   	>> /usr/lpp/htx/mdt/mdt.ab_mem 	
+echo 											>> /usr/lpp/htx/mdt/mdt.ab_mem
+ln -sf /usr/lpp/htx/mdt/mdt.ab_mem /usr/lpp/htx/ecg/ecg.ab_mem

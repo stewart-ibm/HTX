@@ -1,0 +1,277 @@
+* @(#)07	1.5.1.3  src/htx/usr/lpp/htx/rules/reg/hxecom/default, exer_com, htx61H 10/23/09 12:10:24
+*
+*   COMPONENT_NAME: exer_com
+*
+*   FUNCTIONS: none
+*
+*   ORIGINS: 27
+*
+*   IBM CONFIDENTIAL -- (IBM Confidential Restricted when
+*   combined with the aggregated modules for this product)
+*   OBJECT CODE ONLY SOURCE MATERIALS
+*
+*   (C) COPYRIGHT International Business Machines Corp. 1994
+*   All Rights Reserved
+*   US Government Users Restricted Rights - Use, duplication or
+*   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+*
+*RULE_ID is a free form name to be used as tester sees fit.
+*Maximum length is 8 characters.  Default is 00000000.
+*
+*PATTERN_ID for pattern file.  Default is HEX255.
+*
+*COMNET_NAME for identification of network used for coordination.
+*This must be a class C network configured for TCP/IP.  The name
+*entered here must be in the /etc/hosts file and refer to a valid
+*IP address.  The device represented by this address must not be 
+*in the mdt file.  Required field -- NO DEFAULT.
+*
+*TESTNET_NAME for identification of network under test.  This must
+*be a name that exists in /etc/hosts and represent a valid IP
+*address.   The device represented by this address must be in the
+*mdt file.  Required field -- NO DEFAULT.
+*
+*COM_STREAM_PORT and COM_DGRAM_PORT will normally be the defaults but
+*it is possible to partition the network using these parameters.
+*Default is 5100 and 5101 respectively.
+*
+*REPLICATES specifies multiple r-w links if desired.  Normally there
+*will be 1 full-duplex or 1 half-duplex test between devices.  If
+*REPLICATES=n where n=1,2,3..., there will be n full-duplex or half-duplex
+*tests between devices.  Default is 1.
+*
+*MASTER qualifies which remote exercisers can form connections with 
+*this exerciser.  At least 1 of the nodes forming a connection must 
+*be a master.  This is used to cause slaves to connect to a master 
+*node without having the slaves form connections between each other.
+*             S-M-S    vs.   M-M
+*               |            |X|
+*               S            M-M
+*Values are Y and N. Default is Y.
+*
+*OPER specifies if this exerciser process is allowed to read, write, or
+*read-and-write. Valid string values are R, W, RW, or WR.  RW and WR 
+*are equivalent.  Default value is "W" if MASTER=N and "RW" if MASTER=Y.
+*
+*LAYER specifies if testing should be performed using TCP or UDP.
+*When specifying UDP, WRITE_AHEAD value is critical.  See 
+*WRITE_AHEAD. Default is TCP.
+*
+*SHUTDOWN_FLAGS will be used to shutdown all network activity when
+*a specific error(s) has been detected.  This will aid in locating          
+*packets on the network analyzer and isolating transmit from receive
+*problems.  Default is 0x0000.  This number is always specified in
+*hexadecimal format.  The 0x is optional.  The following are flags
+*that can be specified individually or cumulatively:
+*  - 0x0fff  Halt on any error.
+*  - 0x0001  Halt on miscompare.  err=00e3xxxx
+*  - 0x0002  Halt when exceed IO_ALARM_TIME in a read. err=00daxxxx
+*  - 0x0004  Halt on unknown interrupt. err=00dbxxxx
+*  - 0x0008  Halt on timestamp error. err=00dexxxx
+*  - 0x0010  Halt if received packet is wrong length. err=00dfxxxx
+*  - 0x0020  Halt if packet dropped (Transmitted but not received). err=00e1xxxx
+*  - 0x0040  Halt if receive a duplicate or out-of-sequence packet. err=00e0xxxx
+*  - 0x0080  Halt if receive unidentified packet (not above errors).err=00e2xxxx
+*  - 0x0100  Halt if data header fields violate construction rules. err=00ddxxxx
+*  - 0x0200  Halt if write thread receives a SIGPIPE. err=00ebxxxx
+*  - 0x0400  Halt if write OTHER error
+*  - 0x1000  CRASH TO KDB ON MOSCOMPARE 
+*  - 0x2000  send Attention ON MOSCOMPARE 
+* Default is 0x0000.
+*
+* when a miscompare causes a trap to kdb heres what is put in the registers
+* listed here.
+*            r3     r4     r5    r6   r7    r8   r9       r10
+*trap((int) MISC,pattern, rbuf,index,stats,rule,bsize,(int)VER,i);
+*reg3 = BEEFDEAD
+*reg4 = pointer to expected data
+*reg5 = pointer to actual data
+*reg6 = pointer to index to miscompare
+*reg7 = pointer to htx stats structure
+*reg8 = pointer to rules structure.
+*reg9 = pointer to buffersize
+*reg10 = version of hxecom
+* to look at data in pattern buffer at point of miscompare do this:
+* d @r4+@r6 100
+*
+*The following rule attributes may be changed by using multiple
+*stanzas.  The algorithm indicates their use.
+*
+*Write processes:
+*for(stanza=0; stanza<NumberOfStanzas; stanza++) {
+*    for(BufSize = BUFMIN[stanza]; BufSize<BUFMAX[stanza]; i
+*                                             BufSize+=BUFINC[stanza]) {
+*        for(i=0; i< NUM_OPER[stanza]; i++) {
+*            if( !TCP ) {
+*                while(Unacknowledge packets == WRITE_AHEAD[stanza])
+*                    sleep
+*            }
+*            fill pattern with BufSize characters from pattern file
+*            set alarm for IO_ALARM_TIME[stanza]
+*            write(header+pattern+trailer)
+*            clear alarm
+*            if(error)
+*                Print/Update.
+*            sleep(WRITE_SLEEP[stanza] in milliseconds)
+*        }
+*        Print/Update stats
+*    }
+*}
+*
+*Read processes:
+*for(stanza=0; stanza<NumberOfStanzas; stanza++) {
+*    for(BufSize = BUFMIN[stanza]; BufSize<BUFMAX[stanza]; 
+*                                             BufSize+=BUFINC[stanza]) {
+*        for(i=0; i< NUM_OPER[stanza]; i++) {
+*            set alarm for IO_ALARM_TIME[stanza]
+*            read(header+BufSize characters+trailer)
+*            clear alarm
+*            check packet read to pattern generated from PATTERN_ID file
+*            if( !TCP && (WRITE_AHEAD[stanza] - packets_since_ack 
+*                                                  <= ACK_TRIG[stanza]))
+*                Acknowledge packet(s)
+*            if(error)
+*                Print/Update.
+*        }
+*        Print/Update stats
+*    }
+*}
+*
+*BUFMIN - Default is 100 characters.
+*BUFMAX - Default is BUFMIN characters.
+*BUFINC - Default is 1 character.
+*
+*NUM_OPER - Default is 1000.
+*
+*ONESYS - Default is 0. When set to 1 this implies you are running same system
+* network test.
+*
+*WRITE_SLEEP allows lowering the stress level by specifying sleep
+*time in milliseconds.  It will also balance the work-load between          
+*fast and slow machines.  Default is 0.
+*
+*WRITE_AHEAD specifies how many packets can be written ahead of the
+*read process without acknowledgements.  Default is 2 for UDP.  Size
+*of the write ahead value for TCP is ignored.
+*
+*For UDP
+*    The value of WRITE_AHEAD, buffer size(BUFMIN, BUFMAX, and
+*    BUFINC), and network parameters interact to determine behavior.
+*    See SC23-2365-01, "Performance Monitoring and Tuning Guide," for
+*    information on how to setup.  Network option arpt_killc should be
+*    set to a large value to prevent dropping packets every 20 minutes.
+*    
+*ACK_TRIG specifies how many of the test packets to acknowledged.
+*With a heavy load, a machine can become bound by the number of 
+*interrupts that it can service.  Using a low ACK_TRIG value will
+*alleviate this problem except for very small packets.  The default
+*is to ack all test packets.  ACK_TRIG=0 specifies to ack only the
+*last packet in the WRITE_AHEAD sequence (0 left to write).  If you
+*are using a fairly reliable comnet then this will work.  If it is 
+*not then there will be some timeouts related to dropping packets on
+*the comnet.  These can be identified by looking at the error messages
+*printed.
+*-----------------------------------------------------------------------------
+*This shows that packet 239 had been written, but it had never been 
+*received -- A TEST PROBLEM.
+*
+*/dev/MPSF63S0     Dec 11 17:30:30 1993 err=00e10000 sev=4 hxecom
+*R(100.1.1.21.1082) connected to W(100.1.1.25.1054)
+*(Packet number), read (101),  expected (100).
+*Packet(s) dropped.
+*For stanza 0, UDP connection, bufmin=1000, bufmax=1000, bufinc=100
+*Consecutive prior good reads=   156100,  good bytes read=         157192700
+*
+*/dev/MPSF63S0     Dec 11 19:02:35 1993 err=00da0004 sev=4 hxecom
+*R(100.1.1.21.1082) connected to W(100.1.1.25.1054)
+*Read failed - Interrupted system call.
+*SIGALARM signal received.
+*Resetting writer to i=239, bsize=1000, timestamp=1, pak=239.
+*For stanza 0, UDP connection, bufmin=1000, bufmax=1000, bufinc=100
+*Consecutive prior good reads=   228138,  good bytes read=         229734966
+*
+*/dev/MPSF63S0     Dec 11 18:57:57 1992 err=00f20000 sev=1 hxecom
+*W(100.1.1.25.1054) connected to R(100.1.1.21.1082)
+*Resetting Writer to -
+*i= 239, timestamp=   1, bsize=  1000, stanza=  0, pak= 239.
+*Parameters for next write prior to reset -
+*i= 240, timestamp=   0, bsize=  1000, stanza=  0, pak= 240.
+*For stanza 0, UDP connection,  bufmin=1000, bufmax=1000, bufinc=100
+*Consecutive prior good writes=   384240,  good bytes written=         386929680
+*
+*-------------------------------------------------------------------------------
+*This shows that packet 332 hadn't been written causing the reader 
+*to time out -- A COMNET PROBLEM not a test problem.
+*/dev/MPSF63S0     Dec 11 13:56:27 1993 err=00da0004 sev=4 hxecom
+*R(100.1.1.23.1034) connected to W(100.1.1.25.1027)
+*Read failed - Interrupted system call.
+*SIGALARM signal received.
+*Resetting writer to i=332, bsize=1000, timestamp=1, pak=332.
+*For stanza 0, UDP connection, bufmin=1000, bufmax=1000, bufinc=100
+*Consecutive prior good reads=     7332,  good bytes read=           7383324
+*
+*/dev/MPSF63S0     Dec 11 13:53:06 1992 err=00f20000 sev=1 hxecom
+*W(100.1.1.25.1027) connected to R(100.1.1.23.1034)
+*Resetting Writer to -
+*i= 332, timestamp=   1, bsize=  1000, stanza=  0, pak= 332.
+*Parameters for next write prior to reset -
+*i= 332, timestamp=   0, bsize=  1000, stanza=  0, pak= 332.
+*For stanza 0, UDP connection,  bufmin=1000, bufmax=1000, bufinc=100
+*Consecutive prior good writes=     7332,  good bytes written=           7383324
+*------------------------------------------------------------------------------
+*Recommendation: Use ACK_TRIG=1 or 0.  With WRITE_AHEAD=2 use ACK_TRIG=0.
+*If a few timeouts occur, they can be sorted out by method above.
+*
+*IO_ALARM_TIME specifies how long to wait in a read or write function
+*before printing an error.  Default is 300 seconds.
+*
+*TCP_NODELAY specifies if the TCP layer is allowed to delay writing.  Delayed
+*writing may improve utilization of the network through reduced packets/larger
+*packets on the network.  It may also reduce the stress on the hardware and
+*device driver. TCP_NODELAY should be set to check boundary conditions in the
+*device driver and adapter.  When set, user packets will usually be written 
+*without coalescing with other user packets.  When combined with combinations 
+*of BUFMIN,BUFMAX,BUFINC,NUM_OPER, and mtu size, boundary conditions can be 
+*checked quickly. Values are Y and N.  Default is Y.
+*
+*SO_LINGER specifies if data buffered in TCP socket should be flushed or 
+*delivered when socket is closed.  Values are Y and N.  Default is N.  A value 
+*of N will improve ability to restart exerciser for test conditions where
+*the test-network is less than reliable.  A value of N will not allow testing 
+*the ability to force a close of socket with data.
+*
+*DEBUG_PATTERN when set to 1 (the default is 1) hxecom will put debug info in
+*the pattern on the fly. Note this does slow down both reader and writer. This
+*debug info goes in every 128 bytes. The data looks like this:
+*00008540   FFFFFFFF 30313700 35303137 3600FFFF  |....017.50176...|
+*00008550   FFFFFFFF 01002F64 65762F65 6E743133  |....../dev/ent13|
+*00008560   00000000 30303136 37313635 3400FFFF  |....001671654...|
+*017 is the hxecom packet number
+*50176 is a multiple of 128, 50176/128=392  so this is the 392'nd debug entry in
+*this packet. 
+*/dev/ent13 is the device name the writer is using. This packet was written from
+*/dev/ent13
+*001671654 is the process id of ther writer process that wrote the packet. 
+*
+*NO_COMPARE when set to 1 (the default is 0), the hxecom reader process will
+*skip the data compare. This should only be used when you want to get max
+*thruput for performance reasons and you don't care if the data is good or bad.
+RULE_ID=00000000
+PATTERN_ID=HEX255
+COMNET_NAME=comnetXX
+TESTNET_NAME=testnetXX
+BUFMIN=5000
+BUFMAX=5000
+BUFINC=1
+MASTER=Y
+LAYER=TCP
+IO_ALARM_TIME=300
+SHUTDOWN_FLAGS=0x0000
+WRITE_SLEEP=0
+REPLICATES=1
+NUM_OPER=1000
+
+BUFMIN=100
+BUFMAX=1000
+BUFINC=100
+NUM_OPER=100

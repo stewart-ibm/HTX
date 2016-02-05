@@ -9,7 +9,7 @@ OBJECTS = prt_msg_common${OBJ_SUFF} hd_linux${OBJ_SUFF} io_oper_common${OBJ_SUFF
 SRCS = $(patsubst %.o, %.c, $(OBJECTS))
 
 CFLAGS += -D__GR2600__ -D_GNU_SOURCE -O2 -D__HTX_LINUX__ -D_target_ppc -DHTXTHREADED -D_FILE_OFFSET_BITS=64
-LIBS = -lhtxmp64 -lhtx64 -lpthread -lmisc64 -lc
+LIBS = -lhtxmp64 -lhtx64 -lpthread -lc
 
 .PHONY: all clean
 

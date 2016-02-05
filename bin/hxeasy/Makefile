@@ -12,7 +12,7 @@ LDFLAGS +=
 
 CFLAGS += -O1 -g
  
-LIBS =-lpthread -lhtx64 -lmisc64 
+LIBS =-lpthread -lhtx64 
 
 .PHONY: all clean
 

@@ -48,7 +48,7 @@ endif
 CFLAGS += -D__HTX_LINUX_ -D_GNU_SOURCE -DTRUE=1 -DFALSE=0
 
 LIBS += -Wl,--start-group
-LIBS += -lhtx64 -lmisc64 -lhtxsyscfg64 -lpthread -lcfgc64
+LIBS += -lhtx64 -lpthread -lcfgc64
 LIBS += -Wl,--end-group 
 
 .PHONY: all clean

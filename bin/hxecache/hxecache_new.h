@@ -1,7 +1,7 @@
 /* @(#)20       1.5.1.11  src/htx/usr/lpp/htx/bin/hxecache/hxecache_new.h, exer_cache, htx61S, htx61S_691 5/22/12 06:03:38  */
 
 #include <pthread.h>
-#include "htxsyscfg64_new.h"
+#include "htxsyscfg64.h"
 
 #include <sys/shm.h>
 #include <sys/mman.h>

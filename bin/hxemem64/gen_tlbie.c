@@ -1,5 +1,5 @@
 #include "hxemem64.h"
-#include "htxsyscfg64_new.h"
+#include "htxsyscfg64.h"
 extern struct rule_format *stanza_ptr,r;
 extern struct memory_info mem_info;
 extern struct private_data priv;
