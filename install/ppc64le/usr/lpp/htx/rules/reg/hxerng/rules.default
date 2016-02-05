@@ -1,6 +1,0 @@
-* Default rulefile for hxerng
-* @(#)71   1.3  src/htx/usr/lpp/htx/rules/reg/hxerng/rules.default, exer_rng, htxubuntu 11/18/11 07:45:39
-
-rule_name tes1
-num_oper 100
-stream_size 1048576

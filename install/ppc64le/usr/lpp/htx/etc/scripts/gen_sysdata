@@ -1,5 +1,0 @@
-# @(#)62        1.2.4.1     src/htx/usr/lpp/htx/etc/scripts/gen_sysdata, eserv_daemon, htxubuntu 6/7/11 23:26:12
-echo "-----------------------------------" >/tmp/htx_sysdata
-echo "   THE SYSTEM CONFIGURATION INFO   " >>/tmp/htx_sysdata
-echo "-----------------------------------" >>/tmp/htx_sysdata
-/usr/lpp/htx/etc/scripts/gen_vpd >>/tmp/htx_sysdata

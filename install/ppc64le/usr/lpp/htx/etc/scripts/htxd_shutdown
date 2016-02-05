@@ -1,9 +1,0 @@
-#!/bin/bash
-#
-# @(#)45 1.2  src/htx/usr/lpp/htx/etc/scripts/htxd_shutdown, htxd, htxubuntu 8/27/14 04:31:33
-#
-########################################################
-
-ps -ef | grep -w "/usr/lpp/htx/bin/htxd" | grep -v grep | awk '{print $2}' | xargs kill -15 >/dev/null 2>&1
-
-
