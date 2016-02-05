@@ -1,5 +1,21 @@
+/* IBM_PROLOG_BEGIN_TAG                                                   */
+/* This is an automatically generated prolog.                             */
+/*                                                                        */
+/* htxfedora src/htx/usr/lpp/htx/lib/htx64/hxfupdate.c 1.29.6.14          */
+/*                                                                        */
+/* Licensed Materials - Property of IBM                                   */
+/*                                                                        */
+/* Restricted Materials of IBM                                            */
+/*                                                                        */
+/* COPYRIGHT International Business Machines Corp. 1997,2015              */
+/* All Rights Reserved                                                    */
+/*                                                                        */
+/* US Government Users Restricted Rights - Use, duplication or            */
+/* disclosure restricted by GSA ADP Schedule Contract with IBM Corp.      */
+/*                                                                        */
+/* IBM_PROLOG_END_TAG                                                     */
 
-/* @(#)92	1.29.6.14  src/htx/usr/lpp/htx/lib/htx64/hxfupdate.c, htx_libhtx, htxubuntu 7/8/15 00:14:01 */
+/* %Z%%M%	%I%  %W% %G% %U% */
 
 #define addw(msw, lsw, num) \
 { \
@@ -33,7 +49,6 @@
 /*    htx_error = format and issue error messages, update error information.*/
 /*    htx_finish = update end of cycle information.                         */
 /*    sendp = place message on HTX message queue.                           */
-/*    hxf_startup_complete = waits on semaphore until all HE's are started. */
 /*                                                                          */
 /* COMPILER OPTIONS =  -I/src/master/htx/common -g -Nn3000 -Nd4000 -Np1200  */
 /*                     -Nt2000                                              */
@@ -373,17 +388,6 @@ int hxfupdate(char call, struct htx_data *data)
 
   switch (call)
     {
-    case PSEUDOSTART:
-      if ( (rel_pos = htx_pseudostart(data, &save_time)) > 0 )
-        {
-          rc = 0;                 /* set good return code.    */
-        }
-      else /* problem in htx_pseudostart()           */
-        {
-          rc = -1*rel_pos;        /* set bad return code.     */
-          return(rc);               /* RIP                      */
-        } /* endif */
-      break;
     case START:               /*  Startup Call  ***************************/
       sem_id = -1;
       p_shm_hdr = 0;
@@ -979,258 +983,6 @@ Unable to find %s in HTX shared memory structure.\n",
 } /* htx_start() */
 
 
-/****************************************************************************/
-/*****  h t x _ p s e u d o s t a r t ( )  **********************************************/
-/****************************************************************************/
-/*                                                                          */
-/* FUNCTION NAME =     htx_pseudostart()                                          */
-/*                                                                          */
-/* DESCRIPTIVE NAME =  Startup of hxfupdate function.                       */
-/*                                                                          */
-/* FUNCTION =          Establishes connections to the HTX data and control  */
-/*                     structures, and initializes htx_data data structure. */
-/*                                                                          */
-/* INPUT =             data - the htx_data data structure.  Contains a      */
-/*                            variety of HE specific information.           */
-/*                                                                          */
-/* OUTPUT =            Connections to the HTX data and control structures,  */
-/*                     initialized htx_data data structure and the beginning*/
-/*                     of cycle time.                                       */
-/*                                                                          */
-/* NORMAL RETURN =     >= 0 to indicate the relative position of the HE     */
-/*                        entry in the HTX shared memory structure.         */
-/*                                                                          */
-/* ERROR RETURNS =      11 Unable to get HTX message queue.                 */
-/*                      12 Unable to get HTX shared memory.                 */
-/*                      13 Unable to attach HTX shared memory.              */
-/*                      14 Unable to get HTX semaphore structure.           */
-/*                      15 Unable to find htx_data->sdev_id in HTX shared   */
-/*                         memory structure.                                */
-/*                      31 Not enogh space to allocate another pseudo entry */
-/*                                                                          */
-/* EXTERNAL REFERENCES                                                      */
-/*                                                                          */
-/*    NONE.                                                                 */
-/*                                                                          */
-/****************************************************************************/
-
-int htx_pseudostart(struct htx_data *data, int *p_save_time)
-{
-  register int i;                 /* loop counter.                    */
-
-  int     mem_id;                 /* HTX shared memory id.            */
-  int     rc;                     /* return code.                     */
-
-
-  /********************************************************************/
-  /* MSGLOGKEY is a key designated in HTX to represent messages sent  */
-  /* to and received by the HTX message processing program.  This key */
-  /* is used in the MSGGET system call to get the message queue       */
-  /* identifier used for interprocess message switching.  See MSGGET  */
-  /* system call in AIX Technical Reference Manual.                   */
-  /********************************************************************/
-
-  msqid = msgget(MSGLOGKEY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
-                 S_IROTH | S_IWOTH);
-
-  if (msqid == -1)
-    {
-      data->error_code = errno;
-      data->severity_code = HTX_SYS_HARD_ERROR;
-      (void) sprintf(data->msg_text,
-                     "%s for %s: Error in hxfupdate function.\n\
-Unable to access HTX message queue.\nerrno = %d",
-                     data->HE_name,
-                     data->sdev_id,
-                     data->error_code);
-
-      if (sendp(data, HTX_SYS_MSG) != 0)        /* send msg to htx_error() */
-        {
-          perror(data->msg_text);
-          (void) fflush(stderr);
-        } /* endif */
-
-      return(-11);
-    } /* endif */
-
-  /********************************************************************/
-  /* SHMKEY is the key designated to represent shared memory          */
-  /* throughout the HTX system.  This key is used in the SHMGET       */
-  /* system call to get the shared memory region used for             */
-  /* interprocess shared memory.  See SHMGET system call in AIX       */
-  /* Technical Reference Manual for further details.                  */
-  /********************************************************************/
-
-  mem_id = shmget(SHMKEY, 0, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
-                  S_IROTH | S_IWOTH);
-  if (mem_id == -1)
-    {
-      data->error_code = errno;
-      data->severity_code = HTX_SYS_HARD_ERROR;
-      (void) sprintf(data->msg_text,
-                     "%s for %s: Error in hxfupdate function.\n\
-Unable to get HTX shared memory.\nerrno = %d",
-                     data->HE_name,
-                     data->sdev_id,
-                     data->error_code);
-
-      if (sendp(data, HTX_SYS_MSG) != 0)       /* send message */
-        {
-          perror(data->msg_text);
-          (void) fflush(stderr);
-        } /* endif */
-
-      return(-12);
-    } /* endif */
-
-  /********************************************************************/
-  /* The SHMAT system call attaches the shared memory segment         */
-  /* associated with the shared memory identifier mem_id (from the    */
-  /* SHMGET system call).  See SHMAT system call in AIX Technical     */
-  /* Reference Manualfor further details.  The return value from      */
-  /* SHMAT is cast to the structure type for hardware exerciser       */
-  /* statistical accumulators and error messages.                     */
-  /********************************************************************/
-
-  pseudo_dev_count++;
-  if (!((p_shm_hdr) && (mem_id==data->mem_id))) {
-     tmp_p_shm_hdr = (struct htxshm_hdr *) shmat(mem_id, (char *) 0, 0);
-     if (tmp_p_shm_hdr == (struct htxshm_hdr *) -1)
-       {
-         data->error_code = errno;
-         data->severity_code = HTX_SYS_HARD_ERROR;
-         (void) sprintf(data->msg_text,
-                        "%s for %s: Error in hxfupdate function.\n\
-   Unable to attach HTX shared memory for pseudo devices.\nerrno = %d, pseudo device=%d, mem_id=%x, data->mem_id=%x, p_shm_hdr=%x",
-                        data->HE_name,
-                        data->sdev_id,
-                        data->error_code,pseudo_dev_count
-                        ,mem_id,data->mem_id,p_shm_hdr
-                        );
-
-         if (sendp(data, HTX_SYS_MSG) != 0)       /* send message */
-           {
-             perror(data->msg_text);
-             (void) fflush(stderr);
-           } /* endif */
-
-         return(-13);
-       } /* endif */
-     else {
-         p_shm_hdr = tmp_p_shm_hdr;
-         data->mem_id = mem_id;
-       }
-     }
-
-  hft_p_shm_hdr = p_shm_hdr;
-
-  /********************************************************************/
-  /* Read through the entries in the HTX system shared memory to find */
-  /* a device id that equals the device id passed from the hardware   */
-  /* exerciser.  This results in setting the shared memory pointer to */
-  /* the array entry that contains the HTX information for this       */
-  /* device.                                                          */
-  /********************************************************************/
-
-
-  p_shm_HE = (struct htxshm_HE *) (p_shm_hdr + 1);
-  p_shm_HE = p_shm_HE + p_shm_hdr->pseudo_entry_0;
-  for (i = (p_shm_hdr->pseudo_entry_0); i < (p_shm_hdr->pseudo_entry_0+p_shm_hdr->pseudo_entries); i++)
-    {
-      if (strcmp(&data->sdev_id[5], p_shm_HE->sdev_id) != 0)
-        p_shm_HE++;
-      else break;
-    } /* endfor */
-
-  if (i == (p_shm_hdr->pseudo_entry_0+p_shm_hdr->pseudo_entries))
-    { /* Unable to find /dev/???? iallocate a new one if possible */
-      if (p_shm_hdr->pseudo_entries >= PSEUDO_EXTRA_ENTRIES)
-         {
-            p_shm_HE = 0;
-
-            data->error_code = 31;
-            data->severity_code = HTX_HE_HARD_ERROR;
-            (void) sprintf(data->msg_text,
-                           "%s for %s: Error in hxfupdate function.\n\
-      Unable to get space for %s in HTX shared memory structure.\n",
-                           data->HE_name,
-                           data->sdev_id,
-                           data->sdev_id);
-
-            if (sendp(data, HTX_HE_MSG) != 0)       /* send message */
-              {
-                perror(data->msg_text);
-                (void) fflush(stderr);
-              } /* endif */
-
-            return(-31);
-         }
-      else
-         {
-           p_shm_hdr->pseudo_entries++;
-           rc = i + 1 ;             /* return code = HE relative pos.   */
-           strcpy(p_shm_HE->sdev_id, &data->sdev_id[5]);
-         }
-
-    }
-  else
-    rc=i+1;
-
-  if(data->hotplug_cpu == 1) {
-        p_shm_HE->hotplug_cpu = data->hotplug_cpu;
-  } else {
-        p_shm_HE->hotplug_cpu = 0;
-  }
-
-  if(data->hotplug_mem == 1) {
-        p_shm_HE->hotplug_mem = data->hotplug_mem;
-  } else {
-        p_shm_HE->hotplug_mem = 0;
-  }
-
-  if(data->hotplug_io == 1) {
-        p_shm_HE->hotplug_io = data->hotplug_io;
-  } else {
-        p_shm_HE->hotplug_io = 0;
-  }
-
-  /********************************************************************/
-  /* Set all statistical accumulators in shared memory for the        */
-  /* hardware exerciser to zero.  Also set accumulators in passed     */
-  /* DATA structure to zero.                                          */
-  /********************************************************************/
-
-  p_shm_HE->cycles = 0;
-  p_shm_HE->tm_last_err = 0;
-  p_shm_HE->tm_last_upd = 0;
-  p_shm_HE->bad_others = 0;
-  p_shm_HE->bad_reads = 0;
-  p_shm_HE->bad_writes = 0;
-  p_shm_HE->bytes_read1 = 0;
-  p_shm_HE->bytes_read2 = 0;
-  p_shm_HE->bytes_writ1 = 0;
-  p_shm_HE->bytes_writ2 = 0;
-  p_shm_HE->good_others = 0;
-  p_shm_HE->good_reads = 0;
-  p_shm_HE->good_writes = 0;
-  p_shm_HE->total_num_instructions = 0;
-  data->bad_others = 0;
-  data->bad_reads = 0;
-  data->bad_writes = 0;
-  data->bytes_read = 0;
-  data->bytes_writ = 0;
-  data->good_others = 0;
-  data->good_reads = 0;
-  data->good_writes = 0;
-  data->num_instructions = 0;
-  data->miscompare_count = 0;
-
-  p_shm_HE->tm_last_upd = time((time_t *) 0);
-  *p_save_time = p_shm_HE->tm_last_upd;     /* for cycle time calc.     */
-  return (rc);
-
-} /* htx_pseudostart() */
-
 
 
 /****************************************************************************/
@@ -1812,47 +1564,6 @@ Unable to send message.\nerrno = %d",
 } /* sendp() */
 
 
-
-/****************************************************************************/
-/*****  h x f _ s t a r t u p _ c o m p l e t e  ****************************/
-/****************************************************************************/
-/*                                                                          */
-/* FUNCTION NAME =     hxf_startup_complete()                               */
-/*                                                                          */
-/* DESCRIPTIVE NAME =  Waits on semaphore until HTX startup is completed.   */
-/*                                                                          */
-/* NORMAL RETURN =     0 to indicate successful completion.                 */
-/*                                                                          */
-/* ERROR RETURNS =     -1 Error on semop() system call.                     */
-/*                     -2 hxfupdate(START) not yet called or HE not started */
-/*                        under supervisor control.                         */
-/*                                                                          */
-/****************************************************************************/
-int hxf_startup_complete(struct htx_data *data)
-{
-  static struct sembuf wait_startup_complete[2] =
-    {
-      {
-        /* subtract 1 from startup complete semaphore */
-        (unsigned short) 3,
-        (short) -1,
-        SEM_UNDO
-      },
-      {
-        /* add 1 to startup complete semaphore */
-        (unsigned short) 3,
-        (short) 1,
-        SEM_UNDO
-      }
-    };
-
-
-  if (sem_id == -1)  /* system started under htx supervisor? */
-    return(-2);
-
-  return(semop(sem_id, wait_startup_complete, 2));
-
-} /* hxf_startup_complete() */
 
 int dupdev_cmp ( int index, char * my_exerid )
 {

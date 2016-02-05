@@ -1,5 +1,21 @@
+/* IBM_PROLOG_BEGIN_TAG                                                   */
+/* This is an automatically generated prolog.                             */
+/*                                                                        */
+/* htxubuntu src/htx/usr/lpp/htx/lib/htx64/keycheck.c 1.5                 */
+/*                                                                        */
+/* Licensed Materials - Property of IBM                                   */
+/*                                                                        */
+/* Restricted Materials of IBM                                            */
+/*                                                                        */
+/* COPYRIGHT International Business Machines Corp. 2013,2015              */
+/* All Rights Reserved                                                    */
+/*                                                                        */
+/* US Government Users Restricted Rights - Use, duplication or            */
+/* disclosure restricted by GSA ADP Schedule Contract with IBM Corp.      */
+/*                                                                        */
+/* IBM_PROLOG_END_TAG                                                     */
 
-/* @(#)12	1.5  src/htx/usr/lpp/htx/lib/htx64/keycheck.c, htx_license, htxubuntu 8/31/15 06:58:52 */
+/* %Z%%M%	%I%  %W% %G% %U% */
 
 #include <expirekey.h>
 #include <stdio.h>
@@ -57,7 +73,7 @@
 #define MAX_NUMR_OFFSET			255
 
 static long int Vers, Vers_key;
-static char Emailid[12] = {'\0'}, Releases[37] = {'\0'}, NumR[2] = {'\0'}, ReqDate[6] = {'\0'}, EmailLen[2] = {'\0'}, Version[6] = {'\0'} ;
+static char Emailid[12] = {'\0'}, Releases[37] = {'\0'}, NumR[2] = {'\0'}, ReqDate[6] = {'\0'}, EmailLen[3] = {'\0'}, Version[6] = {'\0'} ;
 static int nUMr = 0, eMAILlEN = 0, vERSION;
 static int req_year, req_month, req_day ;
 static int verchk, keyfilefound = 1 ;
@@ -148,8 +164,8 @@ int stx_license()
   int exp_year  = -1;
   int exp_month = -1;
   int exp_day   = -1;
-  char activation_key[60];
-  char buf[512];
+  char activation_key[60]={'\0'};
+  char buf[60] = {'\0'};
   FILE *fp;
   char a_char[2];
   char *filename; /* ="/usr/lpp/htx/etc/scripts/htxkey";*/
@@ -349,7 +365,7 @@ int stx_license()
 	close(fd);
 
 
-          strcpy(activation_key,buf);   activation_key[KEYLEN] = '\0' ;
+          strncpy(activation_key,buf, KEYLEN); 
 
 	DecodeKey(activation_key);
 
@@ -1563,7 +1579,7 @@ int InitialActivate(char *version, int *exp_year, int *exp_month, int *exp_day, 
   int cur_year = 0;
   int cur_day = 0;
   int digit;
-  char digit_char[2];
+  char digit_char[3];
   char key_version[8] = "     ";
   char time_stamp[DATE_TIME_SIZE];
 
@@ -1689,7 +1705,7 @@ int DecodeKey(unsigned char* key)
   char *a_char;
   char a_num[3];
   int digit;
-  char digit_char[2];
+  char digit_char[3];
   char exp_date_key[7];
   char prev_date_key[6];
   char req_date_key[7];

@@ -1,0 +1,48 @@
+--------------------------------------------------
+|                                  Page  1 of  3 |
+|                                                |
+| Welcome to STX Add devcie HELP screen!         |
+|                                                |
+| I. Features :                                  |
+|                                                |
+|     Any number of copies of a device can be    |
+|   added to any of the existing ecgs. Option is |
+|   available to start the exerciser immediately |
+|   and to force on an already existing device   |
+|                                                |
+|                                 contd.....     |
+|                                                |
+|          F = Forward      Q = Quit             |
+--------------------------------------------------
+--------------------------------------------------
+|                                  Page  2 of  3 |
+|                                                |
+| II. Procedure:                                 |
+|                                                |
+|     Enter the path of the ecg to which the     |
+|   device is to be added in the first line.     |
+|     Enter the device to be added in second line|
+|   Toggle the flag in the third line, valid     |
+|     options are: 1. default (start on load )   |
+|                  2. yes     (start on load )   |
+|                  3. no      (suspend on load)  |
+|                                                |
+|                                contd...        |
+|      F = Forward   B = Back    Q = Quit        |
+--------------------------------------------------
+--------------------------------------------------
+|                                  Page  3 of  3 |
+|                                                |
+| III. Procedure contd....                       |
+|                                                |
+|     Toggle the flag for force redefinition on  |
+|   fourth line. If  force redefinition is set   |
+|   exerciser will replace the existing device   |
+|                                                |
+|   Enter the number of copies in fifth line     |
+|   duplicate copies of the exerciser will be    |
+|   started if a number is entered here, else    |
+|   only one copy will be started. This opiton   |
+|   overrides force redefinition flag.           |
+|      F = Forward   B = Back    Q = Quit        |
+--------------------------------------------------

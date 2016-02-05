@@ -9,7 +9,7 @@ static char sccsid[] = "@(#)71	1.1  src/htx/usr/lpp/htx/bin/hxemem64/corsa.c, ex
 #include <hxihtx64.h>
 #include "hxemem64.h"
 #include "nx_corsa.h"
-#include "htxsyscfg64_new.h"  
+#include "htxsyscfg64.h"  
 
 
 #define KB					1024

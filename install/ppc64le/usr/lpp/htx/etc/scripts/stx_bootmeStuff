@@ -1,0 +1,368 @@
+#!/bin/ksh
+# @(#)76 1.2  src/htx/usr/lpp/htx/etc/scripts/stx_bootmeStuff, htx_bootme, htxubuntu 11/11/03 05:12:02
+#
+# COMPONENT_NAME: htx_bootme
+#
+# ORIGINS: 27
+#
+# OWNER: Jack E. Moore
+#        jem@us.ibm.com
+#
+###############################################################################
+###############################################################################
+
+# THERE IS NOTHING TO EDIT IN THIS FILE
+# GO TO: /usr/lpp/htx/rules/reg/bootme/default
+# TO EDIT ANY BOOTME VARIABLES!
+
+
+###############################################################################
+# file locations
+  PROG_DIR=/usr/lpp/htx/etc/scripts
+  SC_ERR=/tmp/sctcheckstop.err
+  rules=/usr/lpp/htx/rules/reg/bootme/default
+  blog=/tmp/bootme.log
+  Work=/tmp/bootme.work
+  typeset -i count=0 scount=0 bcount=0
+
+
+###############################################################################
+function logError
+{
+  if [[ -e "$SC_ERR" ]]
+     then wall "stx_bootme has detected a problem - Check the AIX error log for details."
+          #errlogger "$(cat $SC_ERR)" >/dev/null
+          rm $SC_ERR
+          exit 1
+  fi
+}
+
+
+###############################################################################
+# pulls BOOT_METHOD statement from $rules
+  BOOT_METHOD=$(grep "^BOOT_METHOD:" $rules | head -n1 2>/dev/null)
+  BOOT_METHOD=${BOOT_METHOD##*: }
+  if [[ -z "$BOOT_METHOD" ]]
+     then echo "`date`:" > $SC_ERR
+          echo >> $SC_ERR
+          echo "Please check the value of BOOT_METHOD in:" >> $SC_ERR
+          echo $rules >> $SC_ERR
+          echo >> $SC_ERR
+  fi
+
+
+###############################################################################
+# pulls BOOT_CMD statement(s) from $rules
+  case $BOOT_METHOD in
+
+     # Assign the single BOOT_CMD
+       single) BOOT_CMD=$(grep "^BOOT_CMD:" $rules | head -n1 2>/dev/null)
+               BOOT_CMD=${BOOT_CMD##*: }
+               if [[ -z "$BOOT_CMD" ]]
+                  then echo "`date`:" > $SC_ERR
+                       echo >> $SC_ERR
+                       echo "Please check the value of BOOT_CMD in:" >> $SC_ERR
+                       echo $rules >> $SC_ERR
+                       echo >> $SC_ERR
+               fi
+       ;;
+
+
+     # Pull a random reboot command from the array
+     # imports all uncommented BOOT_CMD statements from $rules
+       random) cat $rules | while read input
+               do  if [[ -n $(echo $input | grep ^BOOT_CMD) ]]
+                      then BOOTCMD[$count]=${input##*: }
+                         # echo "$count: ${BOOTCMD[$count]}"
+                           echo ${BOOTCMD[$count]} | awk '{ print $1 }' >> $Work
+                           let count=count+1
+                   fi
+               done
+
+             # manipulate the various boot methods saved in $Work to make a | separated list
+             # of boot commands. We use this list later to search the bootme.log for matchs.
+               sort -uo <$Work $Work
+               cat $Work | while read input
+               do  list=$list$input"|"
+               done
+               list=${list%\|*}   # removes the last |
+               rm $Work
+
+               rdom=$(echo "scale=5\n((${RANDOM} / 32767) * $count)" | /bin/bc)
+               BOOT_CMD=${BOOTCMD[$rdom]}
+
+               if [[ -z "$BOOT_CMD" ]]
+                  then echo "`date`:" > $SC_ERR
+                       echo >> $SC_ERR
+                       echo "Please check the value of BOOT_CMD in:" >> $SC_ERR
+                       echo $rules >> $SC_ERR
+                       echo >> $SC_ERR
+               fi
+       ;;
+
+
+     # find the next sequential boot command based on the last one noted in $blog
+     # imports all uncommented BOOT_CMD statements from $rules
+       sequential)
+            cat $rules | while read input
+            do  if [[ -n $(echo $input | grep ^BOOT_CMD) ]]
+                   then BOOTCMD[$count]=${input##*: }
+                      # echo "$count: ${BOOTCMD[$count]}"
+                        echo ${BOOTCMD[$count]} | awk '{ print $1 }' >> $Work
+                        let count=count+1
+                fi
+            done
+
+          # manipulate the various boot methods saved in $Work to make a | separated list
+          # of boot commands. We use this list later to search the bootme.log for matchs.
+            sort -uo <$Work $Work
+            cat $Work | while read input
+            do  list=$list$input"|"
+            done
+            list=${list%\|*}   # removes the last |
+            rm $Work
+
+            [ -e $blog ] || touch $blog
+            bcount=$(cat $blog | wc -l)
+            if [[ -s $blog ]]
+               then while [[ -z "$seq" ]]
+                    do  let scount=scount+1
+                        seq=$(tail -n$scount $blog | head -n1 | grep -E "$list")
+                        [ "$scount" -eq "$bcount" ] && break
+                    done
+            fi
+
+            let scount=0
+            while [[ -z "$seqf" ]]
+            do  seqf=$(echo "$seq" | grep "${BOOTCMD[$scount]}")
+                [ "$scount" -gt "$count" ] && break
+                let scount=scount+1
+            done
+
+            [ -n "$seqf" ] && BOOT_CMD=${BOOTCMD[$scount]} || BOOT_CMD=${BOOTCMD[0]}
+            [ -z "$BOOT_CMD" ] && BOOT_CMD=${BOOTCMD[0]}
+       ;;
+
+
+     # If BOOT_METHOD is not defined, then
+       *) echo "`date`:" > $SC_ERR
+          echo >> $SC_ERR
+          echo "Please check the value of BOOT_METHOD in:" >> $SC_ERR
+          echo $rules >> $SC_ERR
+          echo >> $SC_ERR
+       ;;
+
+  esac
+
+
+###############################################################################
+# pulls BOOT_WAIT statement from $rules
+  BOOT_WAIT=$(grep "^BOOT_WAIT:" $rules | head -n1 | awk '{ print $2 }')
+  if [[ -z "$BOOT_WAIT" ]]
+     then echo "`date`:" > $SC_ERR
+          echo >> $SC_ERR
+          echo "Please check the value of BOOT_WAIT in:" >> $SC_ERR
+          echo $rules >> $SC_ERR
+          echo >> $SC_ERR
+  fi
+
+
+###############################################################################
+# Log any errors found during the BOOT* parameter reading above
+  logError
+
+
+#############################################################################
+# look for '/tmp/sctResult' files (indicating processor failure(s))
+  if [[ -n "$(ls /tmp/sctResult* >/dev/null 2>/dev/null)" ]]
+     then echo "`date`:" > $SC_ERR
+          echo >> $SC_ERR
+          echo "SCTU failure detected during stx_bootme execution - restart aborted" >> $SC_ERR
+          echo "Check: ls /tmp/sctResult*" >> $SC_ERR
+          ls -al /tmp/sctResult* >> $SC_ERR
+          echo >> $SC_ERR
+          echo "Contact HTX for debug assistance (component exer_sct2)" >> $SC_ERR
+          echo >> $SC_ERR
+  fi
+
+
+# look for checkstop files (/usr/lib/ras/scanlog* and /usr/lib/ras/checkstop*)
+  if [[ -n "$(ls /usr/lib/ras/scanlog* >/dev/null 2>/dev/null)" || -n "$(ls /usr/lib/ras/checkstop* >/dev/null 2>/dev/null)" ]]
+     then echo "`date`:" > $SC_ERR
+          echo >> $SC_ERR
+          echo "Checkstop failure detected during stx_bootme execution - restart aborted" >> $SC_ERR
+          echo "Check: ls /usr/lib/ras/scanlog*" >> $SC_ERR
+          ls -al /usr/lib/ras/scanlog* >> $SC_ERR
+          echo >> $SC_ERR
+          echo "       ls /usr/lib/ras/checkstop*" >> $SC_ERR
+          ls -al /usr/lib/ras/checkstop* >> $SC_ERR
+          echo >> $SC_ERR
+          echo "Contact the screen team for debug assistance" >> $SC_ERR
+          echo >> $SC_ERR
+  fi
+
+# Log any errors found during the error checks above
+  logError
+
+# look for /usr/lpp/htx/mdt/mdt.bootme file - but only if stx_bootme wasn't started with the bypass option
+  if [[ ! -e /usr/lpp/htx/bootme.bypass ]]
+     then if [[ ! -f /usr/lpp/htx/ecg/ecg.bootme || ! -s /usr/lpp/htx/ecg/ecg.bootme ]]
+             then echo "`date`:" > $SC_ERR
+                  echo >> $SC_ERR
+                  echo "The stx_bootme ecg file \"ecg.bootme\" has a problem - restart aborted" >> $SC_ERR
+                  echo "Check: ls /usr/lpp/htx/ecg/ecg.bootme" >> $SC_ERR
+                  ls -al /usr/lpp/htx/ecg/ecg.bootme >> $SC_ERR
+                  echo >> $SC_ERR
+                  echo "If ecg.bootme is missing or is zero length, copy a good mdt file" >> $SC_ERR
+                  echo "over to ecg.bootme and stx_bootme will resume functioning at the next" >> $SC_ERR
+                  echo "scheduled reboot interval.">> $SC_ERR
+                  echo >> $SC_ERR
+
+                  logError
+          fi
+  fi
+
+
+#############################################################################
+# pulls BOOT_PRE statement from $rules and executes the command if found
+  BOOT_PRE=$(grep "^BOOT_PRE:" $rules | head -n1 | awk '{ print $2 }')
+  if [[ -z "$BOOT_PRE" ]]
+     then echo "`date`:" > $SC_ERR
+          echo >> $SC_ERR
+          echo "Please check the value of BOOT_PRE in:" >> $SC_ERR
+          echo $rules >> $SC_ERR
+          echo >> $SC_ERR
+
+          logError
+  fi
+  [ -f $BOOT_PRE ] && { echo "`date +\"%D %T\"`: Running BOOT_PRE $BOOT_PRE" >> $blog; $BOOT_PRE; }
+
+
+#############################################################################
+# escape for testing - touch .noreboot (keeps from having to edit script)
+  [ -f $HTXLPP/.noreboot ] && exit
+
+
+#############################################################################
+# remove some other potentially large files
+  rm -f /tmp/aixerr_* /tmp/htx*.0*  /tmp/list*
+
+
+#############################################################################
+# Cypher's future restart time - used with the "-t" options
+# I know this looks like overkill, but it works!
+function timeCalc
+{
+  # Assign variables
+    typeset -i julianDate Year Month Days Hours Minutes Seconds
+
+  # Pulls and parses system date
+    date=$(date +"%D %T")
+    Month=$(echo $date | cut -c "1-2")
+    Days=$(echo $date | cut -c "4-5")
+    Year="20"$(echo $date | cut -c "7-8")
+    Hours=$(echo $date | cut -c "10-11")
+    Minutes=$(echo $date | cut -c "13-14")
+    Seconds=$(echo $date | cut -c "16-17")
+
+  # Calculates the Actual Julian date
+    (( julianDate=(1461*(Year+4800+(Month-14)/12))/4+(367*(Month-2-12*((Month-14)/12)))/12-(3*((Year+4900+(Month-14)/12)/100))/4+Days-32075 ))
+    let julianDate=julianDate-2450000
+
+  # Calculates the total number of seconds (HUGE number)
+    totalSeconds=$(echo "($Hours * 3600) + ($Minutes * 60) + $Seconds" | /usr/bin/bc)
+    let totalSeconds=$totalSeconds+($julianDate*86400)
+
+  # Now we add the testers BOOT_WAIT time and add 30 more seconds to 
+  # accomodate system overhead and the fact that the -t command does not
+  # have a seconds field.  The extra 30 ensures that the system stays
+  # down for at least the desired number of BOOT_WAIT.
+    let totalNewSeconds=$totalSeconds+30+$BOOT_WAIT
+
+  # Reverse calculate the Days, Hours, Minutes and Seconds
+    (( miff=$totalNewSeconds ))
+    floor=$(echo "scale=6\n $miff / 86400" | /bin/bc)
+    Days=${floor%.*}
+    julianDate=$Days
+    (( miff = miff - ( Days * 86400 ) ))
+    floor=$(echo "scale=6\n $miff / 3600" | /bin/bc)
+    Hours=${floor%.*}
+    (( miff = miff - ( Hours * 3600 ) ))
+    floor=$(echo "scale=6\n $miff / 60" | /bin/bc)
+    Minutes=${floor%.*}
+    (( Seconds = miff - ( Minutes * 60 ) ))
+
+  # Ensure that there is a leading "0" in case of a single digit number
+    typeset -Z2 Hours=$Hours
+    typeset -Z2 Minutes=$Minutes
+    typeset -Z2 Seconds=$Seconds
+
+  # Reverse calculate the Julian date
+    let julianDate=julianDate+2450000
+    (( l=julianDate+68569 ))
+    (( n=(4*l)/146097 ))
+    (( l=l-(146097*n+3)/4 ))
+    (( i=(4000*(l+1))/1461001 ))
+    (( l=l-(1461*i)/4+31 ))
+    (( j=(80*l)/2447 ))
+    (( Days=l-(2447*j)/80 ))
+    (( l=j/11 ))
+    (( Month=j+2-(12*l) ))
+    (( Year=100*(n-49)+i+l ))
+
+  # Ensure that there is a leading "0" in case of a single digit number
+    typeset -Z2 Month=$Month
+    typeset -Z2 Days=$Days
+    typeset -Z2 Year=$Year
+
+  # And just that easy - set NEW_BOOT_WAIT with the value for -t
+    NEW_BOOT_WAIT="$Month$Days$Hours$Minutes$Year"
+
+  # mmddHHMMyy
+  # mm Specifies the month.
+  # dd Specifies the day.
+  # HH Specifies the hour.
+  # MM Specifies the minute.
+  # yy Specifies the year (optional)
+}
+
+
+#############################################################################
+# Copy htxerr to backup locations
+  [ -e /tmp/htxerr.bootme1 ] && cp /tmp/htxerr.bootme1 /tmp/htxerr.bootme2
+  [ -e /tmp/htxerr ]         && cp /tmp/htxerr         /tmp/htxerr.bootme1
+
+
+#############################################################################
+# Log message
+  echo "`date`:" > $SC_ERR
+  echo "stx_bootme initiated a system reboot using command:" >> $SC_ERR
+  if [[ -z $(echo $BOOT_CMD | grep "\-t") ]]
+     then echo "$BOOT_CMD" >> $SC_ERR
+     else echo "$BOOT_CMD $BOOT_WAIT" >> $SC_ERR
+  fi
+  #errlogger "$(cat $SC_ERR)" >/dev/null
+  rm $SC_ERR
+
+  sync; sync
+
+
+#############################################################################
+# Issue the tester supplied shutdown / reboot command
+  if [[ -z $(echo $BOOT_CMD | grep "\-t") ]]
+     then echo "`date +\"%D %T\"`: $BOOT_CMD" >> $blog
+          sync
+          $BOOT_CMD
+
+     else timeCalc
+          echo "`date +\"%D %T\"`: $BOOT_CMD $BOOT_WAIT ($NEW_BOOT_WAIT)" >> $blog
+          sync
+
+          if [[ -n $(echo $BOOT_CMD | grep "shutdown") ]]
+             then $BOOT_CMD $NEW_BOOT_WAIT </tmp/.bootme
+             else $BOOT_CMD $NEW_BOOT_WAIT
+          fi
+  fi
+
+  exit 0
+

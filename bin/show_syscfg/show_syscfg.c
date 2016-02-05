@@ -1,6 +1,20 @@
+/* IBM_PROLOG_BEGIN_TAG                                                   */
+/* This is an automatically generated prolog.                             */
+/*                                                                        */
+/* htxfedora src/htx/usr/lpp/htx/bin/show_syscfg/show_syscfg.c 1.3.3.18   */
+/*                                                                        */
+/* Licensed Materials - Property of IBM                                   */
+/*                                                                        */
+/* COPYRIGHT International Business Machines Corp. 2010                   */
+/* All Rights Reserved                                                    */
+/*                                                                        */
+/* US Government Users Restricted Rights - Use, duplication or            */
+/* disclosure restricted by GSA ADP Schedule Contract with IBM Corp.      */
+/*                                                                        */
+/* IBM_PROLOG_END_TAG                                                     */
 
-/* @(#)47       1.3.3.18  src/htx/usr/lpp/htx/bin/show_syscfg/show_syscfg.c, htxconf, htxubuntu 11/22/15 23:14:33 */
-#include "htxsyscfg64_new.h"
+/* %Z%%M%       %I%  %W% %G% %U% */
+#include "htxsyscfg64.h"
 
 int main(int argc, char* argv[])
 {
@@ -27,7 +41,7 @@ int main(int argc, char* argv[])
 		init_syscfg_with_malloc();
 	}
 
-    pvr_value_true = get_pvr();
+    pvr_value_true = get_true_cpu_version();
 	pvr_value_os = get_cpu_version();
     Pvr = pvr_value_true>>16;
 

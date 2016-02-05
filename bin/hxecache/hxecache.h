@@ -1,7 +1,7 @@
 /* @(#)79       1.10  src/htx/usr/lpp/htx/bin/hxecache/hxecache.h, exer_cache, htxubuntu 4/20/15 00:01:18  */
 
 #include <pthread.h>
-#include "htxsyscfg64_new.h"
+#include "htxsyscfg64.h"
 
 #include <sys/shm.h>
 #include <sys/mman.h>

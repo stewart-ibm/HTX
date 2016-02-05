@@ -9,7 +9,7 @@
 #include <sched.h>
 
 #include "hxssup.h"
-#include "htxsyscfg64_new.h"
+#include "htxsyscfg64.h"
 #include "cfgclibdef.h"
 #include "scr_info.h"
 #include "hxiipc.h"

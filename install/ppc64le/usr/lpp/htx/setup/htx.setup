@@ -1,0 +1,70 @@
+#!/bin/ksh
+
+# @(#)55	1.5  src/htx/usr/lpp/htx/setup/htx.setup, htxmisc_sh, htxubuntu 9/25/13 02:16:41 
+
+##-------------------------------------------------------------------------
+## This script loads miscex kernel exetnsion each time user logs in as HTX.
+##-------------------------------------------------------------------------
+
+     echo "***************************************************"
+     echo "*           Loading HTX kernel modules            *"
+     echo "*                                                 *"
+     echo "* NOTE : HTX kernel modules are not GPL licensed. *"
+     echo "*        You may get tainted kernel warnings.See  *"
+     echo "*        /tmp/htxStartup.log for Errors,if it is  *"
+     echo "*        a version mismatch between a kernel and  *"
+     echo "*        a module, please report a defect.        *"
+     echo "*                                                 *"
+     echo "***************************************************"
+     sleep 1
+
+#---------------------------------------------------------------------------
+
+#loading miscex kernel extension
+
+if [ "$CMVC_RELEASE" != "htxltsbml" ] ; # Miscex is in-built in BML kernel
+    then
+    lsmod | grep miscex >/dev/null 2>&1 || {
+        if [ -f /usr/lpp/htx/etc/kernext/miscex.ko ];
+        then
+            echo "Setting up miscex.ko"
+            insmod -f /usr/lpp/htx/etc/kernext/miscex.ko
+            rm -f /dev/miscchar
+            major=`cat /proc/devices | awk '/miscex/ {print $1}'`
+            mknod /dev/miscchar c $major 0
+        else
+            echo "/usr/lpp/htx/etc/kernext/miscex.ko not found. "
+        fi
+    }
+    else
+        if [ -c /dev/miscchar ];
+        then
+            echo "Setting up miscex.ko ..."
+
+        else
+            echo " /dev/miscchar not found. Creating ..... "
+            major=`cat /proc/devices | awk '/miscex/ {print $1}'`
+            mknod /dev/miscchar c $major 0
+        fi
+  fi
+
+#set shmmax and shmall values 
+shmmax_val=`cat /proc/sys/kernel/shmmax`
+let MB=1024*1024
+let shmmax_val=$shmmax_val/$MB
+shmmax_new_val=256
+#echo "$shmmax_new_val, $shmmax_val"
+if [[ "$shmmax_val" -lt "$shmmax_new_val" ]];
+then
+	echo "Setting shmmax to 256MB"
+	echo 268435456 > /proc/sys/kernel/shmmax
+fi
+
+shmall_val=`cat /proc/meminfo | grep MemTotal | awk '{print $2}'`
+shmall_val=`expr $shmall_val \* 9 / 10` # Taking 90% of total memory.
+shmall_4K_val=`expr $shmall_val / 4`  # in terms of 4K
+
+echo "Writing $shmall_4K_val to /proc/sys/kernel/shmall "
+echo $shmall_4K_val > /proc/sys/kernel/shmall
+
+

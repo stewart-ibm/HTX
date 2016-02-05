@@ -1,0 +1,101 @@
+#!/bin/ksh
+# @(#)09        1.3  src/htx/usr/lpp/htx/etc/scripts/create.trial.log.linux, htx_linux, htxubuntu 3/10/07 11:43:01
+#
+#------------------------------------------------------------------------------
+# Determine if echo interprets backslash formatting and correct if possible
+  [ -x /bin/echo ] && {
+     [ "X`(echo '\t') 2>/dev/null`" = 'X\t' ] && alias echo="/bin/echo -e"
+  }
+
+  TrialLog=/usr/lpp/htx/trial.log
+  rm -f $TrialLog
+
+
+#------------------------------------------------------------------------------
+# Entry check function
+  Check () {
+     [ "$(echo "$ans" | grep '[^a-zA-Z0-9_.-]')" ] && {
+        echo "Only alphanumeric, underscore and dash chars"
+        unset ans
+     }
+  }
+
+
+#------------------------------------------------------------------------------
+# Get the testers name
+  ttfile=/tmp/.ttname
+  while [[ -z $ttname ]]; do
+     ttname=$(cat $ttfile 2>/dev/null)
+     [ "$ttname" ] && echo " Testers Name? {$ttname} \c" \
+                   || echo " Testers Name? \c"
+     read ans
+     Check
+     [ "$ans" ] && ttname=$ans
+  done
+  echo $ttname > $ttfile
+
+
+#------------------------------------------------------------------------------
+# Get trial name
+  ttfile=/tmp/.ttrial
+  while [[ -z $ttrial ]]; do
+     ttrial=$(cat $ttfile 2>/dev/null)
+     [ "$ttrial" ] && echo "   Trial Name? {$ttrial} \c" \
+                   || echo "   Trial Name? \c"
+     read ans
+     Check
+     [ "$ans" ] && ttrial=$ans
+  done
+  echo $ttrial > $ttfile
+
+
+#------------------------------------------------------------------------------
+# Get hmc name
+  ttfile=/tmp/.tthmc
+  tthmc=$(cat $ttfile 2>/dev/null)
+  [ "$tthmc" ] && echo " HMC Hostname? {$tthmc} \c" \
+               || echo " HMC Hostname? \c"
+  read ans
+  Check
+  [ "$ans" ] && tthmc=$ans
+  echo $tthmc > $ttfile
+
+
+#------------------------------------------------------------------------------
+# Get HMC Level
+  ttfile=/tmp/.tthmcver
+  while [[ -z $tthmcver ]]; do
+     tthmcver=$(cat $ttfile 2>/dev/null)
+     [ "$tthmcver" ] && echo "    HMC Level? {$ttrial} \c" \
+                     || echo "    HMC Level? \c"
+     read ans
+     Check
+     [ "$ans" ] && tthmcver=$ans
+  done
+  echo $tthmcver > $ttfile
+
+
+#------------------------------------------------------------------------------
+  echo "\nCollecting OS, HTX, firmware and machine details"
+  VerOut=$(/usr/lpp/htx/etc/scripts/ver 2>/dev/null)
+
+
+#------------------------------------------------------------------------------
+# Write the trial log
+
+  echo "   Tester's Name: $ttname
+     Trial Name: $ttrial
+    Trial start: $(date +"%D %T")
+    System Name: $(hostname -s)
+   System Model:$(echo "$VerOut" | grep "Machine Type/Model" | awk -F: '{print $NF}')
+  System Serial:$(echo "$VerOut" | grep "Machine Serial" | awk -F: '{print $NF}')
+      HTX level:$(echo "$VerOut" | grep "HTX Version" | awk -F: '{print $NF}')
+   Kernel level:$(echo "$VerOut" | grep "Kernel Version" | awk -F: '{print $NF}')
+       OS level:$(echo "$VerOut" | grep "OS Version" | awk -F: '{print $NF}')
+ Firmware level:$(echo "$VerOut" | grep "System FW" | awk -F: '{print $NF}')
+       HMC Host: $tthmc" | tee -a $TrialLog
+
+  [ "$hmcBaseVer" ] && echo "   HMC Base Ver: $hmcBaseVer" | tee -a $TrialLog
+  [ "$hmcBuild" ]   && echo "      HMC Build: $hmcBuild"   | tee -a $TrialLog
+  [ "$hmcPatch" ]   && echo "      HMC Patch: $hmcPatch"   | tee -a $TrialLog
+

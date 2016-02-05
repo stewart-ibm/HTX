@@ -31,7 +31,7 @@ auto_SRCS = $(patsubst %.o, %.c, $(auto_OBJECTS))
 all: hxecom hxecom2 mkintfmap auto
 
 CFLAGS += -D__RELGR2600__
-LIBS = -lhtx64 -lmisc64 -lpthread 
+LIBS = -lhtx64 -lpthread 
  
 .PHONY: all clean
 

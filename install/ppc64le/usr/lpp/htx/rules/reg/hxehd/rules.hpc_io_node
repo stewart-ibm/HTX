@@ -1,0 +1,195 @@
+* hxehd rules file for creating customer like load environment.
+* HPC_IO_NODE
+* Requirements:
+*
+*  90/10: Read/Write ratio
+*  5/95: Random/sequential access
+*  256K-16MB(random) : transfer size
+*  number of threads: 6
+*
+*
+*******************************************************************************
+*---------------------------------------------------------------------------*
+*- STANZA 1: Sequentially write the entire disk on every 6th iteration of  -*
+*-           the rules file. This stanza will run in the background while  -*
+*-           other stanza in the rules file are running.                   -*
+*---------------------------------------------------------------------------*
+rule_id = SEQBWRC1
+pattern_id = #003
+addr_type = seq
+num_oper = 0
+oper = bwrc
+type_length = fixed
+num_blks = 2000 
+starting_block = 0
+direction = up
+no_mallocs = 1
+turn_attention_on = no
+increment = 0
+skip = -6
+
+*---------------------------------------------------------------------------*
+*- STANZA 2: Sleep for 2 minutes on every 6th iteration of the rules file. -*
+*-           This lets the background thread (STANZA 1) initialize an area -*
+*-           of the disk before the other rule stanzas start.              -*
+*---------------------------------------------------------------------------*
+rule_id = SLEEP2
+oper = s
+sleep = 120000000
+skip = -6
+
+*---------------------------------------------------------------------------*
+*- STANZA 3: Do random read compare 50000 times. - Thread 1                -*
+*---------------------------------------------------------------------------*
+rule_id = RDCMP3
+pattern_id = #003
+addr_type = seq 
+num_oper = 50000
+oper = rc
+type_length = random
+num_blks = 32768 
+no_mallocs = 1 
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 4: Do seq  read compare 50000 times. - Thread 2                -*
+*---------------------------------------------------------------------------*
+rule_id = RDCMP4
+pattern_id = #003
+addr_type = seq 
+num_oper = 50000
+oper = rc
+type_length = random
+num_blks = 32768 
+no_mallocs = 1 
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 5: Do seq read compare 50000 times. - Thread 3                -*
+*---------------------------------------------------------------------------*
+rule_id = READCMP5
+pattern_id = #003
+addr_type = seq
+num_oper = 50000
+oper = rc
+type_length = fixed 
+num_blks = 32768 
+no_mallocs = 1 
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 6: Do seq read compare 50000 times. - Thread 4               -*
+*---------------------------------------------------------------------------*
+rule_id = SEQW6
+pattern_id = #003
+addr_type = seq 
+num_oper = 50000
+oper = rc 
+type_length = fixed 
+num_blks = 32768 
+no_mallocs = 1 
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 7: Do random read compare 50000 times. - Thread 5                -*
+*---------------------------------------------------------------------------*
+rule_id = READCMP7
+pattern_id = #003
+addr_type = random
+num_oper = 50000
+oper = rc
+type_length = random
+num_blks = 32768 
+no_mallocs = 1 
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 8: Do seq read compare 50000 times. - Thread 6                   -*
+*---------------------------------------------------------------------------*
+rule_id = RDCMP8
+pattern_id = #003
+addr_type = seq 
+num_oper = 32768 
+oper = rc
+type_length = random
+num_blks = 10000 
+no_mallocs = 1 
+start_stanza = yes
+
+*---------------------------------------------------------------------------*
+*- STANZA 9: Do sequential write  50000 times. Start of a new              -*
+*-            sequence of threads. - Thread 1                              -*
+*---------------------------------------------------------------------------*
+rule_id = SEQW9
+pattern_id = #003
+addr_type = seq
+num_oper = 50000
+oper = w
+type_length = fixed 
+num_blks = 32768 
+no_mallocs = 1 
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 10: Do random read compare 50000 times. - Thread 2               -*
+*---------------------------------------------------------------------------*
+rule_id = RDCMP10
+pattern_id = #003
+addr_type = random
+num_oper = 50000
+oper = rc
+type_length = random
+num_blks = 32768 
+no_mallocs = 1 
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 11: Do seq read compare 50000 times. - Thread 3                  -*
+*---------------------------------------------------------------------------*
+rule_id = RDCMP11
+pattern_id = #003
+addr_type = seq 
+num_oper = 50000
+oper = rc
+type_length = random 
+num_blks = 32768 
+no_mallocs = 1 
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 12: Do seq  read compare 50000 times. - Thread 4                 -*
+*---------------------------------------------------------------------------*
+rule_id = RDCMP12
+pattern_id = #003
+addr_type = seq 
+num_oper = 32768 
+oper = rc
+type_length = random
+num_blks = 10000 
+no_mallocs = 1 
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 13: Do sequential read compare 50000 times. - Thread 5           -*
+*---------------------------------------------------------------------------*
+rule_id = SEQRC13
+pattern_id = #003
+addr_type = seq
+num_oper = 50000
+oper = rc
+type_length = random
+num_blks = 32768 
+no_mallocs = 1 
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 14: Do seq read 50000 random read operations.                    -*
+*---------------------------------------------------------------------------*
+rule_id = SEQRD14
+addr_type = seq 
+num_oper = 50000
+oper = r
+type_length = random
+num_blks = 32768 
+no_mallocs = 1
+start_stanza = yes

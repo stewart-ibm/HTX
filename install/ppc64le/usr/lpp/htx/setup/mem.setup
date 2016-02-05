@@ -1,0 +1,245 @@
+###### This script is used to collect the required memory statistics for hxemem64 exerciser.
+###### Collect the large and huge page memory required memory statistics 
+###### into the file /tmp/freepages
+Hugepagesize=`cat /proc/meminfo |grep Hugepagesize |awk '{print $2}'`
+if [[ $Hugepagesize -ne 16384 ]]
+then
+    echo "Hugepagesize is not equal to 16M"
+    echo "cache instances will not be created."
+    echo "avail_16M=0,avail_16G=0,free_16M=0,free_16G=0" >  /tmp/freepages
+    echo "mem_16M=0" >>  /tmp/freepages
+    echo "cache_16M=0" >>  /tmp/freepages
+    echo "tlbie_16M=0" >> /tmp/freepages
+    exit
+fi
+
+# Number of available processors on the system
+num_proc=`cat /proc/cpuinfo  |grep -i processor |wc -l`
+
+#Find processor
+cpu_name=cpu`cat /proc/cpuinfo  |grep -i processor | head -1 | awk '{print $3}'`
+
+#Find if SMT is enabled
+# smt_enabled=`ls /sys/devices/system/cpu/cpu0 | grep smt_snooze_delay | wc -l`
+#Initilize exer variables to zero
+cache_16M=0
+tlbie_16M=0
+mem_16M=0
+mem_16M_l4=0
+
+# Check the highest SMT of all the cores. If the highest value is
+# more than 1, it means SMT is enabled
+maxSMT=`cat /tmp/htx_syscfg 2> /dev/null | grep core|awk -F'(' '{print $2}'|awk -F')' '{print $1}'|sort -n -r| head -1`
+num_cores=`cat /tmp/htx_syscfg 2> /dev/null | awk ' /Number of Cores/ {print $5}'`
+percent_cores=`grep 'percent_hw_threads' /usr/lpp/htx/rules/reg/hxetlbie/tlbie | awk '{ print $3 }' | head -1`
+# Processor Version i.e will be 003e for p6 & 003f for p7
+###proc_ver=`cat /proc/cpuinfo |grep -m 1 revision |awk {'print $5'}`
+proc_ver=`grep 'Processor Version' /tmp/htx_syscfg | awk '{ print $4 }'`
+shared_processor_mode=`grep shared_processor_mode /tmp/htx_syscfg | awk '{print $3}'`
+
+if [ "$shared_processor_mode" =  "no" ]
+then
+
+	if [ $((maxSMT)) -gt 1 ]
+	then
+	    smt_enabled=1
+	fi
+
+	#If SMT is enabled, find number of SMT threads supported on CPUs
+	if [ "$smt_enabled" = "1" ]
+	then
+	    virtual_cpus=`ls -l /proc/device-tree/cpus | grep ^d | awk '($NF ~ /^PowerPC/)' | wc -l`
+	    smt_thr_per_cpu=$((num_proc/virtual_cpus))
+	    if [ "$proc_ver" = "0x3e" ]
+	    then
+		smt_thr_per_cpu_cache=$smt_thr_per_cpu
+	    else
+		#Check the SMT of all cores and take the highest value
+		smt_thr_per_cpu_cache=$maxSMT
+	    fi
+	else
+	    smt_thr_per_cpu=1
+	    smt_thr_per_cpu_cache=1
+	fi
+
+	# For hxecache .
+	# Find the number of cache instances runnning 
+	num_instances=`grep chips /tmp/htx_syscfg | awk -F: '{print $2}'`
+
+	# Find the instance with the maximum number of cpus in it.
+	max_cpus_in_instance=`cat /tmp/htx_syscfg | grep "chip "|awk -F'(' '{print $2}'|awk -F')' '{print $1}'|sort -n -r| head -1`
+
+	    if [ "$proc_ver" = "0x3e" ]
+	    then
+		#p6
+		 pages_reserved_cache_per_instance=32
+		Cpuset=8
+	    elif [ "$proc_ver" = "0x3f" ]
+	    then
+		#p7
+		Cpuset=8
+		max_8MB_segments_required_per_core=$smt_thr_per_cpu_cache
+		
+			# In P7, L3 cache size is 4MB, hence 1 16M page is allocated to the cache thread
+			# rolling it. Also 1/2 of 1 16M page is allocated to the prefetch thread. Hence
+			# the worst case memory consumption will be in L3 Cache Roll with no prefetch.
+			# In which case the maximum 16M pages required will be equal to number of cache
+			# threads running, which is maximum ( 8 * 4 ).
+
+		pages_reserved_cache_per_instance=$max_cpus_in_instance
+
+	    elif [ "$proc_ver" = "0x4a" ]
+	    then
+		#p7+
+			Cpuset=8
+			# The same logic as in above case applies here, with the difference being as follows.
+			# In P7+, size of L3 cache memory = 10 MB, hence for rollover, 20MB memory is required.
+			# Hence, 2 16M pages are reserved per thread.
+		
+		pages_reserved_cache_per_instance=$((max_cpus_in_instance*2))
+
+	    elif [[ "$proc_ver" = "0x4b" || "$proc_ver" = "0x4d" || "$proc_ver" = "0x4c" ]]
+	    then
+		#P8
+		pages_reserved_cache_per_instance=$((max_cpus_in_instance/maxSMT))
+	    fi
+
+	     Cpuset=$((Cpuset*smt_thr_per_cpu_cache))
+
+	    if [ "$proc_ver" == "0x3e" ]
+	    then
+		number_of_cache_instances=$(((num_proc/Cpuset)+1))
+		cache_16M=$((number_of_cache_instances*pages_reserved_cache_per_instance))
+	    else
+		cache_16M=$((num_instances*pages_reserved_cache_per_instance))
+	    fi
+fi
+# Minimum 16M pages requirement for hxemem64 is one per CPU
+mem_16M=$num_proc
+if [ "$shared_processor_mode" = "no" ]
+then
+	mem_16M_l4=`expr 8 \* $num_instances`
+	if [ $mem_16M_l4 -gt $mem_16M ]
+	then
+		mem_16M=$mem_16M_l4
+	fi
+	tlbie_16M=`expr $num_cores \* $percent_cores \/ 100`
+	if [ $tlbie_16M -eq 0 ]
+	then
+		tlbie_16M=1
+	fi	
+fi
+leave_16M=`expr $cache_16M + $mem_16M + $tlbie_16M`
+leave_16G=0
+
+# Add extra 16M as buffer so that if any other process takes additional 16M pages. We don't fall short of it and hit any error.
+extra_16M_buffer=5
+leave_16M=`expr $leave_16M + $extra_16M_buffer`
+
+free_16M=0
+free_16G=0
+avail_16M=0
+avail_16G=0
+allocate_16M=0
+
+free_16M=`cat /proc/meminfo |grep HugePages_Free |awk '{print $2}'`
+avail_16M=`cat /proc/meminfo |grep HugePages_Total |awk '{print $2}'`
+
+if [ "$free_16G"x = "x" ]; then free_16G=0
+fi
+if [ "$avail_16G"x = "x" ]; then avail_16G=0
+fi
+if [ "$free_16M"x = "x" ]; then free_16M=0
+fi
+if [ "$avail_16M"x = "x" ]; then avail_16M=0
+fi
+
+# Deduct from free pool, pages accounted for cache.
+free_16M=$((free_16M-leave_16M))
+free_16G=$((free_16G-leave_16G))
+
+# Check if VRM is enabled.
+if [ ! "$CMVC_RELEASE" = "htxltsbml" ]
+then
+	 MEMORY_MODE=`cat /proc/ppc64/lparcfg | grep cmo_enabled | cut -f2 -d=`
+fi
+
+if [ $((MEMORY_MODE)) -eq 1 ]
+then
+    # Partition is running on virtual real memory (VRM)
+    # Can't config 16M pages. Reset leave_16M to bypass while loop.
+    leave_16M=0
+    free_16M=0
+
+    # Clear app specific vars.
+    mem_16M=0
+    cache_16M=0
+fi
+
+if [ $free_16M -lt 0 ] && [ $leave_16M -ge 1 ]
+then
+    allocate_16M=$((-free_16M))
+
+    # Check to see if there is sufficient memory available to form the required 16M
+    # pages.If req mem for 16M pages > half of the available memory, then we dont configure
+    # the pages.
+
+    current_free_memory_present_KB=`cat /proc/meminfo |grep MemFree | awk '{print $2}'`    
+    current_free_memory_present=$((current_free_memory_present_KB*1024))
+
+    if [ $((allocate_16M*16777216)) -le $((current_free_memory_present/2)) ] ; then
+	
+		num_16M_pages_at_present=`cat /proc/sys/vm/nr_hugepages`
+	
+
+        #Total 16M pages to be configured = existing size of 16M pages configured at present + 
+     #                                                               extra 16M pages required 
+        allocate_16M=$((num_16M_pages_at_present+allocate_16M))
+        echo "Creating 16MB pages using the following command"
+       
+        echo "echo $allocate_16M > /proc/sys/vm/nr_hugepages"
+        echo $allocate_16M > /proc/sys/vm/nr_hugepages
+		
+    fi 
+       
+    # Fetch the current number of 16M free pages
+    free_16M=`cat /proc/meminfo |grep HugePages_Free |awk '{print $2}'`
+    if [ "$free_16M"x = "x" ]; then 
+    	free_16M=0
+    	leave_16M=0
+	mem_16M=0
+	cache_16M=0
+    elif [ $leave_16M -gt $free_16M ] #means no. of 16M pages are less than required.
+    then
+    	echo "Warning:There is not sufficient memory on the system to create the required no. of 16M pages."
+    	echo "Memory exerciser may not use any 16M pages."
+	leave_16M=$((leave_16M-mem_16M)) # mem will not use any 16M pages.
+	mem_16M=0
+	if [ $leave_16M -gt $free_16M ]
+	then
+		echo "cache instances will not be created."
+		leave_16M=$((leave_16M-cache_16M))
+		cache_16M=0
+	fi
+    fi
+    free_16M=$((free_16M-leave_16M))
+fi
+    
+avail_16M=`cat /proc/meminfo |grep HugePages_Total |awk '{print $2}'`
+if [ "$avail_16M"x = "x" ]; then avail_16M=0
+fi
+        
+if [ $free_16M -lt 0 ]; then free_16M=0
+fi
+
+if [ $free_16G -lt 0 ]; then free_16G=0
+fi
+
+free_16M=`expr $free_16M + $mem_16M`
+echo "avail_16M=$avail_16M,avail_16G=$avail_16G,free_16M=$free_16M,free_16G=$free_16G" >  /tmp/freepages
+#add details on freepages designated for cache for ablink.runsetup
+echo "mem_16M=$mem_16M" >>  /tmp/freepages
+echo "cache_16M=$cache_16M" >>  /tmp/freepages
+echo "tlbie_16M=$tlbie_16M" >> /tmp/freepages
+#Increasing /proc/sys/kernel/shmmax value to 1GB,considering cache exer worst case requirement for chip with 16cores.
+echo 1073741824 > /proc/sys/kernel/shmmax

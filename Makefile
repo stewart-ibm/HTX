@@ -37,5 +37,5 @@ ${SUBDIRS_CLEAN}:
 
 deb:
 	@echo "Making Debian package..."
-	cp -r $(PACKAGINGDIR)/ubuntu/* $(SHIPDIR)/usr/
-	dpkg-deb -b $(SHIPDIR)/usr  $(TOPDIR)/htxubuntu.deb
+	cp -r $(PACKAGINGDIR)/ubuntu/* $(SHIPDIR)/
+	dpkg-deb -b $(SHIPDIR)  $(TOPDIR)/htxubuntu.deb

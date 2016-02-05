@@ -1,0 +1,36 @@
+#!/bin/ksh
+
+rm /tmp/stx.log  2>/dev/null
+rm /tmp/stx.log.*  2>/dev/null
+rm /tmp/stx.log.*.*  2>/dev/null
+
+touch /tmp/stx.log
+chmod 664 /tmp/stx.log
+
+/usr/lpp/htx/etc/scripts_stx/addlog.pl
+
+
+
+/usr/lpp/htx/etc/scripts_stx/addstxround.pl
+chmod 664 /etc/logrotate.d/stxround
+
+if [ "$CMVC_RELEASE" = "htxrhel6" ]
+then
+    /etc/init.d/rsyslog restart
+elif [ "$CMVC_RELEASE" = "htxltsbml" ]
+then
+    /etc/init.d/sysklogd restart
+else
+    if [ -f /etc/init.d/syslog ]
+    then
+         /etc/init.d/syslog restart
+    fi
+fi
+
+if [ -f /usr/sbin/logrotate ]
+then
+    rm -f /etc/cron.hourly/logrotate 2> /dev/null
+    cp /etc/cron.daily/logrotate /etc/cron.hourly/ 2> /dev/null
+    /usr/sbin/logrotate  /etc/logrotate.d/stxround 2> /dev/null
+fi
+

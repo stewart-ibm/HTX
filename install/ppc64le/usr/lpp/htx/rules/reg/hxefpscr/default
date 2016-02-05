@@ -1,0 +1,14 @@
+
+* The crash_on_mis flag along with the htxkdblevel environment variable file will decide whether the machine should enter KDB in case of miscompare or not. 
+*
+* crash_on_mis should only be set to "yes","YES","no,"NO". Any other value will give an error.
+*
+* If the htxkdblevel environment variable is non-zero, the machine will enter KDB in case of miscompare, irrrespective of crash_on_mis is yes or no. 
+*
+* If the crash_on_mis is set to 'yes', the machine will enter the KDB in case of miscompare, irrespecxtive of htxkdblevel is zero or non-zero.
+*
+*
+*
+rule_id = rule_1
+crash_on_mis = no
+turn_attn_on = no

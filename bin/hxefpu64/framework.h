@@ -30,7 +30,7 @@
 #include <sys/stat.h>
 
 #include <hxihtx64.h>
-#include <htxsyscfg64_new.h>
+#include <htxsyscfg64.h>
 #include "fpu_common_struct_prot.h"
 
 #ifdef __HTX_LE__

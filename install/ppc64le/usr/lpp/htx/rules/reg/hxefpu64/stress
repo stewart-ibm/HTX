@@ -1,0 +1,85 @@
+* Rule file	for	hxefpu64 exerciser running on P7 and above.
+*
+* This Rule	file is	for	"stress" shift. Instruction biasing is shown below.
+*
+* For details of rule keywords,	please refer hxefpu64.readme
+* in /usr/lpp/htx/rules/reg/hxefpu64 dir on	test machine.
+*
+* NOTE:	Rule keyword & associated value	should be all in one
+*	line _only_. Currently '\n'	(newline) is used as
+*	delimiter to differentiate between keywords.
+*
+
+* XS category instrcution mask details 
+* VMX
+*  0x0400000000800000 - VMX_VSCR_ONLY (mfvscr, mtvscr - all contained)
+*  0x0400000000000018 - VMX_INT_ARITHMETIC_UNSIGNED_ONLY, VMX_INT_ARITHMETIC_SIGNED_ONLY (not everything)
+*  0x0400000000008000 - VMX_INT_LOGICAL_ONLY (vand vandc, vor, vnor, vxor - all contained)
+*  0x0400000000000600 - VMX_INT_AVERAGE_SIGNED_ONLY, VMX_INT_AVERAGE_UNSIGNED_ONLY (all VMX avg instructions, all contained)
+*  0x0400000000206000 - VMX_INT_CMP_UNSIGNED_ONLY, VMX_INT_CMP_SIGNED_ONLY, VMX_FP_CMP_ONLY (all VMX int n fp compare instr, all contained)
+*  0x0400000000081800 - VMX_INT_MAX_MIN_SIGNED_ONLY, VMX_INT_MAX_MIN_UNSIGNED_ONLY, VMX_FP_MAX_MIN_ONLY (all VMX int n fp max/min instr, all contained)
+*  0x0400000000010000 - VMX_INT_ROTATE_SHIFT_ONLY (all VMX int rotate n shift instr, all contained)
+* VSX
+*  0x0100000400000000 - VSX_MISC_ONLY (only VSX logica instr, not everything)
+*
+* (0x0400000000a9fe00, 90 - all contained):(0x0400000000000018,5 - VMX int arith:not everything):(0x0100000400000000,5 - VSX misc:not everything)
+*
+* Threadwise shift instruction biasing.
+* T0-3: XS  (sub-part of integer)
+
+
+* Stress shifts with 100% normal data
+
+rule_id						stress_norm
+num_oper					2000
+num_threads					0
+seed						[0,0,0,0,0,0,0,0]
+stream_depth				2000
+test_method					1
+unaligned_loads_stores_%	[20,30,20,30,20,30,20,30]
+fpscr						[0,0,0,0,0,0,0,0]
+DATA_BIAS_MASK				[0xa, 0xa, 0xa,	0xa, 0xa, 0xa, 0xa, 0xa]
+INS_BIAS_MASK				[(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5)]
+
+
+* Stress shifts with 50/50% normal/denormal data
+
+rule_id						stress_n_dn
+num_oper					2000
+num_threads					0
+seed						[0,0,0,0,0,0,0,0]
+stream_depth				2000
+test_method					1
+unaligned_loads_stores_%	[20,20,20,20,20,20,20,20]
+fpscr						[0,0,0,0,0,0,0,0]
+DATA_BIAS_MASK				[0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55]
+INS_BIAS_MASK				[(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5)]
+
+
+* Stress shifts with 100% denormal	data
+
+rule_id						stress_denorm
+num_oper					2000
+num_threads					0
+seed						[0,0,0,0,0,0,0,0]
+stream_depth				2000
+test_method					1
+unaligned_loads_stores_%	[30,30,30,30,30,30,30,30]
+fpscr						[0,0,0,0,0,0,0,0]
+DATA_BIAS_MASK				[0xa0, 0xa0, 0xa0, 0xa0,0xa0, 0xa0, 0xa0, 0xa0]
+INS_BIAS_MASK				[(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5)]
+
+
+* Stress shifts with mix data corners
+
+rule_id						stress_all
+num_oper					2000
+num_threads					0
+seed						[0,0,0,0,0,0,0,0]
+stream_depth				2000
+test_method					1
+unaligned_loads_stores_%	[20,20,20,20,20,20,20,20]
+fpscr						[0,0,0,0,0,0,0,0]
+DATA_BIAS_MASK				[0x1111111111, 0x1111111111, 0x1111111111, 0x1111111111]
+INS_BIAS_MASK				[(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5):(0x0400000000a9fe00,90)(0x0400000000000018,5)(0x0100000400000000,5)]
+

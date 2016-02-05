@@ -1,5 +1,21 @@
+/* IBM_PROLOG_BEGIN_TAG                                                   */
+/* This is an automatically generated prolog.                             */
+/*                                                                        */
+/* htxfedora src/htx/usr/lpp/htx/lib/htx64/hxfmsg.c 1.3.4.2               */
+/*                                                                        */
+/* Licensed Materials - Property of IBM                                   */
+/*                                                                        */
+/* Restricted Materials of IBM                                            */
+/*                                                                        */
+/* COPYRIGHT International Business Machines Corp. 1997,2014              */
+/* All Rights Reserved                                                    */
+/*                                                                        */
+/* US Government Users Restricted Rights - Use, duplication or            */
+/* disclosure restricted by GSA ADP Schedule Contract with IBM Corp.      */
+/*                                                                        */
+/* IBM_PROLOG_END_TAG                                                     */
 
-/* @(#)77	1.3.4.2  src/htx/usr/lpp/htx/lib/htx64/hxfmsg.c, htx_libhtx, htxubuntu 10/15/14 04:08:00 */
+/* %Z%%M%	%I%  %W% %G% %U% */
 
 #include <htx_local.h>
 #include <hxihtx64.h>
@@ -51,13 +67,19 @@ int hxfmsg(struct htx_data *p, int err, enum sev_code  sev, char *text)
   /*
    ***  Beginning of Executable Code  *****************************************
    */
-  p->error_code = err;
-  p->severity_code = sev;
+	if(p == NULL){ /* to handle cases when the htx_data pointer is not updated in hxfupdate*/
+		printf("%s",text);
+		return 0;
+	}
+	else{
+		p->error_code = err;
+		p->severity_code = sev;
 
-  (void) strncpy(p->msg_text, text, MAX_TEXT_MSG);
-  if (p->msg_text[MAX_TEXT_MSG - 1] != '\0')
-    p->msg_text[MAX_TEXT_MSG -1] = '\0';  /* string MUST end with null char  */
+		(void) strncpy(p->msg_text, text, MAX_TEXT_MSG);
+		if (p->msg_text[MAX_TEXT_MSG - 1] != '\0')
+		p->msg_text[MAX_TEXT_MSG -1] = '\0';  /* string MUST end with null char  */
 
-  return(hxfupdate(ERROR, p));
+		return(hxfupdate(ERROR, p));
+	}
 
 } /* hxfmsg() */

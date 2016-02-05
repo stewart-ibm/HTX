@@ -1,0 +1,590 @@
+**=============================================================================
+** Package:     CPU 
+** Component:   exer_cpu
+**
+** File:        rules
+** Abstract:    default rule file fo hxecpu. 
+**
+*==============================================================================
+
+*Rule file keyWords common across test cases are defined under CONFIG RuleSetId
+*These rules can't be overriden by stanzas.
+RulesetId       = CONFIG
+NextRulesetId	= DEFAULTS
+
+*Rule file KeyWords common across all the stanzas but can be overriden by each stanza.
+RulesetId	= DEFAULTS
+RunFlag		= 1
+64BitMode   = 1
+Mixed_dcbt  = Yes
+RefPassType = Trace
+
+* By default Mixed_dcbt is set to Yes. So all dcbt's 0,1,3,8,A will be generated.
+* Set Mixed_dcbt = No, to generate only dcbt 0,1,3.
+
+*First stanza.
+RulesetId	= Test0
+NumOper     = 100
+
+
+*Similarly we can write upto 30 stanzas as of now.
+
+*===============================================================================
+*This is how we define a stanza.
+*RuleSetId =  TEST0 <-- stanzanumber
+*<KeyWord> = <KeyValue>
+*<KeyWord> = <KeyValue>
+*<KeyWord> = <KeyValue>
+*<KeyWord> = <KeyValue>
+
+*The KeyWords can be categorized into 2 types:
+* 1)KeyWords common across all the stanzas, and can't be overriden by stanza.
+* Ex:CpusSet = 0,1,2,3.
+* 2)KeyWords common across all the stanzas, and can be overriden by stanza.
+* Ex TestPasses = 100
+
+
+*===============================================================================
+*
+*                              !!! WARNING !!!
+*
+* The following ruleset is for information only. The rules may contain extra
+* data or examples of valid values which would not be included in an actual
+* rules. These rules will not normally be invoked as the SCT command line would
+* have to specify them to be used, and this should not be done.
+*
+* The exact syntax for each rule is contained in the 'General Information' 
+* section.
+*
+*===============================================================================
+* TYPE1 KeyWords::"KEYWORDS COMMON ACROSS ALL THE STANZAS, AND CAN'T BE OVERRIDEN BY STANZA"
+* These are the Rule file KeyWords common across all the stanzas, and can't be  overriden by 
+* stanzas.These are defined under CONFIG RuleSetId. 
+* CONFIG Default Values(Common across all the stanzas).
+
+* These rules are only evaluated during the hxecpu configuration phase. Although 
+* They may be placed in any stanza, they will have no effect in any stanza.
+* except 'CONFIG'. The rules marked 'fixed' are currently assigned internally
+* and the rule value is ignored in all cases.
+
+
+*CpuArch        = PowerPC 						(fixed)
+*CpuType        = Host processor type 					(fixed)
+*CpusAllowed    = 16							(fixed)
+*CpusAvailable  = All processors on machine				(fixed)
+
+*MemoryAddressMode = Virtual						(fixed)
+*MemoryAccessMode = wiMg						(fixed)
+*MemSizeInst	= 1
+*MemSizeData	= 3
+
+*CpusToBuild    = Minimum of CpusAllowed or CpusAvailable
+*CpusToTest     = CpusToBuild
+*CpuMaster      = 0
+*CpusSetN       = (comma-separated list of logical cpu numbers)
+
+*StreamSource   = Random
+*StreamCase     = 1							(fixed)
+
+*===============================================================================
+* TYPE2 KeyWords::"KEYWORDS COMMON ACROSS ALL THE STANZAS, AND CAN BE OVERRIDEN BY STANZA."
+* These are the Rule file KeyWords common across all the stanzas, and can be overriden by
+* stanzas.These are defined under DEFAULTS RuleSetId.
+* Default Values(Common across all stanzas).
+
+*CpuMap         = All Cpu's						(fixed)
+*CpuBase        = 0
+*CpuWalk        = 1
+
+*SeedMethod     = Random
+*InitialSeed    = 1
+
+*Tests          = -1
+*TestPasses     = 16
+*MaxExecTime    = 2 (seconds)
+*Priority       = 55
+
+*DbSize             = 0x10000
+*UserInstStream     = 0
+*UserContext        = 0
+*InstStreamFilePath = /usr/lpp/htx/data/hxecpu/cpuInstStream
+*ContextFilePath    = /usr/lpp/htx/data/hxecpu/cpuContext
+
+*NumOper           = 1 
+
+*CacheSetup    = 6:4
+*CacheCleanup  = 0:8
+
+*DebugLevel     = 0
+*DebugDelay     = 0
+*DebugPrint     = 0
+*DebugTrace     = 0
+*DebugTrap      = 0
+
+*===============================================================================
+* StreamSource 'Random' Default Values
+
+*The following rules apply to the 'RANDOM' stream source and may not be  applicable to other stream 
+*sources.  The default for BiasStorage will be 40 , if other categories  of instructions is 
+*disabled or their biasing is made zero, then the biasing value of them gets added to BiasStorage. 
+
+*DisableInstList= (comma-separated list of inst mnemonics)
+*EnableInstList = (comma-separated list of inst mnemonics)
+*StreamLength   = 1024 (0x400)
+*BufferSize     = 4096 (0x1000)
+*SyncDistance   = 50
+*BiasStorage    = 40 
+*BiasCache      = 6
+*BiasFixed      = 10
+*BiasFloating   = 10
+*BiasBranch     = 4
+*BiasVMX        = 15
+*BiasVSX        = 15
+
+*BiasBranchLong =  5
+*BiasBranchMed  = 15
+*BiasBranchShort= 80
+*BiasBranchNeg  = 50
+*MaxBranchDist  = 16
+
+*BiasUnaligned  = 50
+
+* DisableFixed = 0
+* DisableFloat = 0
+* DisableVMX   = 0
+* DisableVSX   = 0
+
+*DebugStream    = (None)
+*DebugTrigger   = (None)
+*DebugEditInst  = (None)
+*DebugEditData  = (None)
+*DebugPm        = 0
+
+*===============================================================================
+*
+* GENERAL INFORMATION
+*
+* The System Coherency Test generates pseudo-random instruction streams used to
+* verify the coherency protocols used by a multi-processor system.  Althought,
+* intended primarily for MP testing, the random instruction streams generated
+* as test cases are useful in verifying the architectual integrity of a uni-
+* processor as well.
+*
+*===============================================================================
+*
+* KEYWORD DEFINITIONS AND DEFAULT VALUES
+*
+*-------------------------------------------------------------------------------
+* Configuration Rules
+
+* CpuArch       = PowerPc       (program restriction, cannot be altered)
+
+* CpuArch specified the processor architecture for the system being tested.
+* Currently, only the Power PC architecture is supported.
+
+* CpuType       = Processor     (program/system restriction, cannot be altered)
+ 
+* CpuType specified the particular processor in the architecture family which
+* is to be tested. Currently the PowerPC 601, 604, 604e, Helmwind, Mach5, and
+* 630fp processors are supported, as well as the Apache processor when running
+* in a non-tagged mode. This value is determined from the hardware and can not
+* be set by the user.
+
+* CpusAllowed   = 16            (program limit, cannot be altered)
+
+* CpusAllowed is the maximum number of Cpus which a single copy of CPU can test.
+
+* CpusAvailable = # of Cpu's    (system limit, cannot be altered)
+
+* CpusAvailable is the Actual number of Cpus (up to Cpus Allowed) available on
+* the system being tested.
+
+* MemoryAddressMode = Virtual      (Virtual, Real) (currently, Virtual only)
+
+* MemoryAddressMode is used to specify whether memory is to be accessed in
+* virtual or real modes. Currently, the rule is ignored and all accesses are in
+* virtual mode.
+
+* MemoryAccessMode = wiMg          (Any valid combination) (currently, wiMg only)
+
+* MemoryAccessMode specifies the WIMG bit setting to be used in accessing
+* memory from the stream. Currently, this rule is ignored and the settings
+* are taken from the existing settings for AIX.
+
+* MemSizeInst	= 1		(1-250) ((Inst+Data) < 250)
+* MemSizeData	= 3		(1-250)
+
+* MemSizexxx specifies the amount of shared memory to be allocated for 
+* instruction streams and data buffers, respectively. The value is in 
+* megabytes, and combined size for instructions and data cannot exceed 250 Mb. 
+* This memory will be accessed as a single segment addressed on a segment
+* boundary, with the instruction memory at the beginning of the segment and the
+* data memory immediately above it.. A virtual to real memory map will be built
+* immediately above the data memory.
+ 
+* CpusToBuild   = CpusAvailable	(1 to CpusAllowed)
+
+* CpusToBuild specifies the number of instruction/data streams that are to be
+* built for each test cycle. If the number is greater than CpusAllowed,
+* CpusAllowed will be used.
+
+* CpusToTest    = CpusToBuild	(0 to CpusToBuild)
+
+* CpusToTest specifies the number of instruction/data streams to be executed
+* for each test cycle. If the number is greater than the minimum of CpusAllowed
+* and CpusAvailable, then MIN(CpusAllowed,CpusAvailable) will be used. Zero
+* means that no streams will be executed.
+
+* CpuMaster     = -1    	(-1 thru CpusAvailable)
+
+* CpuMaster which processor is to be used for test generation and analysis.
+* A -1 allows the master process to run on any available processor, while
+* other values specify a specific processor to which the master process will
+* be bound.
+
+* CpusSetN      =               (comma-separated list of logical cpu numbers)
+
+* CpusSetN specifies logical cpus which are to be used for Nth Set of CPU servers.
+* If 'CpusToTest' has been assigned a value then first #CpusToTest cpus in CpusSetN
+* will be used. If #CpusToTest is more than cpus specified in CpusSetN then only
+* cpus specified in CpusSetN will be used.
+
+* StreamSource  = Random	(Random, AVP-Dc, AVP-Xcoff)
+
+* StreamSource specified the source to be used for instruction/data streams.
+* Random means to generate random streams within the program. AVP means to read
+* an AVP testcase to obtain the streams. AVP must be further specified as 
+* either AVP-Dc (Data Colored) or AVP-Xcoff (Encore->Xcoff).
+
+* StreamCase    = 1             (1,2)
+
+* StreamCase specifies which execution case is to be used for generating and
+* executing tests.
+*   Case 1 - Multiple instruction streams, single data buffer
+*   Case 2 - Single instruction stream, multiple data buffers (not available)
+
+*-------------------------------------------------------------------------------
+* General Rules
+
+* CpuMap        = (First CpusToTest processors) (16-bit hex value, ie. 0xC000)
+
+* CpuMap specifies which processors are to be used for test execution. The
+* processors are represented by a bit with the most significant bit
+* corresponding to processor 0 and the nth bit corresponding to processor n.
+* By default, the first CpusToTest processors will be used.
+
+* CpuBase       = 0       (0 thru maximum available processors)
+
+* CpuBase identifies the processor that is to be used as the initial or base
+* processor for assigning streams to processors. Streams will be assigned to
+* processors in logical order starting with CpuBase, wrapping as required.
+
+* CpuWalk       = 1       	(0, 1)
+
+* CpuWalk specifies whether CpuBase is to be "walked" through the available
+* processors on subsequent test passes.
+
+* SeedMethod    = Random        (Fixed, Arithmetic, Pseudo-Random, Random)
+
+* SeedMethod specifies the method by which successive seeds are to be generated.
+*     FIXED             - The seed is fixed at the initial seed for all tests
+*     ARITHMETIC        - The current seed is incremented by 1 for each test.
+*     PSEUDO-RANDOM     - The seeds are taken from a pseudo-random sequence
+*                         seeded by the initial seed.
+*     RANDOM            - Seeds are derived form the system timer.
+
+* InitialSeed   = 1             (32-bit value)
+
+* InitialSeed specifies the random number seed to be used for the first test in
+* the current test series. Hexadecimal values must be preceeded by '0x'
+
+* Tests         = -1            (32-bit value)
+
+* Tests specifies how many sets of instruction streams/data buffers are to be
+* generated. A value of < 0 means run until terminated by the user with a
+* with a SigTerm signal to the Master process.
+
+* TestPasses    = 16            (32-bit value)
+
+* RefPassType = Trace or Normal (String)
+* When RefPassType is set to trace, the reference Pass is executed in trace mode.
+* The default value of RefPassType is set to trace.
+
+* TestPasses specifies how many times each set of instruction streams/data
+* buffers is to be executed. For each pass, the individual instruction streams
+* will be rotated through the available processors. A value of 0 means that the
+* test will be executed once on each processor mapped in CpuMap. A value less
+* than 0 means that the test will be executed until a failure occurs or until
+* the program is terminated by the user with a SigTerm signal.
+
+* Priority      = 55            (40 <= x <= 128)
+
+* Priority specifies the process priority to be used during actual execution
+* of the instruction stream, with 40 being the highest priority.  Values less
+* than 60 should be used with caution, as they may affect other processes  in
+* the system, including those used to diagnose failures.
+
+* MaxExecTime   = 2             (0 <= x <= 1,000 seconds)
+
+* MaxExecTime specifies the maximum number of seconds that will be
+* allowed for a single test pass to complete. If the test exceeds the specified
+* time, it will be aborted and counted as a failing test. Values outside the
+* allowed range will be adjusted to the closest valid value. A value of 0
+* means no time limit will be set for the test.
+
+* NOTE: The following rules are intended to be used when you want to run hxecpu
+*       in Buster Mode.
+
+* DbSize = 0x10000	(value in hex).
+* if you intend to use load/store instructions in your stream, then you need to specify 
+* the size of databuffer to use.
+
+* UserInstStream = 0    (0,1)
+* Key Word to read instruction stream from file.If set to 1 reads instructions from the file 
+* specified by InstStreamFilePath .If InstStreamFilePath is not set then it reads the 
+* default inst streams file.
+
+* UserContext = 0  	(0,1)
+* Key Word to read register context from file.If set to 1 reads context from the file 
+* specified by contextFilePath .If contextFilePath is not set then it reads the 
+* default context file.
+
+* InstStreamFilePath = /usr/lpp/htx/data/hxecpu/cpuInstStream (absolute path of  
+*								        inststream file)
+* This parameter specifies the absolute path of instruction stream file and this keyword 
+* needs to be set if you are setting  UserInstStream to 1.
+
+* ContextFilePath = /usr/lpp/htx/data/hxecpu/cpuContext (absolute path of context file)
+* This parameter specifies the absolute path of register context file and this keyword 
+* needs to be set if you are setting userContext to 1.
+
+* NumOper      =  1 (Positive 16 bit Integer.)
+* This keyword is specific to each stanza and it specifies 
+* number of times a particular stanza runs in a rulefile pass.
+
+* NOTE: The following rules are intended to be used for CPU program debug only.
+*       They will cause the program to take various non-standard actions which
+*       are designed to aid the debug of program failures. They are of minimal
+*       use in diagnosing test failures.
+
+* CacheSetup    = 6:4           ( {2 || 6 || 10}:{0 || 4 || 8} }
+* CacheCleanup  = 0:8           ( {0 || 2}:{0 || 4 || 8} }
+
+*   dcbf         0b1000         icbi         0b0010
+*   dcbst        0b0100         dcbi         0b0001
+
+* CacheSetup specifies the cache actions to be taken for the instruction and
+* data buffers prior to test execution. The possible values are:
+*     Instruction Streams { Inval Only, Store and Inval, Flush and Inval }
+*     Data Buffers        { Nothing, Store, Flush }
+
+* CacheCleanup is similar to CacheSetup, except that the actions are taken
+* after the test executes, but before any comparisons are made. The possible
+* values are:
+*     Instruction Streams { Nothing, Inval Only }
+*     Data Buffers        { Nothing, Store, Flush }
+
+* DebugLevel    = 0             (0 <= x)
+
+* DebugLevel specifies the level of diagnostic messages that are to be allowed
+* to print during stream generation and execution. The default is not to print
+* any messages.
+
+* DebugDelay    = 0             (0 <= x)
+
+* DebugDelay specifies the time (in seconds) which will be allowed to elapse
+* after a slave process has been initiated, but before it is allowed to enter
+* its command loop. This delay allows the operator to start up a debugger
+* on the slave process without adversely affecting the system calls for various
+* semaphore operations.
+
+* DebugPrint    = 0             (0 <= x)
+
+* DebugPrint allows the printing of diagnostic dumps following stream
+* execution. The default will allow printing only after a stream error occurs.
+
+* DebugTrace    = 0
+
+* DebugTrace turns on the AIX kernel trace facility for debugging system problems.
+
+* DebugTrap     = 0             (0, 1)
+
+* DebugTrap is used to enable certain TRAP instructions in the program as a
+* diagnostic tool.
+
+*--------------------------------------------------------------------------------
+* Rules for 'StreamSource = Random'
+
+* DisableInstList =             (comma-separated list of instruction mnemonics)
+
+* DisableInstList is used to disable the use of instructions which would
+* normally be available for inclusion in the test streams. This rules affects
+* only the generated instructions and has no impact on the use of instructions
+* in any of the support code, such as the stream prolog.
+
+* EnableInstList =              (comma-separated list of instruction mnemonics)
+
+* EnableInstList = is used to enable the use of instructions which would
+* normally not be available for inclusion in the instruction streams. Any
+* instructions so enabled must be defined in the appropriate Inst tables which
+* are hard-coded into the program.
+
+* StreamLength  = 1024          (128 <= x <= 4096 instructions)
+
+* StreamLength specifies the number of instructions to be generated in each
+* instructions due to the prolog and epilog instructions added to each stream.
+* It will be further reduced by the number of sync points generated for the
+* stream.
+
+* BufferSize    = 4096          (512 <= x <= 16384 bytes)
+
+* BufferSize specifies how many bytes are to be allocated per CPU for the data
+* buffers used for operand storage by the instruction streams.  For StreamCase
+* 1, a single buffer of BufferSize*CpusToTest will be allocated. For StreamCase
+* 2, a buffer of BufferSize will be allocated for each CpuToTest.
+
+* SyncDistance  = 50            (0, 20<x<(StreamLength/2), Max of 15 sync-points)
+
+* SyncDistance specifies the approximate distance, in instructions, between
+* the sync points generated in the instruction stream. Values outside the
+* allowed range will be set to the closest valid value. A value of 0 means
+* that no sync points are to be generated.
+
+* BiasStorage   = 40           (0-100)
+* BiasCache     = 6            (0-100)
+* BiasFixed     = 10           (0-100)
+* BiasFloating  = 10           (0-100)
+* BiasBranch    = 4            (0-100)
+* BiasVMX       = 15           (0-100)
+* BiasVSX       = 15           (0-100)
+
+* The BiasX rules specify the relative numbers of various classes of
+* instructions to be used in generating random instruction streams. The total
+* for all classes must be 100. Valuses greater than 100 will be set to 100,
+* then a total will be generated starting with BiasStorage and proceeding in
+* the order shown. Once the total reaches 100, the last class added will be
+* adjusted, if necessary, and subsequent classes will be set to 0.
+
+* The default for BiasStorage will be 40 , if other categories  of instructions is
+* disabled or not present, then the biasing value of them gets added to BiasStorage.
+* BiasVSX is given the least priority of  BiasStorage,BiasCache ,BiasFixed,
+* BiasFloating, BiasBranch, BiasVMX . Hence, if BiasVSX is set to a value which
+* makes  the  total of the above  greater than 100, BiasVSX will internally be set to
+*       100 - (BiasStorage + BiasCache + BiasFixed + BiasFloating + BiasBranch + BiasVMX)
+* unless the others are explicitly adjusted, through this file, so that their
+* sum fall within the 100.
+
+* BiasBranchLong=  5            (0-100)
+* BiasBranchMed = 15            (0-100)
+* BiasBranchShort=80            (0-100)
+
+* The BiasBranchX rules specify the percentage of all branch instructions
+* which are to fall into the indicated range. The total for all ranges must be
+* 100, and unspecified ranges will be adjusted as required to guarantee a total
+* of 100.
+
+* BiasBranchNeg = 50            (0-100)
+
+* BiasBranchNeg specifies the percentage of all branches which are to be taken
+* in a negative direction. The remainder will be positive.
+
+* MaxBranchDist = 16            (0-StreamLength/2)
+
+* MaxBranchDistance specifies the maximum distance (in instructions) that a
+* branch instruction may specify.
+
+* BiasUnaligned = 50 			(0-100)
+
+* Which indicates that there is probability of 50% load store instructions will have 
+* unaligned address.
+
+* The following disable Flags does the function of disabling the particular class of 
+* instructions (Fixed,Float,VMX,VSX), including the load stores of that class in the  
+* generated instruction stream.For those class  of instructions whose disable flag is
+* set ,the instructions for that class will not be  included in the generated
+* instruction stream.
+ 
+* DisableFixed = 0
+* DisableFloat = 0
+* DisableVMX   = 0
+* DisableVSX   = 0
+
+* NOTE: The following rules are intended to be used for CPU program debug only.
+*       They will cause the program to take various non-standard actions which
+*       are designed to aid the debug of program failures. They are of minimal
+*       use in diagnosing test failures.
+
+* DebugStream   = Pass Stream:Entry[:Exit] [...] { 1-16}
+*                 Int  Hex   :Hex   :Hex
+*                 R    R      R      0
+
+* DebugStream allows specific stream to be entered or exited at arbitrary
+* offsets into the stream. Pass identifies the execution pass on which the
+* special entries and exits are to be made. Stream identifies the specific
+* stream to be modified, while Entry and Exit specify the offsets into the
+* stream where it is to be entered and exited, respectively. The
+* Stream:Entry:Exit sequence may be repeated up to 16 times separated by
+* blanks, but only one may be specified per instruction stream.
+
+* DebugFailTrig = InstOffset:DataOffset (0xFFFF:0xFFFF - no triggers)
+*                 Hex       :Hex
+*                 R          0xFFFF
+
+* DebugFailTrig specifies the offset of an address in low storage which is to
+* be read to indicate that either and instruction miscompare, data miscompare,
+* or both has occured. When a miscompare is detected, the location 0:InstOffset
+* or 0:DataOffset will be read as required. The offsets specified should be
+* chosen at a location which will not be used by the syste,.
+
+* DebugTrigger  = Pass,TrigAddr Stream:SyncAddr,BaseReg:Offset,Data [...] {1-16}
+*                 Int ,Hex      Hex   :Hex     ,Int    :Hex   ,Hex
+*                 R    0x0fe0   R      R        R       R      R
+
+* DebugTrigger allows the test to generate a trigger event which may be viewed
+* externally and used to trigger a logic analyser or other tool. Pass
+* the execution pass on which the trigger can first be generated (0 is the
+* serial pass. It can be generated on all subsequent passes if the trigger
+* conditions are met. Trigger specifies a 16-bit offset in low storage which
+* will be read to generate the trigger. This offset must be selected at a
+* location which will not normally be read by the system. Stream specifies
+* the instruction stream which is to be monitored. SyncAddr is the return
+* address for the call to the Sync code which occurs AFTER the failure point.
+* This value will be in the LR register during the Sync routine. BaseReg
+* specifies a GPR which contains the base address for the data area. Offset
+* specifies the offset from the base address of the failing data. A half-word
+* will be read from this location. Data specifies the value that the half-word
+* just read will have when the trigger is to be generated. During the Sync
+* routine identified by SyncAddr, the test will read the data at BaseReg:Offset
+* and logically compare it with Data. If they match, the test will do a read
+* from location 0:TrigAddr to trigger the scope. The trigger sequence
+* Stream:SyncAddr,BaseReg:Offset,Data may be repeated up to 16 times,
+* separated by blanks, but only one may be specified per stream.
+
+* DebugEditInst = Pass Stream:Offset,Inst[:Repetitions] [...] {1-16}
+*                 Int  Hex   :Hex   ,Hex  :Int
+
+* DebugEditInst allows the test to modify specific instructions in the
+* stream during the stream execution. Pass specifies the execution pass on
+* which the stream is to be modified. Stream specifies the instruction stream
+* to modify, while Offset specifies the byte offset into the stream of the
+* instruction to be replaced. Inst specifies the exact data used to replace
+* identified instruction. Repetitions specifies the number of sequential
+* instructions to be replaced by Inst. Up to 16 unique instructions may be
+* specified on any stream, with essentially unlimited numbers of instruction
+* being replaced.
+
+* DebugEditData = Pass Buffer:Offset,Data[:Length[:Repetitions]} [...] {1-16}
+*                 Int  Hex   :Hex   ,Hex  :Int    :Int
+*                 Req  Req    Req    Req   4       1
+
+* DebugEditInst allows the test to modify specific data blocks in the data
+* buffers during the stream execution. Pass specifies the execution pass on
+* which the buffers are to be modified. Buffer specifies the data buffer
+* to modify, while Offset specifies the byte offset into the buffer of the
+* data to be replaced. Data specifies the exact data used to replace
+* identified location. Length specifies the length of a single data unit,
+* while Repetitions specifies the number of sequential units to be replaced.
+* Up to 16 unique data units may be specified, with each unit replacing a
+* number of data locations.
+
+*===============================================================================

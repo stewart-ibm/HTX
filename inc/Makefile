@@ -19,7 +19,7 @@ TARGET= bufupd.h \
                         hxiipc64.h \
                         hxihtx64.h \
                         scr_info64.h \
-                        htxsyscfg64_new.h \
+                        htxsyscfg64.h \
                         hxerng.h \
                         getrule.h \
 			hxfcpp_wrap.H \

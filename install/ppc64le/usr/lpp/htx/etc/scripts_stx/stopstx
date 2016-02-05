@@ -1,0 +1,2 @@
+# @(#)48        1.1  src/htx/usr/lpp/htx/etc/scripts_stx/stopstx, htxconf, htxubuntu 4/30/03 11:31:22
+/usr/lpp/htx/bin/eservd -shutdown

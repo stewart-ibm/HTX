@@ -1,0 +1,171 @@
+* @(#)18	1.7  src/htx/usr/lpp/htx/rules/reg/hxestorage/hdd.buster, exer_storage, htxubuntu 5/12/15 04:48:04 *
+* hxestorage default buster rulefile for HDD
+*---------------------------------------------------------------------------*
+*- STANZA 1: Sequentially write the entire disk on 1st iteration of the    -*
+*-           rule file. This stanza will create 4 threads which will run   -*
+*-           in the background while other stanza in the rule are running. -*
+*-           Each thread will be covering a different section of the disk. -*
+*- Th 1 : Does Sequential IO from LBA 0 to maxblks/4, proceed from LBA #   -*
+*-        0 --> LBA # Maxblks/4.                                           -*
+*- Th 2 : Does Sequential IO from LBA maxblks/4 to maxBlks/2, proceed from -*
+*-        LBA # Maxblks/2 --> LBA # Maxblks/4.                             -*
+*- Th 3 : Does Sequential IO from LBA maxblks/2 to 3/4maxblks, proceed from-*
+*-        LBA # Maxblks/2 --> LBA # 3/4maxblks.                            -*
+*- Th 4 : Does Sequential IO from maxblks to 3/4maxblks, proceed from LBA  -*
+*-        # Maxblks --> LBA # 3/4Maxblks.                                  -*
+*---------------------------------------------------------------------------*
+rule_id = rule_1
+pattern_id = #007
+oper = bwrc
+num_oper = 0
+num_threads = 4
+direction = UP DOWN
+starting_block = BOT TOP
+transfer_size = 256K
+num_mallocs = 1
+seek_breakup_prcnt = 0
+section = yes
+skip = -99999999
+
+*---------------------------------------------------------------------------*
+*- STANZA 2: Sleep for 2 minutes.                                          -*
+*-           This lets the background thread (STANZA 1) initialize an area -*
+*-           of the disk before the other rule stanzas start.              -*
+*---------------------------------------------------------------------------*
+rule_id = rule_2
+oper = S
+sleep = 120000000
+skip = -99999999
+
+*---------------------------------------------------------------------------*
+*- STANZA 3: Creates number of threads twice the queue depth. Each thread  -*
+*- doing 20000 num_oper with RC operation with xfer size between 1 block   -*
+*- to 256K.                                                                -*
+*---------------------------------------------------------------------------*
+rule_id = rule_3
+pattern_id = #007
+num_oper = 20000
+num_threads = 2qd
+seek_breakup_prcnt = 100
+oper = RC
+transfer_size = [1BLK-256K,-1]
+num_mallocs = 4
+
+*---------------------------------------------------------------------------*
+*- STANZA 4: Do a butterfly test on the drive on every 5 iteration of the  -*
+*-           rules file. This will cause the drive to seek from the outer  -*
+*-           limits of the drive to the inner limits of the drive.         -*
+*---------------------------------------------------------------------------*
+rule_id = rule_4
+pattern_id = #007
+num_threads = 1
+num_oper = 40000
+oper = w
+transfer_size = 128K
+starting_block = BOT
+direction = IN
+skip = 5
+
+*---------------------------------------------------------------------------*
+*- STANZA 5: Creates 1QD number of threads doing RWRC/RC/WRC opers with    -*
+*- random size small IO transfer. num_mallocs will vary for the threads    -*
+*- (small IO transfer test).                                               -*
+*---------------------------------------------------------------------------*
+rule_id = rule_5
+pattern_id = #007
+num_threads = 1QD
+oper = rwrc rc wrc
+num_oper = 40000
+transfer_size = [1BLK-128k,-1]
+num_mallocs = 4 6 8
+seek_breakup_prcnt = 100
+
+*---------------------------------------------------------------------------*
+*- STANZA 6: This stanza will create 1QD number of threads, each doing     -*
+*- a 80/20 random/seq access ratio. Each thread will be picking up a       -*
+*- different transfer size (80/20 random/seq acces ratio test).            -*
+*---------------------------------------------------------------------------*
+rule_id = rule_6
+pattern_id = #007
+num_threads = 1QD
+oper = rwrc rc wrc
+num_oper = 40000
+transfer_size = [1BLK-128K,-1]
+num_mallocs = 4
+seek_breakup_prcnt = 80
+
+*---------------------------------------------------------------------------*
+*- STANZA 7: Creates single thread which does 20000 random writes of       -*
+*- pattern #004 with save_seeds flag. Each thread will do IO transfer of   -*
+*- random sizes in-between 1block-16K.                                     -*
+*---------------------------------------------------------------------------*
+rule_id = rule_7
+pattern_id = #004
+oper = w
+num_threads = 1
+num_oper = 20000
+seek_breakup_prcnt = 100
+transfer_size = [1BLK-16K,-1]
+rule_option = save_seeds
+num_mallocs = 10
+
+*---------------------------------------------------------------------------*
+*- STANZA 8: Creates single thread which does 20000 random read/compares   -*
+*- of pattern #004 on same LBA where previous stanza has done write. Each  -*
+*- thread will do IO transfer of random sizes in-between 1block-16K.       -*
+*---------------------------------------------------------------------------*
+rule_id = rule_8
+pattern_id = #004
+oper = rc
+num_threads = 1
+num_oper = 20000
+seek_breakup_prcnt = 100
+transfer_size = [1BLK-16K,-1]
+rule_option = restore_seeds
+num_mallocs = 10
+
+*---------------------------------------------------------------------------*
+*- STANZA 9: Reinitializes disk to pattern #007 using same seeds as the   -*
+*-           previous 2 stanzas.                                           -*
+*---------------------------------------------------------------------------*
+rule_id = rule_9
+pattern_id = #007
+oper = w
+num_threads = 1
+num_oper = 20000
+seek_breakup_prcnt = 100
+transfer_size = [1BLK-16K,-1]
+rule_option = restore_seeds
+num_mallocs = 10
+
+*---------------------------------------------------------------------------*
+*- STANZA 10: One threads writes to disk while 3 threads are reading from   -*
+*-           the same memory buffer that is used to write to the disk.     -*
+*---------------------------------------------------------------------------*
+rule_id = rule_10
+pattern_id = #007
+num_oper = 1000
+oper = cawr carw
+num_threads = 2
+num_cache_threads = 4
+testcase = cache
+seek_breakup_prcnt = 0
+starting_block = BOT MID
+transfer_size = 32BLK
+num_mallocs = 6
+align = 4096
+
+*---------------------------------------------------------------------------*
+*- STANZA 11: Clean up after the CACHE operation. 63 operations * 512       -*
+*-            blocks/oper will cover 32000 blocks, starting from block 0.  -*
+*---------------------------------------------------------------------------*
+rule_id = rule_11
+pattern_id = #007
+num_oper = 63
+oper = w
+num_threads = 2
+seek_breakup_prcnt = 0
+transfer_size = 512BLK
+starting_block = BOT MID
+num_mallocs = 1
+

@@ -1,0 +1,216 @@
+#!/usr/bin/perl -w
+use Getopt::Long qw(GetOptionsFromString);
+use File::Basename;
+
+my $BASE = "";
+my $mmap_file_path = "$BASE/home/utpsm/";
+my $rdir = "";
+my $mdir = "";
+my $mdtfile = "";
+my $ncpu = 0;
+my $cpu_set_size=8;
+my $infile;
+my $usecapi = 1;
+
+#Before executing anything else determine we are on AIX or Linux
+$os = `uname`;
+chomp($os);
+if($os =~ m/AIX/i)
+{
+	$aix = 1;
+}
+
+if( @ARGV == 0 && -e "default_inputs.txt" ){
+	open DEFAULT_INPUTS_FILE, "default_inputs.txt" or die $!;
+	my @inputs = <DEFAULT_INPUTS_FILE>;
+	for my $input (@inputs){
+		chomp $input;
+		if($input){
+			parseOptions(\$ncpu, \$infile, \$mdtfile, \$rdir, \$mdir, \$usecapi, $input);
+			gen_mdt_htxtpsm();	
+		}
+	}
+	close(DEFAULT_INPUTS_FILE);
+	exit 0;
+}else{
+	parseOptions(\$ncpu, \$infile, \$mdtfile, \$rdir, \$mdir, \$usecapi);
+	gen_mdt_htxtpsm();	
+}
+
+
+sub usage
+{
+	print "Name:".$0."\n";
+	print "Description: Generate rules file for multiple cpus\n";
+	print "Options:\n";
+	print "    -help or --help: Display this message\n";
+	print "    -ncpu or --ncpu <Number of cpus for which rules file is to be generated>\n";
+	print "    -infile or --infile <Absolute path of input rules file>\n";
+	print "    -mdtfile or --mdtfile <Absolute path of mdt file>\n";
+	print "    -rdir or --rdir <Absolute path of directory where rule files are to be created>\n";
+	print "    -mdir or --mdir <Absolute path of directory where mdt file is to be created>\n";
+	print "    -capi or --capi <0|1> Flag indicating whether to use capi devices if they are available\n";
+	print "    NOTE1: By default ncpu is equal to the number of threads available in the system\n";
+	print "    NOTE2: By default mdtfile is set to mdt.tpsm\n";
+	print "    NOTE3: By default rdir is set to /usr/lpp/htx/rules/reg/tpsm/\n";
+	print "    NOTE4: By default mdir is set to /usr/lpp/htx/mdt/\n";
+	print "    NOTE5: By default capi is set to 1 (i.e., capi devices will be used if available)\n";
+}
+
+sub parseOptions
+{
+	#All arguments are passed by reference
+	my($ncpu, $infile, $mdtfile, $rdir, $mdir, $usecapi, $optionString) = @_;
+	my $help = 0;
+	if($optionString){
+		GetOptionsFromString($optionString, 'help|?' => \$help, 'ncpu=i' => $ncpu, 'infile=s' => $infile, 
+			'mdtfile=s' => $mdtfile,
+			'rdir=s' => $rdir, 'mdir=s' => $mdir, 'capi=i' => $usecapi);
+	}else{
+		GetOptions('help|?' => \$help, 'ncpu=i' => $ncpu, 'infile=s' => $infile, 
+			'mdtfile=s' => $mdtfile,
+			'rdir=s' => $rdir, 'mdir=s' => $mdir, 'capi=i' => $usecapi);
+	}
+	
+	if( $help )
+	{
+		usage();
+		exit 0;
+	}
+
+	if($$ncpu == 0)
+	{
+		if( $aix )
+		{
+			$$ncpu = get_num_processors_aix();
+		}
+		else
+		{
+			$$ncpu = `egrep cpu?[0-9] /proc/stat |wc -l`;
+		}
+		chomp($$ncpu);
+	}
+	if($$mdtfile eq "")
+	{
+		$$mdtfile = "mdt.tpsm";
+	}
+	if($$rdir eq "")
+	{
+		$$rdir = "$BASE/usr/lpp/htx/rules/reg/tpsm/";
+	}
+	if($$mdir eq "")
+	{
+		$$mdir = "$BASE/usr/lpp/htx/mdt/";
+	}
+}
+
+sub get_num_processors_aix
+{
+	my $STR = `bindprocessor -q`;
+	my @lproc_temp = split(/:/, $STR);
+	my @lproc = split(/\s+/, $lproc_temp[1]);
+	my $num_lproc = 0;
+	foreach $num (@lproc)
+	{
+        	chomp($num);
+        	if($num =~ m/^$/)
+        	{
+                	next;
+        	}
+        	else
+        	{
+                	$num_lproc++;
+        	}
+	}
+	return $num_lproc;
+}
+
+sub gen_mdt_htxtpsm
+{
+	my $i=0;
+	my @rulefiles;
+	my @capi_devices = find_capi_devices();
+	
+	if( -d "$mmap_file_path" ){
+    	#print "Directory $mmap_file_path exists\n";
+	}else{
+   		mkdir("$mmap_file_path", 0777);
+    	#print "Created $mmap_file_path\n";
+	}
+	
+	for(my $cpu_idx=0; $cpu_idx < $ncpu; $cpu_idx+=$cpu_set_size){
+		@cpu_ids = ($cpu_idx..(($ncpu-1) < ($cpu_idx+$cpu_set_size-1) ? ($ncpu-1) : ($cpu_idx+$cpu_set_size-1)) );
+		
+		# Give upto 8 CAPI cards to each rule file
+                my @cards_for_this_rulefile = ();
+		while(@cards_for_this_rulefile<8 && @capi_devices>0){
+                	my $next_available_card = shift(@capi_devices);
+                	if($next_available_card){
+                	        push(@cards_for_this_rulefile, $next_available_card);
+                	}
+		}
+
+		my $rule_file = $infile ? $infile : "$rdir/default_templates/rules.template";
+		my %ctxt =
+                        ( cpu_ids   => \@cpu_ids,
+                  capi_devices  => \@cards_for_this_rulefile,
+                  mmap_file_path => $mmap_file_path,
+                  rule_template_dir => dirname($rule_file)
+                );
+
+		my $outfile = `basename $rule_file .template`;
+		chomp $outfile;
+		my $output = process_template($rule_file, \%ctxt);
+		open(RULEFILE, ">$rdir/$outfile\_$i") || die("Unable to open rule file \"$rdir/$outfile\_$i\" for writing. Exiting.");
+		print RULEFILE $output;
+		close(RULEFILE);
+		push(@rulefiles, "$outfile\_$i");
+		$i++;
+	}
+	my %ctxt = (rulefiles => \@rulefiles);
+	my $output = process_template("$rdir/default_templates/mdt.tpsm.template", \%ctxt);
+	open(MDTFILE, ">$mdir/$mdtfile") || die("Unable to open output file \"$mdir/$mdtfile\" for writing. Exiting.");
+	print MDTFILE $output;
+	close(MDTFILE);
+	print "\nCreated $mdtfile ($mdir$mdtfile)\n";
+	
+}
+
+sub find_capi_devices
+{
+	if(! $usecapi){
+		return ();
+	}
+	my @capi_devices;
+	my $device = "'capi*'";
+	#my $device = "'ttyS*'";
+	my $capi_devices_str = `find /dev/ -type c -name $device | tr -s "\n" " "`;
+	chomp($capi_devices_str);
+	if(length $capi_devices_str)
+	{
+		@capi_devices = split(' ', $capi_devices_str);
+	}
+	return @capi_devices;
+}
+
+sub process_template
+{
+	my ($templateFile, $context) = @_;
+	my %ctxt = %$context;
+	if(-e $templateFile ){
+		open TEMPLATE_FILE, $templateFile or die $!;
+		my @inputs = <TEMPLATE_FILE>;
+		close TEMPLATE_FILE;
+		my $inp = join('', @inputs);
+		$inp =~ s/<%(.*?)%>/eval $1/ges;
+		
+		my $nl = $/;
+		$/ = "";
+		chomp $inp;
+		$/ = $nl;
+		
+		return $inp . "\n";
+	}else{
+		print "Cannot find $templateFile\n"; 
+	}
+}

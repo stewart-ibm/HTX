@@ -1,0 +1,177 @@
+*
+* rules.seq1090
+*
+*******************************************************************************
+*---------------------------------------------------------------------------*
+*- STANZA 1: Random Write/Read/Compare 60000 times. Thread 1. 			   -*
+*---------------------------------------------------------------------------*
+rule_id = SEQWRC1
+pattern_id = #009
+addr_type = random  
+num_oper = 60000
+oper = wrc
+type_length = fixed 
+num_blks = 512
+starting_block = 0
+direction = up
+no_mallocs = 1
+turn_attention_on = no
+increment = 0
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 2: Do seq write 100000 times. - Thread 2               	  	   -*
+*---------------------------------------------------------------------------*
+rule_id = SEQW2
+pattern_id = #008
+addr_type = seq 
+num_oper = 100000
+oper = w 
+type_length = fixed
+num_blks = 128
+no_mallocs = 4
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 3: Do random write 100000 times. - Thread 3           		       -*
+*---------------------------------------------------------------------------*
+rule_id = SEQW3
+pattern_id = #00A
+addr_type = random 
+num_oper = 100000
+oper = w
+type_length = random
+num_blks = 256
+no_mallocs = 4
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 4: Do seq write 100000 times. - Thread 4			               -*
+*---------------------------------------------------------------------------*
+rule_id = SEQW4
+pattern_id = #007
+addr_type = seq
+num_oper = 100000
+oper = w
+type_length = random 
+num_blks = 512
+no_mallocs = 16 
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 5: Do seq write compare 100000 times. - Thread 5                  -*
+*---------------------------------------------------------------------------*
+rule_id = SEQW5
+pattern_id = #008
+addr_type = seq 
+num_oper = 100000
+oper = w 
+type_length = fixed 
+num_blks = 128 
+no_mallocs = 8 
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 6: Do random write 100000 times. - Thread 6 	                   -*
+*---------------------------------------------------------------------------*
+rule_id = SEQW6
+pattern_id = #009
+addr_type = seq 
+num_oper = 100000
+oper = w
+type_length = random
+num_blks = 128
+no_mallocs = 4
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 7: Do seq write  100000 times. - Thread 7			               -*
+*---------------------------------------------------------------------------*
+rule_id = SEQW7
+pattern_id = #00A
+addr_type = random 
+num_oper = 100000
+oper = w
+type_length = random
+num_blks = 512
+no_mallocs = 8 
+start_stanza = yes
+
+*---------------------------------------------------------------------------*
+*- STANZA 8: Do sequential write 100000 times. Start of a new		       -*
+*-            sequence of threads. - Thread 1                              -*
+*---------------------------------------------------------------------------*
+rule_id = SEQW8
+pattern_id = #007
+addr_type = seq
+num_oper = 100000
+oper = w
+type_length = fixed 
+num_blks = 128
+no_mallocs = 8
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 9: Do random write 100000 times. - Thread 2               		   -*
+*---------------------------------------------------------------------------*
+rule_id = SEQW9
+pattern_id = #008
+addr_type = random
+num_oper = 100000
+oper = w 
+type_length = random
+num_blks = 512
+no_mallocs = 16 
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 10: Do seq write  read compare 100000 times. - Thread 3           -*
+*---------------------------------------------------------------------------*
+rule_id = RDWRC10
+pattern_id = #009
+addr_type = random 
+num_oper = 60000
+oper = wrc
+type_length = random 
+num_blks = 256
+no_mallocs = 8 
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 11: Do seq write 100000 times. - Thread 4              		   -*
+*---------------------------------------------------------------------------*
+rule_id = SEQW11
+pattern_id = #00A
+addr_type = random 
+num_oper = 100000
+oper = w
+type_length = random
+num_blks = 512
+no_mallocs = 16 
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 12: Do sequential write  100000 times. - Thread 5                 -*
+*---------------------------------------------------------------------------*
+rule_id = SEQW12
+pattern_id = #008
+addr_type = seq
+num_oper = 100000
+oper = w 
+type_length = random
+num_blks = 128
+no_mallocs = 8
+start_stanza = no
+
+*---------------------------------------------------------------------------*
+*- STANZA 13: Do 100000 random write operations.  - Thread 6                -*
+*---------------------------------------------------------------------------*
+rule_id = SEQW13
+pattern_id = #009
+addr_type = random
+num_oper = 100000
+oper = w 
+type_length = fixed
+num_blks = 256 
+no_mallocs = 10
+start_stanza = yes

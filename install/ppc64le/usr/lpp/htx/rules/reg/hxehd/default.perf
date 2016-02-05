@@ -1,0 +1,234 @@
+*****************************************************************
+* STANZA 1 : Reads Only. These opers are done on OUTER LBA's 
+* this is expected to generate maximum read throughput(MB/secs) 
+*****************************************************************
+
+rule_id = SEQREAD1
+pattern_id = HEX255
+addr_type = seq
+num_oper = 200000
+oper = r
+type_length = fixed
+num_blks = 2048
+min_blkno = 0
+max_blkno = 0.1
+direction = up
+global_var = mode PERFORMANCE
+start_stanza = yes 
+
+
+*******************************************************************
+* STANZA 2-5 : Reads Only. 4 set of threads with read only.  
+* These opers are done on whole disks. num_blks = 1, this would queue up
+* max number of read operations. Should generate max read thruput (IO/secs)  
+* Thread 1 : operates on 0 to 25% of disk.
+* Thread 2 : operates on 26 to 50% of disk. 
+* Thread 3 : operates on 51 to 75% of disk. 
+* Thread 4 : operates on 76 to 99% of disk. 
+*******************************************************************
+rule_id = SEQREAD2
+pattern_id = HEX255
+addr_type = seq
+num_oper = 200000
+oper = r
+global_var = mode PERFORMANCE
+type_length = fixed
+num_blks = 1
+min_blkno = 0
+max_blkno = 0.25
+direction = up
+start_stanza = no
+
+rule_id = SEQREAD3
+pattern_id = HEX255
+addr_type = seq
+num_oper = 200000
+oper = r
+type_length = fixed
+num_blks = 1
+min_blkno = 0.26
+max_blkno = 0.50
+direction = up
+start_stanza = no
+
+
+rule_id = SEQREAD4 
+pattern_id = HEX255
+addr_type = seq
+num_oper = 200000
+oper = r
+type_length = fixed
+num_blks = 1
+min_blkno = .51
+max_blkno = .75
+direction = up
+start_stanza = no 
+
+rule_id = SEQREAD5
+pattern_id = HEX255
+addr_type = seq
+num_oper = 200000
+oper = r
+type_length = fixed
+num_blks = 1
+min_blkno = .76
+max_blkno = .99
+direction = up
+start_stanza = yes 
+
+**********************************************************************
+* STANZA 6 : Writes Only. These opers are done on OUTER LBA's
+* this is expected to generate maximum write throughput(MB/secs).
+* Notes : Write stanzas are included for the sake of completeness. 
+* In case you are only worried about max thruput (MBps or IOps) remove
+* all the stanzas below. 
+**********************************************************************
+rule_id = SEQWRIT6
+pattern_id = HEX255
+addr_type = seq
+num_oper = 200000
+oper = w
+type_length = fixed
+num_blks = 2048
+min_blkno = .00
+max_blkno = .10
+direction = up
+start_stanza = yes
+
+
+**********************************************************************
+* STANZA 7-10 : Writes Only. 4 set of threads created. 
+* These opers are done on whole disks, num_blks = 1, should queue max IOs. 
+* this is expected to generate maximum write throughput(IO/secs).
+**********************************************************************
+rule_id = SEQWRIT7
+pattern_id = HEX255
+addr_type = seq
+num_oper = 200000
+oper = w
+type_length = fixed
+num_blks = 1
+min_blkno = 0
+max_blkno = 0.25
+direction = up
+start_stanza = no
+
+rule_id = SEQRD8
+pattern_id = HEX255
+addr_type = seq
+num_oper = 200000
+oper = w
+type_length = fixed
+num_blks = 1
+min_blkno = 0.26
+max_blkno = 0.50
+direction = up
+start_stanza = no
+
+
+rule_id = SEQRD9
+pattern_id = HEX255
+addr_type = seq
+num_oper = 200000
+oper = w
+type_length = fixed
+num_blks = 1
+min_blkno = .51
+max_blkno = .75
+direction = up
+start_stanza = no
+
+rule_id = SEQRD10
+pattern_id = HEX255
+addr_type = seq
+num_oper = 200000
+oper = w
+type_length = fixed
+num_blks = 1
+min_blkno = .76
+max_blkno = .99
+direction = up
+start_stanza = yes
+
+************************************************************************
+* STANZA 11 : One thread will do Read and other thread would do write 
+* on disk at the same time. This should generate max Read/Write bandwidth
+* on the disk. 
+* **********************************************************************
+rule_id = SEQRD11
+pattern_id = HEX255
+addr_type = seq
+num_oper = 200000
+oper = r
+type_length = fixed
+num_blks = 2048
+min_blkno = .00
+max_blkno = .10
+direction = up
+start_stanza = no 
+
+rule_id = SEQWRT12
+pattern_id = HEX255
+addr_type = seq
+num_oper = 200000
+oper = w
+type_length = fixed
+num_blks = 2048
+min_blkno = .11
+max_blkno = .20
+direction = up
+start_stanza = yes 
+
+****************************************************************************
+* STANZA 13 : Two Read threads/Two Write threads, with num_blks = 1, 
+* aims at generating max read/write io's per sec. 
+****************************************************************************  
+rule_id = SEQRD13
+pattern_id = HEX255
+addr_type = seq
+num_oper = 200000
+oper = r
+type_length = fixed
+num_blks = 1
+min_blkno = 0
+max_blkno = 0.25
+direction = up
+start_stanza = no
+
+rule_id = SEQWRT14
+pattern_id = HEX255
+addr_type = seq
+num_oper = 200000
+oper = w
+type_length = fixed
+num_blks = 1
+min_blkno = 0.26
+max_blkno = 0.50
+direction = up
+start_stanza = no
+
+
+rule_id = SEQRD15
+pattern_id = HEX255
+addr_type = seq
+num_oper = 200000
+oper = r
+type_length = fixed
+num_blks = 1
+min_blkno = .51
+max_blkno = .75
+direction = up
+start_stanza = no
+
+rule_id = SEQWRT16
+pattern_id = HEX255
+addr_type = seq
+num_oper = 200000
+oper = w
+type_length = fixed
+num_blks = 1
+min_blkno = .76
+max_blkno = .99
+direction = up
+start_stanza = yes
+

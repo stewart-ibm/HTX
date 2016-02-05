@@ -1,0 +1,107 @@
+# @(#)78        1.2     src/htx/usr/lpp/htx/rules/reg/bootme/default, htx_bootme, htxubuntu 8/18/05 05:16:53
+#
+# COMPONENT_NAME: htx_bootme
+#
+# ORIGINS: 27
+#
+###############################################################################
+# Please refer to /usr/lpp/htx/rules/reg/bootme.doc for more details.
+#
+# Syntax Requirements:
+# 1) Statements must not have leading spaces.
+# 2) Statements must have a colon immediately following it.
+# 3) There must be a single space after the colon.
+#
+#
+###############################################################################
+# To change the reboot time(s), remove the comment "#" from ONLY ONE of the
+# REBOOT statements below, or add/edit one to suit your needs.
+#
+# REBOOT can NOT be modified "on-the-fly" - refer to bootme.doc for details
+#
+# The first field in the crontab entry denotes minutes (0-59) in an hour and
+# the second denotes hours (0-23) in a 24 hour day.  The time elements must
+# all be contiguous - no spaces between any of the characters. The time
+# elements must be legal crontab entries.  Only two space seperated items
+# are allowed after "REBOOT:"
+#
+# Example 1: will reboot every half hour (0,30), every hour (*)
+# Example 2: will reboot every 20 minutes (0,20,40), every hour (*)
+# Example 3: will reboot at the top of each hour specified in the hour field
+#            (Midnight, 4am, 8am, 12pm, 4pm, and 8pm).  Do not place the 
+#            wildcard "*" in the minutes position as this will cause your
+#            test system to reboot continuously during the hours in the 
+#            second field.
+# Example 4: will reboot every half hour during the hours in the hour field.
+#
+# If you must use crontab fields other than minutes and hours, then you should
+# run "bootme on" and manually edit the crontab entry (crontab -e).  The
+# bootme scripts only allows for the setting of these two fields and does pad
+# the remaining crontab time entries with "*" wildcards.  Adding a third or
+# fourth entry in this default profile will result in unexpected behavior.
+
+REBOOT: 0,30 *
+#REBOOT: 0,20,40 *
+#REBOOT: 0 0,4,8,12,16,20
+#REBOOT: 0,30 0,4,8,12,16,20
+
+
+###############################################################################
+# Method to run bootme.
+# Only one uncommented item allowed for this statement type.
+#
+# "single" is the default method that most will use. Uncomment ONE BOOT_CMD
+#          and bootme will use it for every reboot.
+# "random" selects a random method from the list of uncommented BOOT_CMD's.
+#          Uncomment 2 or more BOOT_CMD's when using this method.
+# "sequential" will select, in order, from the uncommented BOOT_CMD's.
+#          Uncomment 2 or more BOOT_CMD's when using this method.
+#
+# BOOT_METHOD can be modified "on-the-fly" - refer to bootme.doc for details
+
+BOOT_METHOD: single
+#BOOT_METHOD: random
+#BOOT_METHOD: sequential
+
+
+###############################################################################
+# Command to use to reboot system
+# single BOOT_METHOD: Only one uncommented item allowed
+# random or sequential BOOT_METHOD's: two or more uncommented items allowed
+#
+# BOOT_CMD can be modified "on-the-fly" - refer to bootme.doc for details
+# give the full path, as path may cause some problem
+
+BOOT_CMD: /sbin/reboot      
+#BOOT_CMD: set_poweron_time -s -d m10
+#BOOT_CMD: shutdown -r        #Not used in linux
+#BOOT_CMD: shutdown -t        #Not used in linux
+#BOOT_CMD: reboot -q        #Not used in linux
+#BOOT_CMD: reboot -t        #Not used in linux
+
+
+###############################################################################
+# Edit this to set the future time when the system will begin to power back on.
+# Please refer to the /usr/lpp/htx/rules/reg/bootme.doc BOOT_WAIT section for
+# more details. Only one uncommented item allowed for this statement type.
+#
+# BOOT_WAIT can be modified "on-the-fly" - refer to bootme.doc for details
+# Not used in linux as time is not implemented yet
+
+#BOOT_WAIT: 300
+BOOT_WAIT: 600
+
+
+###############################################################################
+# Edit this to set the pre and post boot scripts.  Please refer to the 
+# /usr/lpp/htx/rules/reg/bootme.doc BOOT_PRE and BOOT_POST section for more
+# details.  bootme will ignore these files if they do not exist.
+# BOOT_PRE will be run just before the system reboots (pre-boot)
+# BOOT_POST will be run just after the system reboots (post-boot)
+#
+# BOOT_PRE and BOOT_POST can be modified "on-the-fly" - refer to bootme.doc for
+# details
+
+BOOT_PRE: /usr/lpp/htx/etc/scripts/boot_pre
+BOOT_POST: /usr/lpp/htx/etc/scripts/boot_post
+

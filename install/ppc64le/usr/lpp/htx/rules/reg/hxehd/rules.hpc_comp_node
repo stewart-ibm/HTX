@@ -1,0 +1,28 @@
+* Customer workload env rules for hpc compute node
+* Not much IO other thna logging
+**---------------------------------------------------------------------------*
+*- STANZA 1: Sequentially write the entire disk on every 6th iteration of  -*
+*-           the rules file. This stanza will run in the background while  -*
+*-           other stanza in the rules file are running.                   -*
+*---------------------------------------------------------------------------*
+rule_id = SEQWRC1  
+pattern_id = #003 
+addr_type = seq
+num_oper = 64 
+oper = wrc
+type_length = fixed
+num_blks = 64 
+starting_block = 0
+direction = up
+no_mallocs = 1
+turn_attention_on = no
+increment = 0
+
+*---------------------------------------------------------------------------*
+*- STANZA 2: Sleep for 3 minutes on every 6th iteration of the rules file. -*
+*-           This lets the background thread (STANZA 1) initialize an area -*
+*-           of the disk before the other rule stanzas start.              -*
+*---------------------------------------------------------------------------*
+rule_id = SLEEP2
+oper = s
+sleep = 180000000

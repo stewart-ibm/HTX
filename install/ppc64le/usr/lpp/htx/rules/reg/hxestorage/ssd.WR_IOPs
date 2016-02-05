@@ -1,0 +1,20 @@
+* @(#)27	1.1  src/htx/usr/lpp/htx/rules/reg/hxestorage/ssd.WR_IOPs, exer_storage, htxubuntu 11/17/14 19:10:42 *
+*******************************************************************
+* TEMPLATE 1
+*******************************************************************
+template_id = iops_w
+oper = w
+transfer_size = 4K
+
+************************************************************************
+* STANZA 1 : Writes Only. creates num_threads same as queue depth. This 
+* would queue up max number of write operations. Should generate max 
+* write IOPS.
+************************************************************************
+rule_id = rule_1
+pattern_id = HEX255
+mode = performance
+num_threads = 1qd(iops_w)
+num_oper = 200000
+seek_breakup_prcnt = 100
+

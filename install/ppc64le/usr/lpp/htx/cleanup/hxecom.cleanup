@@ -1,0 +1,48 @@
+# @(#)53       1.4.4.1  src/htx/usr/lpp/htx/cleanup/hxecom.cleanup, exer_com, htxubuntu 9/29/15 07:03:14
+
+#get rid of any hxecom processes left over
+linux= 
+linux=`uname -s`
+#echo $linux
+#if [ $linux == Linux ]; then
+#    echo it is linux
+#else
+#    echo it is not linux
+#fi
+
+data=`ps -ef | grep hxecom | awk '{print $2}'`
+for item in $data
+do
+    echo "Removing process " $item
+    kill -9 $item  > /dev/null 2>&1
+done
+
+# These are well known ipc resource ids of hxecom.
+for i in 0 1 2 3
+do 
+	echo bbb000$i >> /tmp/hxecom_sids 
+done
+
+#clean up the shared memory keys and semaphores of hxecom
+data1=`ipcs | grep bbb | awk '{print $2}'`
+
+for item1 in $data1
+do
+	item2=`grep $item1 /tmp/hxecom_sids`
+	if [ "$item2" ]
+	then 
+#	    echo "Removing hxecom key " $item1
+		ipcrm sem  $item1 > /dev/null 2>&1
+		ipcrm shm $item1 > /dev/null 2>&1
+	fi 
+done
+
+rm /tmp/hxecom_sids
+
+#get rid of tty semaphores..
+data1=`ipcs | grep eea | awk '{print $2}'`
+for item1 in $data1
+do
+#	    echo "Removing tty key " $item1
+		ipcrm sem $item1 > /dev/null 2>&1
+done

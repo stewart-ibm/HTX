@@ -1,0 +1,23 @@
+* @(#)51	1.2  src/htx/usr/lpp/htx/rules/reg/hxestorage/rules.hpc_io_node, exer_storage, htxubuntu 3/10/15 13:19:12 *
+* hxestorage rules file for creating customer like load environment.
+* HPC_IO_NODE
+* Requirements:
+*
+*  90/10: Read/Write ratio
+*  5/95: Random/sequential access
+*  256K-16MB(random) : transfer size
+*
+*******************************************************************************
+*---------------------------------------------------------------------------*
+*- STANZA 1: Creates 1QD threads each doing w[1]r[9]c kind of operation    -*
+*-           with a 5/95 Random/sequential access.                         -*
+*---------------------------------------------------------------------------*
+rule_id = rule_1
+pattern_id = #003
+num_oper = 50000
+num_threads = 7 
+oper = w[1]r[9]c
+direction = UP DOWN
+starting_block = BOT MID MID TOP
+seek_breakup_prcnt = 5
+transfer_size = [512BLK-32768BLK,-1]
