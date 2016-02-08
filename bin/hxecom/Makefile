@@ -1,7 +1,6 @@
 include ../../htx.mk
 
 TARGET= hxecom hxecom2 mkintfmap auto
-#all = ${TARGET}
 
 LDFLAGS +=
 
@@ -28,10 +27,10 @@ hxecom2_SRCS = $(patsubst %.o, %.c, $(hxecom2_OBJECTS))
 mkintfmap_SRCS = $(patsubst %.o, %.c, $(mkintfmap_OBJECTS))
 auto_SRCS = $(patsubst %.o, %.c, $(auto_OBJECTS))
 
-all: hxecom hxecom2 mkintfmap auto
+all: hxecom hxecom2 mkintfmap auto move_scripts
 
 CFLAGS += -D__RELGR2600__
-LIBS = -lhtx64 -lpthread 
+LIBS = -lpthread -lhtx64
  
 .PHONY: all clean
 
@@ -50,6 +49,20 @@ mkintfmap: ${mkintfmap_OBJECTS}
 auto: ${auto_OBJECTS}
 	${CC} ${LDFLAGS} ${LIBPATH} ${auto_OBJECTS} ${LIBS} -o auto 
 	${CP} auto ${SHIPBIN}
+
+move_scripts:
+	mkdir -p ${SHIPDIR}/usr/bin/
+	mkdir -p ${SHIPDIR}/usr/sbin/
+	mkdir -p ${MDT}
+	${CP} build_net htx_build_net pingum fixrules ${SHIPDIR}/usr/bin/
+	${CP} mdt_net net.default ${MDT}/
+	${CP} mktcpip ${SHIPDIR}/usr/sbin/
+	mkdir -p ${RUNSETUP}
+	${CP} hxecom.runsetup ${RUNSETUP}
+	mkdir -p ${RUNCLEANUP}
+	${CP} hxecom.runcleanup ${RUNCLEANUP}
+	mkdir -p ${REGRULES}/hxecom/
+	${CP} nethost1 nethost2 ${REGRULES}/hxecom/
 
 %.o: %.c
 	${CC} ${CFLAGS} ${INCLUDES} -c $< -o $@
