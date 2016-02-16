@@ -59,7 +59,8 @@
 char  page_size[MAX_NUM_PAGE_SIZES][4]={"4K","64K","16M","16G"};
 struct rule_format r, stanza[MAX_STANZAS], *stanza_ptr;
 char shm_max[50], shm_all[50];
-
+unsigned int g_thread_count; /* thread count tracker to make stanza = 1 after mem allocation completion by all threads*/
+pthread_mutex_t g_thread_count_lock;/*mutex lock to guard g_thread_count */
 struct private_data priv;
 struct memory_info mem_info;
 
@@ -248,11 +249,15 @@ int main(int argc, char *argv[])
 /* Store the pid of the process */
     priv.pid=getpid();
 
-/* Intialize mutex variable */
+/* Intialize mutex variables */
     if ( pthread_mutex_init(&mem_info.tmutex,NULL) != 0) {
          displaym(HTX_HE_SOFT_ERROR,DBG_MUST_PRINT,"pthread init error (%d): %s\n",errno,strerror(errno));
     }
     mem_info.mutex = 1; /* flag set that means mutex variable exists*/
+
+	if ( pthread_mutex_init(&g_thread_count_lock,NULL) != 0) {
+		displaym(HTX_HE_SOFT_ERROR,DBG_MUST_PRINT,"pthread init error for g_thread_count_lock (%d): %s\n",errno,strerror(errno));
+	}
 
 /* set htx_data flag to make supervisor aware that we want to recieve SIGUSR2 in case of hotplug add/remove */
 
@@ -513,12 +518,10 @@ int execute_stanza_case(void)
     }
 #endif
 
-    STATS_VAR_INC(test_id, 1)
-/*    stats.test_id++; */
-    STATS_HTX_UPDATE(UPDATE)
 
     display(HTX_HE_INFO,DBG_IMP_PRINT,"Calling create_n_run_test_operation\n");
 
+	g_thread_count = mem_info.num_of_threads;
     res=  create_n_run_test_operation();
 
     displaym(HTX_HE_INFO, DBG_IMP_PRINT, "Stanza_ptr->rule_id = %s Completed\n",
@@ -559,6 +562,10 @@ int fill_segment_data(void)
 	};
 #endif
 
+#ifdef  __HTX_LINUX__
+long long hard_limt_mem_size = DEF_SEG_SZ_4K * (32 * KB); /* Linux has a hard limit of 32K for total number of shms (SHMNI)*/
+long long new_seg_size		 = mem_info.total_mem_avail/(32 * KB);
+#endif
     /*
      * If seg_size = 0 , the default value for segment size is 256
      * (for < 16G page segments)
@@ -568,6 +575,11 @@ int fill_segment_data(void)
         if (stanza_ptr->seg_size[i] == 0 ) {
             if (i < PAGE_INDEX_16G) {
                 stanza_ptr->seg_size[i]= DEF_SEG_SZ_4K; /* 256MB for < 16G */
+#ifdef  __HTX_LINUX__
+				if (mem_info.total_mem_avail > hard_limt_mem_size) {
+					stanza_ptr->seg_size[i]= new_seg_size;
+				}	
+#endif
             } else {
                 stanza_ptr->seg_size[i]= DEF_SEG_SZ_16G; /* 1 16GB page */
             }
@@ -1150,6 +1162,18 @@ void * run_test_operation(void *tn)
             }
         }
 	}  
+
+	pthread_mutex_lock(&g_thread_count_lock);
+
+	g_thread_count--;
+	
+	/*displaym(HTX_HE_INFO,DBG_MUST_PRINT,"####Thread:%d count = %d \n",ti,g_thread_count);*/
+	if(g_thread_count == 0){
+		stats.test_id++; 
+		hxfupdate(UPDATE,&stats);	
+	}
+	pthread_mutex_unlock(&g_thread_count_lock);
+
     if (stanza_ptr->run_mode == RUN_MODE_CONCURRENT) {
         do_the_bind_proc(BIND_TO_THREAD, UNBIND_ENTITY,-1);
     }
@@ -5698,6 +5722,7 @@ int save_buffers(int ti, unsigned long rc, struct segment_detail sd, \
                 expected_pat = *(unsigned long *)(&stanza_ptr->pattern[pi][pat_offset]);
             }
         }
+		memcpy(bit_pattern,(char*)&expected_pat,sizeof(unsigned long));
 
         switch(width){
             case LS_DWORD: {
