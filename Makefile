@@ -1,6 +1,6 @@
 include htx.mk
 
-SUBDIRS= inc lib bin rules etc mdt cleanup pattern setup runsetup
+SUBDIRS= inc lib bin rules etc mdt cleanup pattern setup runsetup Documentation
 SUBDIRS_CLEAN = $(patsubst %,%.clean,$(SUBDIRS))
 
 TARGET= .htx_profile \
@@ -9,7 +9,6 @@ TARGET= .htx_profile \
         .bashrc \
         .exrc \
         htx_eq.cfg \
-        equaliser.readme \
 	run_htx_cmdline.sh \
         hxsscripts
 

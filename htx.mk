@@ -23,6 +23,7 @@ endif
 TOPDIR=/home/veeresh/HTX/
 SHIPDIR=${TOPDIR}/install/${ARCH}/
 SHIPTOPDIR=${SHIPDIR}/usr/lpp/htx/
+SHIPDOCDIR=${SHIPTOPDIR}/Documentation/
 PACKAGINGDIR=${TOPDIR}/packaging/
 INCLUDES=-I./ -I/usr/include/ -I${EXPINC}
 EXPORT=${TOPDIR}/export/${ARCH}/
