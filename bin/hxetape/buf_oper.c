@@ -1,17 +1,21 @@
-/* IBM_PROLOG_BEGIN_TAG                                                   */
-/* This is an automatically generated prolog.                             */
-/*                                                                        */
-/* htx71L src/htx/usr/lpp/htx/bin/hxetape/buf_oper.c 1.22.3.1             */
-/*                                                                        */
-/* Licensed Materials - Property of IBM                                   */
-/*                                                                        */
-/* COPYRIGHT International Business Machines Corp. 2010                   */
-/* All Rights Reserved                                                    */
-/*                                                                        */
-/* US Government Users Restricted Rights - Use, duplication or            */
-/* disclosure restricted by GSA ADP Schedule Contract with IBM Corp.      */
-/*                                                                        */
-/* IBM_PROLOG_END_TAG                                                     */
+/* IBM_PROLOG_BEGIN_TAG */
+/* 
+ * Copyright 2003,2016 IBM International Business Machines Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/* IBM_PROLOG_END_TAG */
 
 /* @(#)10	1.22.3.2  src/htx/usr/lpp/htx/bin/hxetape/buf_oper.c, exer_tape, htxubuntu 2/26/13 03:36:05 */
 
@@ -23,24 +27,6 @@
  * FUNCTIONS: bldbuf() - fills write buffer with patterned data
  *            cmpbuf() - compare read buffer to write buffer
  *         init_seed() - initializes seed for random number generation
- *
- * Release/Change activity:
- *    DATE    |PROGRAMMER    |DESCRIPTION
- *    --------+--------------+----------------------------------------
- *    10/31/88| T. Homer     | initial release
- *    05/21/92| R. Cherry    | increment htx information bad_others
- *            |              | variable on data mis-compares.
- *    06/15/92| R. Cherry    | block number not being updated in
- *            |              | wr/rd to end of tape operations.
- *    07/01/92| R. Cherry    | skip records need to take into account
- *            |              | the smit blocksize.
- *    07/30/92| R. Cherry    | write buffer corrupted by printf's.
- *    10/21/93| R. Cherry    | fix of pattern 001/002 generation for
- *            |              | variable blocksizes.
- *    11/03/93| R. Cherry    | fix segmentation violation error.
- *     1/15/98| D. Stauffer  | Deleted buf_size from bldbuf. No longer have
- *            |              | to fill in complete buffer. Only do what is
- *            |              | needed.
  *****************************************************************************/
 #include <stdlib.h>
 #include <time.h>

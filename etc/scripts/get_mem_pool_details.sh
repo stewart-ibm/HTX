@@ -1,18 +1,5 @@
 #!/bin/bash
-# IBM_PROLOG_BEGIN_TAG 
-# This is an automatically generated prolog. 
-#  
-# htxubuntu src/htx/usr/lpp/htx/etc/scripts/get_mem_pool_details.sh 1.2 
-#  
-# Licensed Materials - Property of IBM 
-#  
-# COPYRIGHT International Business Machines Corp. 2015,2016 
-# All Rights Reserved 
-#  
-# US Government Users Restricted Rights - Use, duplication or 
-# disclosure restricted by GSA ADP Schedule Contract with IBM Corp. 
-#  
-# IBM_PROLOG_END_TAG 
+
 no_of_instances=`ls -d /sys/devices/system/node/node[0-9]* 2>/dev/null | sort -n -t : -k 1.30 | wc -l`
 for node in $(ls -d /sys/devices/system/node/node[0-9]* 2>/dev/null | sort -n -t : -k 1.30)
 do

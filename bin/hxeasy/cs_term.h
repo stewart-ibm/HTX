@@ -1,20 +1,21 @@
-/* @(#)98   1.4  src/htx/usr/lpp/htx/bin/hxeasy/cs_term.h, exer_asy, htxubuntu 1/15/02 10:13:44 */
-/*
- *   FUNCTIONS:
+/* IBM_PROLOG_BEGIN_TAG */
+/* 
+ * Copyright 2003,2016 IBM International Business Machines Corp.
  *
- *   ORIGINS: 27
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *   IBM CONFIDENTIAL -- (IBM Confidential Restricted when
- *   combined with the aggregated modules for this product)
- *   OBJECT CODE ONLY SOURCE MATERIALS
+ * 		 http://www.apache.org/licenses/LICENSE-2.0
  *
- *   (C) COPYRIGHT International Business Machines Corp. 88,93
- *   All Rights Reserved
- *   US Government Users Restricted Rights - Use, duplication or
- *   disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
-// NOT USED BY NT code........ifdefed out of headers.h
+/* IBM_PROLOG_END_TAG */
 
 /*
  * cs_term.h:

@@ -1,17 +1,21 @@
-/* IBM_PROLOG_BEGIN_TAG                                                   */
-/* This is an automatically generated prolog.                             */
-/*                                                                        */
-/* htxsles11 src/htx/usr/lpp/htx/bin/hxetape/hxetape.h 1.17.1.2           */
-/*                                                                        */
-/* Licensed Materials - Property of IBM                                   */
-/*                                                                        */
-/* COPYRIGHT International Business Machines Corp. 2010                   */
-/* All Rights Reserved                                                    */
-/*                                                                        */
-/* US Government Users Restricted Rights - Use, duplication or            */
-/* disclosure restricted by GSA ADP Schedule Contract with IBM Corp.      */
-/*                                                                        */
-/* IBM_PROLOG_END_TAG                                                     */
+/* IBM_PROLOG_BEGIN_TAG */
+/* 
+ * Copyright 2003,2016 IBM International Business Machines Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/* IBM_PROLOG_END_TAG */
 
 /* @(#)06       1.17.1.3  src/htx/usr/lpp/htx/bin/hxetape/hxetape.h, exer_tape, htxubuntu 2/26/13 03:27:05 */
 
@@ -41,22 +45,6 @@
  *      0x400 - 0x4ff:  buf_oper.c      read/write buffer routines
  *      0x500 - 0x5ff:  io_oper.c       input/output operations routines
  *      0x600 - 0x6ff:  prt_msg.c       message formatter/transmit routines
- *
- * Release/Change activity:
- *    DATE    |PROGRAMMER    |DESCRIPTION
- *    --------+--------------+----------------------------------------
- *    03/21/88| T. Homer     | initial release
- *    06/12/92| R. Cherry    | block number not being updated in
- *            |              | wr/rd to end of tape operations.
- *    07/01/92| R. Cherry    | skip records needs to take into account
- *            |              | the smit blocksize.
- *    08/25/92| R. Cherry    | added sigterm program termination.
- *    04/07/93| R. Cherry    | allow opens with write protected media.
- *    08/02/94| D. Stauffer  | add new fields to the declaration
- *            |              | of ruleinfo to allow the commands to
- *            |              | move the arm of a tape cartridge
- *    04/23/95| L. Record    | add variable block size function
- *    02/22/96| D. Stauffer  | added new fields for hidalgo media chgr
  *****************************************************************************/
 
 #ifndef _H_HXETAPE_
