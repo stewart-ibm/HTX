@@ -1,9 +1,23 @@
-
-/* @(#)26	1.8  src/htx/usr/lpp/htx/bin/bufdisp/bufdisp.c, htxmisc_c, htxubuntu 5/24/04 18:27:43 */
+/* IBM_PROLOG_BEGIN_TAG */
+/* 
+ * Copyright 2003,2016 IBM International Business Machines Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/* IBM_PROLOG_END_TAG */
 
 /******************************************************************************
- * COMPONENT_NAME: htxmisc_c
- * 
  * PROGRAM_NAME: bufdisp.c                                  
  *                                                                           
  * This program will take two data files and compare them against each other.
@@ -15,15 +29,6 @@
  * through the data as well as go to a specific offset. Also you will be able
  * to display the offset in hexadecimal or decimal format. You will also be
  * able to change the block size of the data. The default blocksize is 512.
- *
- * CHANGE LOG: programmer  | date     | change   
- *            -------------|----------|---------------------------------------
- *             D. Stauffer | 02/06/97 | Initial release of code to HTX. 
- *             D. Stauffer | 04/01/97 | Added ASCI characters to side of 
- *                         |          | displayed lines.
- *             HTX India   | 22/04/04 | Change the Logic in comparing 
- *                         |          | the buffers. Now, same logic will be 
- *                         |          | used as in hxehd while comparing. 
  ****************************************************************************/
 #include <stdio.h>                         /* standard include declarations */
 #include <sys/types.h>

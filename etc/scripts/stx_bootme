@@ -1,24 +1,5 @@
 #!/bin/ksh
-# IBM_PROLOG_BEGIN_TAG 
-# This is an automatically generated prolog. 
-#  
-# htxltsbml src/htx/usr/lpp/htx/etc/scripts/stx_bootme 1.5 
-#  
-# Licensed Materials - Property of IBM 
-#  
-# COPYRIGHT International Business Machines Corp. 2010 
-# All Rights Reserved 
-#  
-# US Government Users Restricted Rights - Use, duplication or 
-# disclosure restricted by GSA ADP Schedule Contract with IBM Corp. 
-#  
-# IBM_PROLOG_END_TAG 
 # @(#)75        1.5.4.1  src/htx/usr/lpp/htx/etc/scripts/stx_bootme, htx_bootme, htxubuntu 8/30/12 01:52:01
-#
-# COMPONENT_NAME: htx_bootme
-#
-# ORIGINS: 27
-#
 ###############################################################################
 ###############################################################################
 ##

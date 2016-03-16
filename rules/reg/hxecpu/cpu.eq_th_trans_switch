@@ -1,17 +1,3 @@
-* IBM_PROLOG_BEGIN_TAG 
-* This is an automatically generated prolog. 
-*  
-* htxltsbml src/htx/usr/lpp/htx/rules/reg/hxecpu/cpu.eq_th_trans_switch 1.2 
-*  
-* Licensed Materials - Property of IBM 
-*  
-* COPYRIGHT International Business Machines Corp. 2012,2013 
-* All Rights Reserved 
-*  
-* US Government Users Restricted Rights - Use, duplication or 
-* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. 
-*  
-* IBM_PROLOG_END_TAG 
 * Rule file for hxecpu exerciser
 * This rule file is created to test the thread transitioning feature (thread-switching scenario).
 * This rule file will be used while hxecpu is running under equaliser for the above targated test.

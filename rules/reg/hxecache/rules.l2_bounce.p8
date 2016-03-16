@@ -1,20 +1,4 @@
-* IBM_PROLOG_BEGIN_TAG 
-* This is an automatically generated prolog. 
-*  
-* htxltsbml src/htx/usr/lpp/htx/rules/reg/hxecache/rules.l2_bounce.p8 1.1 
-*  
-* Licensed Materials - Property of IBM 
-*  
-* COPYRIGHT International Business Machines Corp. 2010 
-* All Rights Reserved 
-*  
-* US Government Users Restricted Rights - Use, duplication or 
-* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. 
-*  
-* IBM_PROLOG_END_TAG 
 * Rule file for hxecache
-
-* @(#)57       1.2  src/htx/usr/lpp/htx/rules/reg/hxecache/rules.l2_bounce.p8, exer_cache, htxubuntu 1/11/13 04:18:27 
 
 * Rule 1 - L2 Bounce testcase without Prefetch
 

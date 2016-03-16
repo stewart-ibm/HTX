@@ -1,21 +1,21 @@
-/* IBM_PROLOG_BEGIN_TAG                                                   */
-/* This is an automatically generated prolog.                             */
-/*                                                                        */
-/* htxfedora src/htx/usr/lpp/htx/lib/htx64/hxfupdate.c 1.29.6.14          */
-/*                                                                        */
-/* Licensed Materials - Property of IBM                                   */
-/*                                                                        */
-/* Restricted Materials of IBM                                            */
-/*                                                                        */
-/* COPYRIGHT International Business Machines Corp. 1997,2015              */
-/* All Rights Reserved                                                    */
-/*                                                                        */
-/* US Government Users Restricted Rights - Use, duplication or            */
-/* disclosure restricted by GSA ADP Schedule Contract with IBM Corp.      */
-/*                                                                        */
-/* IBM_PROLOG_END_TAG                                                     */
-
-/* %Z%%M%	%I%  %W% %G% %U% */
+/* IBM_PROLOG_BEGIN_TAG */
+/* 
+ * Copyright 2003,2016 IBM International Business Machines Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/* IBM_PROLOG_END_TAG */
 
 #define addw(msw, lsw, num) \
 { \
@@ -49,27 +49,6 @@
 /*    htx_error = format and issue error messages, update error information.*/
 /*    htx_finish = update end of cycle information.                         */
 /*    sendp = place message on HTX message queue.                           */
-/*                                                                          */
-/* COMPILER OPTIONS =  -I/src/master/htx/common -g -Nn3000 -Nd4000 -Np1200  */
-/*                     -Nt2000                                              */
-/*                                                                          */
-/* CHANGE ACTIVITY =                                                        */
-/*    DATE    :LEVEL:PROGRAMMER:DESCRIPTION                                 */
-/*    MMMMMMMMNMMMMMNMMMMMMMMMMNMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM*/
-/*    04/25/88:1.0  :J FRETER  :INITIAL RELEASE                             */
-/*    09/06/88:2.0  :J BURGESS :Modify to conform to AES Programming Center */
-/*            :     :          :"Software Development Process Guide"        */
-/*    10/13/88:3.0  :T HOMER   :changed message header format               */
-/*    12/14/88:3.1  :J BURGESS :Cleaned up message handling.                */
-/*            :     :          :                                            */
-/*            :     :          :                                            */
-/*            :     :          :                                            */
-/*            :     :          :                                            */
-/*            :     :          :                                            */
-/*            :     :          :                                            */
-/*            :     :          :                                            */
-/*            :     :          :                                            */
-/*            :     :          :                                            */
 /*                                                                          */
 /****************************************************************************/
 

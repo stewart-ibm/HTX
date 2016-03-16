@@ -1,5 +1,3 @@
-# @(#)16	1.11.3.4  src/htx/usr/lpp/htx/.htx_profile, htxbringup, htxubuntu 11/13/14 03:08:36
-#############################################################################
 /default:
 	editor    = "/usr/bin/vi"
 	run_mode  = "REG"
@@ -20,8 +18,6 @@
 	rand_halt_hi = "5400"
 	rand_halt_low = "3600"
 	slow_shutd_wait = "240"
-*	stress_dev = "/dev/lp0"
-*	stress_cycle = "10"
 	hang_mon_period = "60"
 	max_added_devices = "50"
 	max_exer_entries = "6500"
