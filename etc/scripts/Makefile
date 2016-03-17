@@ -62,7 +62,8 @@ TARGET = \
 	collect_shift_logs \
 	stx_shift_framework.readme \
 	create_all_mdt_with_powermixer \
-	get_mem_pool_details.sh
+	get_mem_pool_details.sh \
+	htx_setup.sh 
 
 ifeq ($(HTX_RELEASE), $(filter ${HTX_RELEASE}, "htxfedoraBE" "htxltsbml"))
 	TARGET += create_mdt_mpp
