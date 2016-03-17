@@ -2481,6 +2481,25 @@ int get_cpu_id(int cpu_number)
     return pir;
 }
 
+
+int get_cpu_revision(void)
+{
+    int pvr_last_two_bytes = 0;
+    pvr_last_two_bytes = (int) get_cpu_version();
+    pvr_last_two_bytes = pvr_last_two_bytes & 0x0000FFFF;
+    return pvr_last_two_bytes;
+}
+
+int get_true_cpu_revision(void)
+{
+    int pvr_last_two_bytes = 0;
+    pvr_last_two_bytes = (int) get_true_cpu_version();
+    pvr_last_two_bytes = pvr_last_two_bytes & 0x0000FFFF;
+    return pvr_last_two_bytes;
+}
+
+
+
 int get_num_of_nodes_in_sys(void)
 {
 	return(global_ptr->syscfg.num_nodes);

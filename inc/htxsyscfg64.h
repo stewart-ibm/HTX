@@ -589,9 +589,20 @@ unsigned long getPvr(void);
 /* Using bindprocessor function in misc64 library for Linux */
 int bindprocessor (int What, int Who, int Where);
 
-extern int get_cpu_id(int);
+/*gets the pir value*/
+int get_cpu_id(int);
 
+/*gets the compatible mode pvr value*/
+int get_cpu_version(void);
+
+/*gets the true pvr value*/
 int get_true_cpu_version(void);
+
+/*gets thei last two bytes of compatible mode pvr value*/
+int get_cpu_revision(void);
+
+/*gets thei last two bytes of true pvr value*/
+int get_true_cpu_revision(void);
 
 int htx_bind(int htx_logical_cpu_num);
 
