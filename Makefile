@@ -7,7 +7,6 @@ TARGET= .htx_profile \
         .htxrc \
         .bash_profile \
         .bashrc \
-        .exrc \
         htx_eq.cfg \
 	run_htx_cmdline.sh \
         hxsscripts
@@ -27,6 +26,8 @@ all: ${SUBDIRS}
 clean: ${SUBDIRS_CLEAN} clean_local
 	@echo "Removing dir - "${SHIPDIR}
 	${RM} -rf ${SHIPDIR}
+	@echo "Removing dir - "${EXPORT}
+	${RM} -rf ${EXPORT}
 
 ${SUBDIRS_CLEAN}:
 	@make -C $(@:.clean=) clean

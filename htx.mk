@@ -20,8 +20,9 @@ ifeq ($(HTX_RELEASE), $(filter ${HTX_RELEASE},"htxubuntu" "htxsles12" "htxrhel72
 	CFLAGS+= -D__HTX_LE__
 endif
 #Set the TOPDIR before starting build 
-TOPDIR=/home/veeresh/HTX/
+TOPDIR=/home/mehpatel/test_tree_7/HTX/
 SHIPDIR=${TOPDIR}/install/${ARCH}/
+HTXOBJDIR=${TOPDIR}/obj/
 SHIPTOPDIR=${SHIPDIR}/usr/lpp/htx/
 SHIPDOCDIR=${SHIPTOPDIR}/Documentation/
 PACKAGINGDIR=${TOPDIR}/packaging/

@@ -10,7 +10,7 @@ OBJECTS = hxesamp${OBJ_SUFF}
 
 CFLAGS += 
  
-LIBS =-lpthread -lhtx64 -lmisc64
+LIBS =-lpthread -lhtx64
 
 .PHONY: all clean
 

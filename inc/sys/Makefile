@@ -2,7 +2,7 @@ include ../../htx.mk
 
 SUBDIRS=  
 
-TARGET= miscex.h misclib.h 
+TARGET= misclib.h 
  
 .PHONY: all ${SUBDIRS}
 
