@@ -12,7 +12,7 @@ SRCS = $(patsubst %.o, %.c, $(getDVD_OBJECTS))
 
 CFLAGS += -D_target_ppc -DHTXTHREADED -D_FILE_OFFSET_BITS=64 
 
-LIBS = -lpthread -lc -lhtx64 -lmisc64
+LIBS = -lpthread -lc -lhtx64
 
 .PHONY: all clean
 

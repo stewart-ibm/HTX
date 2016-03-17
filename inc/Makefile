@@ -1,6 +1,6 @@
 include ..//htx.mk
 
-SUBDIRS= diag sys iomm
+SUBDIRS= sys iomm
 SUBDIRS_CLEAN = $(patsubst %,%.clean,$(SUBDIRS))
 
 TARGET= bufupd.h \
