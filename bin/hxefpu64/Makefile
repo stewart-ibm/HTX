@@ -12,7 +12,8 @@ OBJECTS = framework${OBJ_SUFF} \
                   vsx_global${OBJ_SUFF} \
                   vmx_global${OBJ_SUFF} \
                   linux_sync_func${OBJ_SUFF} \
-                  cpu_global${OBJ_SUFF}
+                  cpu_global${OBJ_SUFF} \
+				  miscomp_debug${OBJ_SUFF}
 
 SRCS = $(patsubst %.o, %.c, $(OBJECTS))
 

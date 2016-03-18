@@ -17,7 +17,7 @@
  */
 /* IBM_PROLOG_END_TAG */
 
-/* @(#)95	1.12.3.63  src/htx/usr/lpp/htx/bin/hxefpu64/framework.h, exer_fpu, htxubuntu 1/4/16 02:30:06 */
+/* @(#)95	1.12.3.65  src/htx/usr/lpp/htx/bin/hxefpu64/framework.h, exer_fpu, htxubuntu 3/4/16 01:14:52 */
 
 #ifndef _HTX_FRAMEWORK_H
 #define _HTX_FRAMEWORK_H
@@ -77,7 +77,7 @@ typedef enum
 	stfd,
 	stxsdx,
 	stxvd2x,
-	stxswx,
+	/*stxswx,*/
 	mffs,
 	vmx_stvx,
 	stswi,
@@ -115,6 +115,28 @@ struct enabled_instruction {
 	uint32 instr_index;
 	uint8 run_flag;
 	instruction_masks instr_table;
+};
+#define MAX_SRC_OPRS	(3)
+struct decoded_instruction {
+	int instr_type;					/* Load, store or other instruction type					*/
+	volatile int marked;			/* flag, indicating instruction influencing miscompare 		*/ 
+	char mnemonic[50];				/* complete instruction in string format 					*/
+    int ea_offset;					/* offset of load/store area in case of LS  instruction 	*/
+	uint16 tgt_dtype;				/* target type 												*/
+    uint16 tgt_val;					/* target value as updated by build routine 				*/
+	uint16 op_dtype[MAX_SRC_OPRS];	/* source operand data type 								*/	
+    uint16 op_val[MAX_SRC_OPRS];	/* source operand value 									*/
+};
+typedef struct decoded_instructions dc_instr_t;
+struct reguse{
+	uint16 dc_index;		/* instruction index in the decoded instruction table where the register is used as target */
+	int tgt_reg;			/* register number for this node 								*/
+	struct reguse *src[MAX_SRC_OPRS]; 	/* operand register pointer who modify this register node 		*/
+};
+
+struct reguse_list {
+	int num_entries;
+	struct reguse *head;
 };
 
 #define OP_EOP_MASK_INDEX	0
@@ -296,16 +318,17 @@ unsigned long vsx_reg_file_mask;
 #define GPR_OP_TYPES	1
 #define	CPU_GPR			0
 #define	SPR_REG			1
-#define IMM_DATA		15
-#define IMM_DATA_1BIT 	16
-#define IMM_DATA_2BIT	17
-#define IMM_DATA_3BIT  	18
-#define IMM_DATA_4BIT	19
-#define IMM_DATA_5BIT	20
-#define IMM_DATA_7BIT	21
-#define IMM_DATA_8BIT	22
-#define IMM_DATA_12BIT	23
-#define IMM_DATA_14BIT	24
+/* All IMM_DATA types should not conflict with any of VSR_OP_TYPES */
+#define IMM_DATA		100
+#define IMM_DATA_1BIT 	101
+#define IMM_DATA_2BIT	102
+#define IMM_DATA_3BIT  	103
+#define IMM_DATA_4BIT	104
+#define IMM_DATA_5BIT	105
+#define IMM_DATA_7BIT	106
+#define IMM_DATA_8BIT	107
+#define IMM_DATA_12BIT	108
+#define IMM_DATA_14BIT	109
 #define SYNC_WORD 		8
 #define TIME_STAMPS 	9
 #define CPU_ID_MASKS 	10
@@ -584,6 +607,10 @@ struct client_data {
 	int 				num_enabled_ins;
 	/* ptr to enabled instruction table which is derived after applying masks */
 	struct enabled_instruction enabled_ins_table[MAX_INSTRUCTIONS];
+	struct decoded_instruction dc_instr[MAX_INS_STREAM_DEPTH];
+	struct reguse_list  vsr_usage;
+	struct reguse_list  gpr_usage;
+	struct reguse_list  ls_usage;
 	int 				instr_index[MAX_INS_STREAM_DEPTH];
 	/* Instructions masks list as read from rule file */
 	/* Instructions bias list */
@@ -1003,7 +1030,7 @@ extern struct server_data global_sdata[];
 #define		MACRO_ALL					0x0007		|MACRO_ONLY
 
 #define SHIFTED_PVR_OS_P8 0x4b
-#define SHIFTED_PVR_OS_P9 0x5a  /* <Attn!!!!!!!!> Random value higher than P8 PVR, Need to be set once known </Attn!!!!!!!!> */
+#define SHIFTED_PVR_OS_P9 0x4e  /* Nimbus PVR as shown in fpu tests on BML on Simics */
 
 typedef struct
 {
@@ -1134,7 +1161,7 @@ int execute_testcase(int, int);
 int compare_results(int, int *);
 int allocate_mem(struct shm_buf *);
 int cleanup_mem(int);
-int cleanup_mem_atexit();
+int cleanup_mem_atexit(void);
 int read_rf(void);
 void set_rule_defaults(void);
 int get_rule(int *, FILE *, struct ruleinfo *);
