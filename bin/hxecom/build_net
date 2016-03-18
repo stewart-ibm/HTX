@@ -79,6 +79,7 @@ $crossover_count=0;
 $num_pairs = 0; 
 @pairs="";    #list of devs example dev1 dev2   
 $DAT_CONF_DEFAULT="/etc/dat.conf"; 
+$opensm_pingum_delay = 0;
 
 
 # Testcases Supported by Hxecom till now 
@@ -441,6 +442,10 @@ if($ecgname) {
 }
 `echo "done" >/tmp/bndone`;
 
+if($opensm_pingum_delay == 1) {
+	&debug_log(__FUNC__,__LINE__,"wait for opensmd...\n");
+	sleep(60);
+}
 
 sleep(1);
 $cmd = system("/usr/bin/pingum");
@@ -1995,7 +2000,7 @@ sub setup_opensm {
 	$opensm_service_path="/etc/init.d/opensmd";
 	$opensm_pid="/var/run/opensm.pid";
 	$opensm = 0;
-	$opensmd = 0;
+	$is_switch_connected = 0;
 	
 	$dev_name= &trim($dev_name); 
 	$path="/sys/class/infiniband/".$dev_name; 
@@ -2004,21 +2009,6 @@ sub setup_opensm {
 		return; 
 	} 
 			
-	if (-e $opensm_service_path) { # Try starting OpenSM Service
-    	&debug_log(__FUNC__,__LINE__,"OpenSMD Daemon present, will start in daemon mode \n");
-    	$rc = `service opensmd start`;
-		print SET_ONESYS ("service opensmd start \n"); 
-    	if( -e $opensm_pid) {
-        	&debug_log(__FUNC__,__LINE__,"opensm daemon successfully started \n");
-        	$opensmd = 1;
-    	} else {
-        	&debug_log(__FUNC__,__LINE__,"opensm daemon failed to start, Refer /var/log/opensm.log for more information. \n");
-        	$opensmd = 0;
-    	}
-	} else {
-    	$opensmd = 0;
-    	&debug_log(__FUNC__,__LINE__,"OpenSM service not present   \n");
-	}
 	if ( -e $opensm_path) { # Check if open sm binary is present.
     	$opensm = 1;
 	} else {  # Cannot do anything w/o opensm, exit ...
@@ -2033,13 +2023,20 @@ sub setup_opensm {
        	&debug_log(__FUNC__,__LINE__,"No port to port connection seems to be presnet. Device=$dev_name, port=$port, state=$state \n");
        	exit(3);
     } elsif($state =~/INIT/) {
-    	if(($opensmd) == 0 && ($opensm == 1)) { # if OpenSMD is not running then this is expected
-        	#try running opensm binary to get port to active state.
-            $rc = &run_opensm_on_ports($opensm_path, $dev_name, $port, $guid);
-            if(rc != 0) {
-            	&debug_log(__FUNC__,__LINE__," Check for incompatible cables. Device=$dev_name, port=$port, state=$state\n");
-                exit(4);
-            }
+    	if($opensm == 1) { 
+			$is_switch_connected = `ibnodes | grep $guid | grep "^Switch" | wc -l`;
+			if($is_switch_connected == 0) {
+                &debug_log(__FUNC__,__LINE__,"Port with guid=$guid is not connected by switch and starting opensm\n");
+        	    #try running opensm binary to get port to active state.
+                $rc = &run_opensm_on_ports($opensm_path, $dev_name, $port, $guid);
+                if(rc != 0) {
+            	    &debug_log(__FUNC__,__LINE__," Check for incompatible cables. Device=$dev_name, port=$port, state=$state\n");
+                    exit(4);
+                }
+				$opensm_pingum_delay = 1;
+            } else {
+                &debug_log(__FUNC__,__LINE__,"Port with guid=$guid is connected by switch and skipping opensm starting\n");
+            } 
        	} else {
        		&debug_log(__FUNC__,__LINE__,"Port to port connection detected, but incompatible  cables used. Device=$dev_name, port=$port,  state=$state \n");
         }
