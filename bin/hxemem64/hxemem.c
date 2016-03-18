@@ -3286,7 +3286,10 @@ int fill_mem_info_data_linux(void)
     return(0);
 
 error_exit:
-    pclose(fp);
+	if (fp != NULL) {
+		pclose(fp);
+		fp = NULL;
+	}
     exit(1);
 
 }
