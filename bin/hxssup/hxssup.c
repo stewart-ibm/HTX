@@ -292,13 +292,6 @@ int	main(int argc, char *argv[])
 		end_it(1);
 	}
 
-	/* Sending IBM_copyright_string to /tmp/htxmsg 1st. */
-	temp_msg_buf.mtype = 1;
-	temp_msg_buf.htx_data.severity_code = HTX_HE_INFO;
-	sprintf(temp_msg_buf.htx_data.msg_text, "%s\n\n", IBM_copyright_string);
-	msgsnd(msgqid, &temp_msg_buf, sizeof(temp_msg_buf), 0);
-
-
 	sprintf(mdt_path,"The mdt file selected is:%s/mdt/",HTXPATH);
 	tmp=(char *)getenv("MDTFILE");
 	strcat(mdt_path,tmp);

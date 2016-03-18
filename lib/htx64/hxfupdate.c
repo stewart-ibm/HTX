@@ -357,8 +357,6 @@ int hxfupdate(char call, struct htx_data *data)
 
   if ((strcmp (data->run_type, "REG") != 0) && (strcmp (data->run_type, "EMC") != 0) && (call != 'E')) {
 	if ( call == 'S' ) {
-		fprintf(stderr, "%s\n", IBM_copyright_string);
-		fflush(stderr);
 		set_misc_htx_data(data);
 	}
     return (0);
