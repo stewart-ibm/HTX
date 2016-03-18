@@ -51,7 +51,14 @@ int htxd_cleanup_ecg_ipc(htxd_ecg_info *p_ecg_info)
 	return 0;
 }
 
-
+/* Cleanup equaliser realted setting */
+int htxd_cleanup_equaliser_setting()
+{
+	htxd_set_equaliser_wof_test_flag(0);
+	#ifdef __HTX_LINUX__
+	    htx_unbind_process();
+	#endif
+}
 
 /* count running exercisers */
 int htxd_count_exer_still_running(htxd_ecg_info *p_ecg_info_list)
@@ -69,9 +76,9 @@ int htxd_count_exer_still_running(htxd_ecg_info *p_ecg_info_list)
 		if( (shm_union_pointer.HE_addr + i)->PID == 0) {
 			stopped_exer_count++;
 		}
-	}	
-	
-	return (number_of_exercisers_to_stop - stopped_exer_count);	
+	}
+
+	return (number_of_exercisers_to_stop - stopped_exer_count);
 }
 
 
@@ -88,7 +95,7 @@ int htxd_unload_exercisers(htxd_ecg_info *p_ecg_info_list)
 	char				trace_str[256];
 	htxd_ecg_manager *		p_ecg_manager;
 
-	
+
 	HTXD_FUNCTION_TRACE(FUN_ENTRY, "htxd_unload_exercisers");
 
 	(p_ecg_info_list->ecg_shm_addr).hdr_addr->shutdown = 1;
@@ -104,7 +111,7 @@ int htxd_unload_exercisers(htxd_ecg_info *p_ecg_info_list)
 		pid_to_unload = (shm_union_pointer.HE_addr + i)->PID;
 		if(pid_to_unload != 0) {
 			kill(pid_to_unload, SIGTERM);
-			sprintf(trace_str, "htxd_unload_exercisers() sent SIGTERM to PID <%d>", pid_to_unload); 
+			sprintf(trace_str, "htxd_unload_exercisers() sent SIGTERM to PID <%d>", pid_to_unload);
 			HTXD_TRACE(LOG_OFF, trace_str);
 		//	sleep(5);
 		}
@@ -117,7 +124,7 @@ int htxd_unload_exercisers(htxd_ecg_info *p_ecg_info_list)
 			HTXD_TRACE(LOG_OFF, "all exercisers are stopped");
 			break;
 		} else {
-			sprintf(trace_str, "still running exerciser count <%d>\n", exer_still_running); 
+			sprintf(trace_str, "still running exerciser count <%d>\n", exer_still_running);
 			HTXD_TRACE(LOG_OFF, trace_str);
 		}
 		HTXD_TRACE(LOG_OFF, "wait to stop all exercisers");
@@ -125,7 +132,7 @@ int htxd_unload_exercisers(htxd_ecg_info *p_ecg_info_list)
 
 	p_ecg_manager = htxd_get_ecg_manager();
 	p_ecg_manager->loaded_device_count -= number_of_exercisers_to_stop;
-		
+
 	HTXD_FUNCTION_TRACE(FUN_EXIT, "htxd_unload_exercisers");
 	return 0;
 }
@@ -154,7 +161,7 @@ int htxd_option_method_shutdown_mdt(char **result)
 
 
 	HTXD_FUNCTION_TRACE(FUN_ENTRY, "htxd_option_method_shutdown_mdt");
-	htxd_instance = htxd_get_instance(); 
+	htxd_instance = htxd_get_instance();
 	strcpy(command_ecg_name, htxd_get_command_ecg_name() );
 
 	if(command_ecg_name[0] == '\0') {
@@ -184,8 +191,8 @@ int htxd_option_method_shutdown_mdt(char **result)
 			//break;  ???
 		}
 		p_ecg_info_list = p_ecg_info_list->ecg_info_next;
-	}	
-	
+	}
+
 	if(p_ecg_info_node_to_remove == NULL) {
 		sprintf(*result, "specified mdt(%s) is already inactive", command_ecg_name);
 		HTXD_TRACE(LOG_OFF, *result);
@@ -193,7 +200,7 @@ int htxd_option_method_shutdown_mdt(char **result)
 		return 1;
 	}
 
-	htxd_ecg_shutdown_flag = TRUE;	
+	htxd_ecg_shutdown_flag = TRUE;
 
 	HTXD_TRACE(LOG_OFF, "shutdown detaching ecg_info node");
 	htxd_remove_ecg_info_node(htxd_instance->p_ecg_manager, p_ecg_info_node_to_remove);
@@ -204,13 +211,18 @@ int htxd_option_method_shutdown_mdt(char **result)
 	HTXD_TRACE(LOG_OFF, "shutdown cleanup ipc");
 	htxd_cleanup_ecg_ipc(p_ecg_info_node_to_remove);
 
+	if (htxd_get_equaliser_wof_test_flag() == 1) {
+		HTXD_TRACE(LOG_OFF, "Unload equaliser setting");
+		htxd_cleanup_equaliser_setting();
+	}
+
 	HTXD_TRACE(LOG_OFF, "shutdown execute post run scripts");
 	htxd_execute_post_run_script(p_ecg_info_node_to_remove->ecg_name);
-	
+
 	sprintf(temp_str, "MDT <%s> is shutdhown", p_ecg_info_node_to_remove->ecg_name);
 	htxd_send_message (temp_str, 0, HTX_SYS_INFO, HTXD_MDT_SHUTDOWN_MSG);
 
-	free(p_ecg_info_node_to_remove);	
+	free(p_ecg_info_node_to_remove);
 
 	if(htxd_get_running_ecg_count() == 0) {
 		HTXD_TRACE(LOG_OFF, "no mdt is currently running, daemon goes to idle state");
@@ -241,7 +253,7 @@ int htxd_shutdown_all_mdt(void)
 
 
 	HTXD_FUNCTION_TRACE(FUN_ENTRY, "htxd_shutdown_all_mdt");
-	htxd_instance = htxd_get_instance(); 
+	htxd_instance = htxd_get_instance();
 
 	if( (htxd_get_daemon_state() == HTXD_DAEMON_IDLE) || (htxd_get_daemon_state() == HTXD_DAEMON_UNVALIDATED)) {
 		HTXD_FUNCTION_TRACE(FUN_EXIT, "htxd_shutdown_all_mdt");
@@ -257,8 +269,8 @@ int htxd_shutdown_all_mdt(void)
 		htxd_execute_post_run_script(p_ecg_info_node_to_remove->ecg_name);
 		p_ecg_info_list = p_ecg_info_list->ecg_info_next;
 		free(p_ecg_info_node_to_remove);
-	}	
-	
+	}
+
 	htxd_idle_daemon();
 
 /*	htxd_display_exer_table();	 */

@@ -51,12 +51,12 @@ int htxd_process_all_active_ecg_device(ecg_device_process_function process_actio
 	htxd_instance = htxd_get_instance();
 
 	p_ecg_info_list = htxd_get_ecg_info_list(htxd_instance->p_ecg_manager);
-	
+
 	while(p_ecg_info_list != NULL) {
 		return_code = process_action(p_ecg_info_list, device_list, command_result);
 		p_ecg_info_list = p_ecg_info_list->ecg_info_next;
 	}
-	
+
 	return return_code;
 }
 
@@ -73,12 +73,12 @@ int htxd_process_all_active_ecg(ecg_process_function process_action, char *comma
 	htxd_instance = htxd_get_instance();
 
 	p_ecg_info_list = htxd_get_ecg_info_list(htxd_instance->p_ecg_manager);
-	
+
 	while(p_ecg_info_list != NULL) {
 		return_code = process_action(p_ecg_info_list, command_result);
 		p_ecg_info_list = p_ecg_info_list->ecg_info_next;
 	}
-	
+
 	return return_code;
 }
 
@@ -101,7 +101,7 @@ int htxd_get_number_of_device(char *ecg_name, char *error_msg)
 		return -1;
 	}
 
-	while( (return_code = cfgcrdsz (ecg_fd, stanza, sizeof (stanza), (char *) NULL) ) == CFG_SUCC) {	
+	while( (return_code = cfgcrdsz (ecg_fd, stanza, sizeof (stanza), (char *) NULL) ) == CFG_SUCC) {
 		number_of_devices++;
 	}
 
@@ -111,25 +111,25 @@ int htxd_get_number_of_device(char *ecg_name, char *error_msg)
 			case CFG_SZNF:
 				sprintf(error_tag, "SZNF");
 				break;
-			
+
 			case CFG_SZBF:
 				sprintf(error_tag, "SZBF");
 				break;
-			
+
 			case CFG_UNIO:
 				sprintf(error_tag, "UNIO");
 				break;
-			
+
 			default:
 				sprintf(error_tag, "????");
 				break;
-		}	
+		}
 		strcat(error_msg, error_tag);
 		sprintf(error_tag, ", return code = %d", return_code);
 		strcat(error_msg, error_tag);
 		return -1;
 	}
-	
+
 	if (cfgcclsf (ecg_fd) != CFG_SUCC) {
 		sprintf(error_msg, "Unable to close ECG file.%d (%s)", errno, ecg_name);
 		return -1;
@@ -170,7 +170,7 @@ void htxd_get_active_ecg_name_list(htxd_ecg_manager* ecg_manager, char *ecg_list
 		strcat(ecg_list, "\n");
 		p_ecg_info_list = p_ecg_info_list->ecg_info_next;
 	}
-	
+
 }
 
 
@@ -227,7 +227,7 @@ htxd_ecg_manager * create_ecg_manager(void)
 	if(p_ecg_manager->system_header_info == 0) {
 		p_ecg_manager->system_header_info = (tsys_hdr *)htxd_create_system_header_info();
 	}
-	 
+
 	htxd_set_system_header_info_shm_with_max_exer_entries(p_ecg_manager, htxd_get_max_exer_entries() );
 
 	return p_ecg_manager;
@@ -254,12 +254,12 @@ void htxd_display_ecg_info_list(void)
 		printf("[DEBUG] : ===================================================================>>>\n");
         }
 	printf("[DEBUG] : ==================== END: ECGG INFO DETAILS =========================>>>\n");
-	
+
 }
 
 
 
-/* allocate an ECG info node and attach to the ecg info list */ 
+/* allocate an ECG info node and attach to the ecg info list */
 void htxd_allocate_ecg_info(htxd_ecg_manager* this_ecg_manager)
 {
 	htxd_ecg_info * p_temp_ecg_info;
@@ -638,7 +638,7 @@ int htxd_extract_ecg_to_shm_HE(htxd_ecg_manager *this_ecg_manager, char *stanza,
 
 
 
-/* update exer table entry in shared memory for an exerciser */ 
+/* update exer table entry in shared memory for an exerciser */
 int htxd_update_exer_table(htxd_ecg_manager *this_ecg_manager, union shm_pointers shm_point, int exer_position_in_ecg)
 {
 	htxd_ecg_info *p_current_ecg_info;
@@ -660,7 +660,7 @@ int htxd_update_exer_table(htxd_ecg_manager *this_ecg_manager, union shm_pointer
 	p_exer_table[exer_position_in_exer_table].exer_pos = exer_position_in_ecg;
 	p_exer_table[exer_position_in_exer_table].exer_addr = shm_point;
 	p_exer_table[exer_position_in_exer_table].ecg_exer_addr = shm_point;
-	
+
 	return 0;
 }
 
@@ -694,7 +694,7 @@ int htxd_is_device_need_dr_restart(htxd_ecg_info *p_ecg_info, char *p_device_nam
 	int i;
 	struct htxshm_HE *p_HE;
 	int restart_flag = FALSE;
-	
+
 
 	p_HE = (struct htxshm_HE *)(p_ecg_info->ecg_shm_addr.hdr_addr + 1);
 	for(i = 0; i < p_ecg_info->ecg_shm_exerciser_entries ; i++) {
@@ -744,7 +744,7 @@ int htxd_set_shm_with_exercisers_values_for_dr_restart(char *dr_ecg_name)
 	p_ecg_manager = htxd_get_ecg_manager();
 	running_ecg_name = htxd_get_running_ecg_name();
 
-	p_running_ecg_info = htxd_get_ecg_info_node(p_ecg_manager, running_ecg_name);	
+	p_running_ecg_info = htxd_get_ecg_info_node(p_ecg_manager, running_ecg_name);
 
 	shm_point.hdr_addr = p_running_ecg_info->ecg_shm_addr.hdr_addr + 1;
 	shm_point.HE_addr += p_running_ecg_info->ecg_shm_exerciser_entries;
@@ -784,7 +784,7 @@ int htxd_set_shm_with_exercisers_values_for_dr_restart(char *dr_ecg_name)
 		return -1;
 	}
 
-	return 0;	
+	return 0;
 }
 
 
@@ -792,7 +792,7 @@ int htxd_set_shm_with_exercisers_values_for_dr_restart(char *dr_ecg_name)
 /* update HE values and exer table for an exerciser shared memory */
 int htxd_set_shm_exercisers_values(htxd_ecg_manager *this_ecg_manager, char *current_ecg_name)
 {
-	CFG__SFT *ecg_fd;	
+	CFG__SFT *ecg_fd;
 	int return_code;
 	char default_ecg_stanza[4096];
 	char ecg_stanza[4096];
@@ -831,7 +831,7 @@ int htxd_set_shm_exercisers_values(htxd_ecg_manager *this_ecg_manager, char *cur
 	if (cfgcclsf (ecg_fd) != CFG_SUCC) {
 		return -1;
 	}
-	
+
 	return 0;
 }
 
@@ -858,7 +858,7 @@ int htxd_get_next_key_offset(htxd_ecg_manager *this_ecg_manager)
 			p_ecg_info_list = p_ecg_info_list->ecg_info_next;
 		}
 		if(p_ecg_info_list == NULL) {
-			break; 
+			break;
 		}
 	}
 
@@ -907,6 +907,8 @@ int htxd_init_equaliser_info( htxd_ecg_info *p_ecg_info)
 	p_ecg_info->ecg_equaliser_info.enable_flag	= 0;
 	p_ecg_info->ecg_equaliser_info.debug_flag	= 0;
 	p_ecg_info->ecg_equaliser_info.config_file[0]	= '\0';
+	p_ecg_info->ecg_equaliser_info.wof_test = 0;
+
 	mdt_fd = cfgcopsf (p_ecg_info->ecg_name);
 	if (mdt_fd == (CFG__SFT *) NULL) {
 		sprintf (temp_str, "ERROR: Unable to open ECG file again.n");
@@ -918,7 +920,7 @@ int htxd_init_equaliser_info( htxd_ecg_info *p_ecg_info)
 		return_code = cfgcskwd("equaliser_flag", default_mdt_snz, temp_str);
 		if(return_code ==  CFG_SUCC) {
 			p_ecg_info->ecg_equaliser_info.enable_flag = atoi(htxd_unquote(temp_str));
-		} 
+		}
 		if(p_ecg_info->ecg_equaliser_info.enable_flag == 1) {
 			putenv("EQUALISER_FLAG=1");
 			return_code = cfgcskwd("cfg_file", default_mdt_snz, temp_str);
@@ -926,11 +928,30 @@ int htxd_init_equaliser_info( htxd_ecg_info *p_ecg_info)
 				strcpy( p_ecg_info->ecg_equaliser_info.config_file, htxd_unquote(temp_str));
 				htxd_set_equaliser_conf_file(p_ecg_info->ecg_equaliser_info.config_file);
 			}
-			
+
 			return_code = cfgcskwd("equaliser_debug_flag", default_mdt_snz, temp_str);
 			if(return_code ==  CFG_SUCC) {
 				p_ecg_info->ecg_equaliser_info.debug_flag = atoi(htxd_unquote(temp_str));
 				htxd_set_equaliser_debug_flag(p_ecg_info->ecg_equaliser_info.debug_flag);
+			}
+			return_code = cfgcskwd("wof_test", default_mdt_snz, temp_str);
+			if(return_code ==  CFG_SUCC) {
+				p_ecg_info->ecg_equaliser_info.wof_test = atoi(htxd_unquote(temp_str));
+				htxd_set_equaliser_wof_test_flag(p_ecg_info->ecg_equaliser_info.wof_test);
+			#ifdef __HTX_LINUX__
+				/* Also, get the SMT for core 0, if WOF test is enabled as this will be
+				 * while binding the threads/processes to core 0.
+				 */
+				if (p_ecg_info->ecg_equaliser_info.wof_test == 1) {
+					smt = get_smt_status(0);
+					return_code = do_the_bind_proc(getpid());
+					if (return_code < 0) {
+						sprintf(temp_str, "Binding of htxd process to core 0 failed.\n");
+						htxd_send_message(temp_str, 0, HTX_SYS_INFO, HTX_SYS_MSG);
+
+					}
+				}
+			#endif
 			}
 			htxd_set_equaliser_shm_addr(p_ecg_info->ecg_shm_addr);
 			htxd_set_equaliser_semhe_id(p_ecg_info->ecg_sem_id);
@@ -938,10 +959,10 @@ int htxd_init_equaliser_info( htxd_ecg_info *p_ecg_info)
 		}
 
 		if (cfgcclsf (mdt_fd) != CFG_SUCC) {
-		}	
+		}
 
 	}
-	
+
 	return 0;
 }
 
@@ -964,7 +985,7 @@ int htxd_init_ecg_info(htxd_ecg_manager *this_ecg_manager, char *new_ecg_name)
 	HTXD_TRACE(LOG_OFF, temp_string);
 	/* htxd_send_message (temp_string, 0, HTX_SYS_INFO, HTX_SYS_MSG); */
 
-	htxd_allocate_ecg_info(this_ecg_manager);	
+	htxd_allocate_ecg_info(this_ecg_manager);
 
 	number_of_devices = htxd_get_number_of_device(new_ecg_name, error_msg);
 	max_number_of_devices = number_of_devices + EXTRA_DEVICE_ENTRIES;
@@ -979,7 +1000,7 @@ int htxd_init_ecg_info(htxd_ecg_manager *this_ecg_manager, char *new_ecg_name)
 	p_current_ecg_info->ecg_status = ECG_UNLOADED;
 
 	next_key_offset = htxd_get_next_key_offset(this_ecg_manager);
-	
+
 	p_current_ecg_info->ecg_shm_key = ECG_SHMKEY_START + next_key_offset;
 	p_current_ecg_info->ecg_sem_key = ECG_SEMKEY_START + next_key_offset;
 
@@ -994,7 +1015,7 @@ int htxd_init_ecg_info(htxd_ecg_manager *this_ecg_manager, char *new_ecg_name)
 	/* allocating shared memory */
 	if( ( p_current_ecg_info->ecg_shm_addr.hdr_addr = htxd_init_shm(p_current_ecg_info->ecg_shm_key, max_number_of_devices,&(p_current_ecg_info->ecg_shm_id) ) ) == NULL ) {
 		return -1;
-	}	
+	}
 
 	/* setting shared memory with header values */
 	HTXD_TRACE(LOG_OFF, "setting shm header values");
@@ -1029,7 +1050,7 @@ int htxd_get_exer_position_in_exer_table_by_pid(texer_list *p_exer_table, pid_t 
 	int i;
 	int exer_position_in_exer_table = -1;
 
-	exer_table_lenth = htxd_get_exer_table_length();	
+	exer_table_lenth = htxd_get_exer_table_length();
 
 	for(i = 0; i < exer_table_lenth; i++) {
 		if(search_pid == p_exer_table[i].exer_pid) {
@@ -1056,7 +1077,7 @@ int htxd_get_exer_position_in_exer_table_by_exer_name(texer_list *p_exer_table, 
 		if( strcmp(search_exer_name, p_exer_table[i].dev_name) == 0) {
 			exer_position_in_exer_table  = i;
 			break;
-		}	
+		}
 	}
 
 	return exer_position_in_exer_table;
@@ -1073,7 +1094,7 @@ int htxd_update_exer_pid_in_exer_list(texer_list *p_exer_table, char *exer_name,
 
 	exer_position_in_exer_table = htxd_get_exer_position_in_exer_table_by_exer_name(p_exer_table, exer_name);
 	if(exer_position_in_exer_table == -1) {
-		sprintf(trace_str, "could not find exer_name <%s> in exer_table", exer_name); 
+		sprintf(trace_str, "could not find exer_name <%s> in exer_table", exer_name);
 		HTXD_TRACE(LOG_OFF, trace_str);
 	} else {
 		p_exer_table[exer_position_in_exer_table].exer_pid = new_exer_pid;
@@ -1085,7 +1106,7 @@ int htxd_update_exer_pid_in_exer_list(texer_list *p_exer_table, char *exer_name,
 
 
 
-/* search in the ecg info list with ecg name for an ecg node in the list */ 
+/* search in the ecg info list with ecg name for an ecg node in the list */
 htxd_ecg_info * htxd_get_ecg_info_node(htxd_ecg_manager *this_ecg_manager, char *ecg_name)
 {
 	htxd_ecg_info *p_ecg_info_node = NULL;;
@@ -1126,7 +1147,7 @@ int htxd_get_running_ecg_count(void)
 {
 	int running_ecg_count = 0;
 
-	
+
 	running_ecg_count = htxd_get_ecg_list_length(htxd_get_ecg_manager());
 
 	return running_ecg_count;
@@ -1143,7 +1164,7 @@ int htxd_get_running_ecg_list(char * ecg_name_list)
 
 	ecg_name_list[0] = '\0';
 	p_ecg_manager = htxd_get_ecg_manager();
-	
+
 	p_ecg_info_list = htxd_get_ecg_info_list(p_ecg_manager);
 
 	while(p_ecg_info_list != NULL) {
@@ -1154,10 +1175,10 @@ int htxd_get_running_ecg_list(char * ecg_name_list)
 
 	ecg_name_list_length = strlen(ecg_name_list);
 	if(ecg_name_list_length > 0) {
-		ecg_name_list[ecg_name_list_length - 2] = '\0';	
+		ecg_name_list[ecg_name_list_length - 2] = '\0';
 	}
 
-	return 0;	
+	return 0;
 }
 
 
@@ -1166,7 +1187,7 @@ int htxd_get_running_ecg_list(char * ecg_name_list)
 char * htxd_get_running_ecg_name(void)
 {
 	htxd_ecg_manager *p_ecg_manager;
-	
+
 	p_ecg_manager = htxd_get_ecg_manager();
 
 	return p_ecg_manager->ecg_info_list->ecg_name;

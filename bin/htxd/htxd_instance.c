@@ -35,7 +35,7 @@ extern volatile int htxd_ecg_shutdown_flag;
 
 htxd * htxd_get_instance(void)
 {
-	return htxd_global_instance; 
+	return htxd_global_instance;
 }
 
 
@@ -44,7 +44,7 @@ int htxd_is_daemon_idle(void)
 	if(htxd_global_instance->run_state == HTXD_DAEMON_IDLE) {
 		return TRUE;
 	}
-	
+
 	return FALSE;
 }
 
@@ -54,7 +54,7 @@ int htxd_is_daemon_selected(void)
 	if(htxd_global_instance->run_state == HTXD_DAEMON_SELECTED) {
 		return TRUE;
 	}
-	
+
 	return FALSE;
 }
 
@@ -118,7 +118,7 @@ char *htxd_get_htx_path(void)
 
 void htxd_set_htx_msg_pid(pid_t new_htx_msg_pid)
 {
-	htxd_global_instance->htx_msg_pid = new_htx_msg_pid;	
+	htxd_global_instance->htx_msg_pid = new_htx_msg_pid;
 }
 
 pid_t htxd_get_htx_msg_pid(void)
@@ -128,7 +128,7 @@ pid_t htxd_get_htx_msg_pid(void)
 
 void htxd_set_htx_stats_pid(pid_t new_htx_stats_pid)
 {
-	htxd_global_instance->htx_stats_pid = new_htx_stats_pid;	
+	htxd_global_instance->htx_stats_pid = new_htx_stats_pid;
 }
 
 
@@ -140,7 +140,7 @@ pid_t htxd_get_htx_stats_pid(void)
 
 void htxd_set_dr_child_pid(pid_t new_dr_child_pid)
 {
-	htxd_global_instance->dr_child_pid = new_dr_child_pid;	
+	htxd_global_instance->dr_child_pid = new_dr_child_pid;
 }
 
 pid_t htxd_get_dr_child_pid(void)
@@ -162,7 +162,7 @@ pid_t htxd_get_equaliser_pid(void)
 
 void htxd_set_dr_sem_id(int new_dr_sem_id)
 {
-	htxd_global_instance->dr_sem_id = new_dr_sem_id;	
+	htxd_global_instance->dr_sem_id = new_dr_sem_id;
 }
 
 
@@ -199,6 +199,17 @@ void htxd_set_equaliser_debug_flag(int value)
 int htxd_get_equaliser_debug_flag(void)
 {
 	return htxd_global_instance->equaliser_debug_flag;
+}
+
+void htxd_set_equaliser_wof_test_flag(int value)
+{
+	htxd_global_instance->wof_test = value;
+}
+
+
+int htxd_get_equaliser_wof_test_flag(void)
+{
+	return htxd_global_instance->wof_test;
 }
 
 
@@ -360,7 +371,7 @@ htxd * htxd_create_instance(void)
 		exit(0);
 	}
 	memset(htxd_new_instance, 0, sizeof(htxd) );
-	
+
 	return htxd_new_instance;
 
 }
@@ -429,10 +440,10 @@ int htxd_reset_exer_pid(pid_t child_pid, char *exit_reason)
 		sprintf(exit_detail_string, "%s HE program for %s terminated by %s",
 			(p_exer_table[exer_position_in_exer_table].ecg_exer_addr.HE_addr)->HE_name,
 			(p_exer_table[exer_position_in_exer_table].ecg_exer_addr.HE_addr)->sdev_id,
-			exit_reason);	
-			
+			exit_reason);
+
 		if( (htxd_ecg_shutdown_flag == FALSE) && (htxd_shutdown_flag == FALSE) ) {
-			if ( ( (p_exer_table[exer_position_in_exer_table].ecg_exer_addr.HE_addr)->user_term) || 
+			if ( ( (p_exer_table[exer_position_in_exer_table].ecg_exer_addr.HE_addr)->user_term) ||
 				( (p_exer_table[exer_position_in_exer_table].ecg_exer_addr.HE_addr)->DR_term ) ) {
 				htxd_send_message(exit_detail_string, 0, HTX_SYS_INFO, HTX_SYS_MSG);
 			} else {
@@ -443,7 +454,7 @@ int htxd_reset_exer_pid(pid_t child_pid, char *exit_reason)
 /*		p_exer_table[exer_position_in_exer_table].exer_addr = NULL;
 		p_exer_table[exer_position_in_exer_table].ecg_exer_addr = NULL; */
 		(p_exer_table[exer_position_in_exer_table].ecg_exer_addr.HE_addr)->PID = 0;
-		
+
 	}
 
 	return 0;
@@ -464,14 +475,14 @@ void htxd_display_exer_table(void)
 	for(i = 0; i < exer_table_length; i++) {
 		printf("[DEBUG] : <=====================================================================\n");
 		printf("[DEBUG] : htxd_display_exer_table() index = <%d>\n", i);
-		printf("[DEBUG] : htxd_display_exer_table() exer_name = <%s>\n", p_exer_table[i].dev_name); 
-		printf("[DEBUG] : htxd_display_exer_table() exer_addr = <%p>\n", p_exer_table[i].exer_addr.HE_addr); 
-		printf("[DEBUG] : htxd_display_exer_table() ecg_exer_addr = <%p>\n", p_exer_table[i].ecg_exer_addr.HE_addr); 
+		printf("[DEBUG] : htxd_display_exer_table() exer_name = <%s>\n", p_exer_table[i].dev_name);
+		printf("[DEBUG] : htxd_display_exer_table() exer_addr = <%p>\n", p_exer_table[i].exer_addr.HE_addr);
+		printf("[DEBUG] : htxd_display_exer_table() ecg_exer_addr = <%p>\n", p_exer_table[i].ecg_exer_addr.HE_addr);
 		printf("[DEBUG] : htxd_display_exer_table() exer_pid = <%d>\n", p_exer_table[i].exer_pid);
 		printf("[DEBUG] : htxd_display_exer_table() ecg_shm_key = <%d>\n", p_exer_table[i].ecg_shm_key);
 		printf("[DEBUG] : htxd_display_exer_table() ecg_sem_key = <%d>\n", p_exer_table[i].ecg_sem_key);
 		printf("[DEBUG] : htxd_display_exer_table() ecg_semhe_id = <%d>\n", p_exer_table[i].ecg_semhe_id);
-		printf("[DEBUG] : htxd_display_exer_table() exer_pos = <%d>\n", p_exer_table[i].exer_pos);	
+		printf("[DEBUG] : htxd_display_exer_table() exer_pos = <%d>\n", p_exer_table[i].exer_pos);
 		printf("[DEBUG] : =====================================================================>\n");
 
 		fflush(stdout);
@@ -490,8 +501,8 @@ int htxd_get_string_value(char *command_string, char *string_value)
 		processed_length++;
 	}
 	*string_value = '\0';
-	
-	return processed_length;	
+
+	return processed_length;
 }
 
 
@@ -508,7 +519,7 @@ int htxd_update_command_object(char *command_string)
 
 	start_position += htxd_get_string_value(command_string + start_position, temp_string);
 	p_htxd_instance->p_command->command_index = atoi(temp_string);
-	
+
 	start_position++;
 
 	start_position += htxd_get_string_value(command_string + start_position, temp_string);
@@ -566,7 +577,7 @@ int htxd_get_number_of_running_ecg(void)
 	int running_ecg_count = 0;
 
 	running_ecg_count = htxd_get_ecg_list_length(htxd_global_instance->p_ecg_manager);
-	
+
 	return running_ecg_count;
 }
 

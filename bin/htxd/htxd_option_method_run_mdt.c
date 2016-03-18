@@ -44,6 +44,7 @@ extern int init_syscfg();
 int htxd_start_equaliser(void)
 {
 
+	int rc = 0;
 	pid_t equaliser_pid;
 	char	temp_str[128];
 
@@ -63,6 +64,15 @@ int htxd_start_equaliser(void)
 	default:
 		printf("DEBUG: equaliser process started with pid <%d>\n", equaliser_pid);
 		htxd_set_equaliser_pid(equaliser_pid);
+	#ifdef __HTX_LINUX__
+		if ((htxd_get_equaliser_wof_test_flag()) == 1) {
+			rc = do_the_bind_proc(equaliser_pid);
+			if (rc < 0) {
+				sprintf(temp_str, "binding equaliser process to core 0 failed.\n");
+				htxd_send_message(temp_str, 0, HTX_SYS_INFO, HTX_SYS_MSG);
+			}
+		}
+	#endif
 		break;
 
 	}
@@ -76,12 +86,12 @@ int htxd_start_equaliser(void)
 int htxd_check_for_equaliser_start(htxd_ecg_manager *p_ecg_manager)
 {
 	int equaliser_start_flag = FALSE;
-	
+
 	if( (p_ecg_manager->current_loading_ecg_info->ecg_equaliser_info.enable_flag != 0) && (htxd_get_equaliser_pid() == 0) ) {
 		equaliser_start_flag = TRUE;
 	}
 
-	return equaliser_start_flag;	
+	return equaliser_start_flag;
 }
 
 
@@ -100,8 +110,8 @@ void htxd_execute_run_setup_script(char *ecg_name)
 /* hxsmsg : picks messages from HTX message queue and stores the messages in files */
 int htxd_load_hxsmsg(htxd_profile *p_profile)
 {
-	int hxsmsg_pid;
-	char hxsmsg_path[512];
+	int hxsmsg_pid, rc = 0;
+	char hxsmsg_path[512], temp_str[128];
 	char auto_start_flag_string[8];
 
 
@@ -117,20 +127,20 @@ int htxd_load_hxsmsg(htxd_profile *p_profile)
 		} else {
 			strcpy(auto_start_flag_string, "yes");
 		}
-		
-		execl(	hxsmsg_path, 
-				"hxsmsg", 
-				p_profile->max_htxerr_size, 
-				p_profile->max_htxmsg_size, 
-				p_profile->max_htxerr_save_size,  
-				p_profile->max_htxmsg_save_size, 
-				p_profile->htxerr_wrap, 
-				p_profile->htxmsg_wrap, 
-				p_profile->htxmsg_archive, 
+
+		execl(	hxsmsg_path,
+				"hxsmsg",
+				p_profile->max_htxerr_size,
+				p_profile->max_htxmsg_size,
+				p_profile->max_htxerr_save_size,
+				p_profile->max_htxmsg_save_size,
+				p_profile->htxerr_wrap,
+				p_profile->htxmsg_wrap,
+				p_profile->htxmsg_archive,
 				auto_start_flag_string,
 				p_profile->stress_device,
 				p_profile->stress_cycle,
-				(char *) 0); 	
+				(char *) 0);
 		printf("DEBUG: hxsmsg load failed <errno : %d> !!!\n", errno); fflush(stdout);
 		exit(errno);
 
@@ -140,11 +150,21 @@ int htxd_load_hxsmsg(htxd_profile *p_profile)
 
 	default:
 		htxd_set_htx_msg_pid(hxsmsg_pid);
+	#ifdef __HTX_LINUX__
+		if ((htxd_get_equaliser_wof_test_flag()) == 1) {
+			rc = do_the_bind_proc(hxsmsg_pid);
+			if (rc < 0) {
+				sprintf(temp_str, "binding hxsmsg process to core 0 failed.\n");
+				htxd_send_message(temp_str, 0, HTX_SYS_INFO, HTX_SYS_MSG);
+			}
+
+		}
+	#endif
 		break;
 	}
 
 	htxd_reset_FD_close_on_exec_flag();
-	
+
 	return 0;
 }
 
@@ -153,8 +173,8 @@ int htxd_load_hxsmsg(htxd_profile *p_profile)
 /* hxsstas : read exerciser info from shared memory and store it /tmp/htxstats file */
 int htxd_load_hxstats(void)
 {
-	int hxstats_pid;
-	char hxsstats_path[512];
+	int hxstats_pid, rc = 0;
+	char hxsstats_path[512], temp_str[128];
 
 
 	hxstats_pid = htxd_create_child_process();
@@ -176,7 +196,17 @@ int htxd_load_hxstats(void)
 		htxd_set_htx_stats_pid(hxstats_pid);
 	}
 
-	htxd_reset_FD_close_on_exec_flag();	
+	htxd_reset_FD_close_on_exec_flag();
+#ifdef __HTX_LINUX__
+	if ((htxd_get_equaliser_wof_test_flag()) == 1) {
+		rc = do_the_bind_proc(hxstats_pid);
+		if (rc < 0) {
+			sprintf(temp_str, "binding hxstats process to core 0 failed.\n");
+			htxd_send_message(temp_str, 0, HTX_SYS_INFO, HTX_SYS_MSG);
+		}
+
+	}
+#endif
 
 	return 0;
 }
@@ -206,12 +236,12 @@ int htxd_load_exerciser(struct htxshm_HE *p_HE)
 	{
 	case 0:
 		setsid();
-		
+
 		temp_int = p_HE->priority;
 		nice(temp_int);
 
 		sleep(5);   /* let daemon update shared memory */
-		
+
 		strcpy(exerciser_name, p_HE->HE_name);
 
 		if (strcmp(p_HE->HE_name, "hxemem64") == 0) {
@@ -245,15 +275,15 @@ int htxd_load_exerciser(struct htxshm_HE *p_HE)
 			strcat(rule_path, "reg/");
 			strcat(rule_path, p_HE->reg_rules);
 		}
-	
+
 /* system("export EXTSHM=OFF"); */
 unsetenv("EXTSHM");
 		if ( (execl(exerciser_path, exerciser_name, device_name, run_mode, rule_path, (char *) 0) ) == -1) {
 			sprintf(trace_str, "execl() failed  exerciser_path <%s> exerciser_name <%s> errno = <%d>\n", exerciser_path, exerciser_name, errno);
-			htxd_send_message (trace_str, 0, HTX_SYS_SOFT_ERROR, HTX_SYS_MSG);	
+			htxd_send_message (trace_str, 0, HTX_SYS_SOFT_ERROR, HTX_SYS_MSG);
 			HTXD_TRACE(LOG_ON, trace_str);
 			exit(-1);
-		} 	
+		}
 
 	case -1:
 		sprintf(trace_str, "exerciser <%s> fork failed with error <%d>", p_HE->sdev_id, errno);
@@ -286,21 +316,21 @@ int htxd_activate_all_ecg_devices(htxd_ecg_manager *this_ecg_manager)
 
 	HTXD_FUNCTION_TRACE(FUN_ENTRY, "htxd_activate_all_ecg_devices");
 
-	p_current_ecg_info = this_ecg_manager->current_loading_ecg_info;	
+	p_current_ecg_info = this_ecg_manager->current_loading_ecg_info;
 	/* number_of_exercisers_to_run = p_current_ecg_info->ecg_number_of_exercisers_to_run; */
 	number_of_exercisers_to_run = p_current_ecg_info->ecg_shm_exerciser_entries;
 
 	p_HE = (struct htxshm_HE *)(p_current_ecg_info->ecg_shm_addr.hdr_addr + 1); /* skipping shm header and point to first HE */
 
 	for(i = 0; i < number_of_exercisers_to_run; i++) {
-		htxd_load_exerciser(p_HE + i);	
-	}	
+		htxd_load_exerciser(p_HE + i);
+	}
 	sleep(10);  /* let all exercisers to start */
-	
+
 	(p_current_ecg_info->ecg_shm_addr.hdr_addr)->started = 1;
 	p_current_ecg_info->ecg_status = ECG_ACTIVE;
 	this_ecg_manager->loaded_device_count += number_of_exercisers_to_run;
-	
+
 	HTXD_FUNCTION_TRACE(FUN_EXIT, "htxd_activate_all_ecg_devices");
 	return 0;
 }
@@ -323,7 +353,7 @@ int htxd_option_method_run_mdt(char **result)
 	/* htxd instance will be created only first time */
 	htxd_instance = htxd_get_instance();
 	strcpy(command_ecg_name, htxd_get_command_ecg_name());
-	
+
 	sprintf(trace_str, "ECG name from command = <%s>", command_ecg_name);
 	HTXD_TRACE(LOG_OFF, trace_str);
 
@@ -345,7 +375,7 @@ int htxd_option_method_run_mdt(char **result)
 
 	if(ecg_manager == NULL) {
 		HTXD_TRACE(LOG_OFF, "ecg manager is creating");
-		ecg_manager = create_ecg_manager();		
+		ecg_manager = create_ecg_manager();
 		if(ecg_manager == NULL) {
 			HTXD_TRACE(LOG_OFF, "e_ecg_manager() failed to create ecg manager");
 			return 1;
@@ -356,7 +386,7 @@ int htxd_option_method_run_mdt(char **result)
 
 	/* start hxsmsg process if it is not already started */
 	if(htxd_get_htx_msg_pid() == 0) {
-		htxd_truncate_error_file();	
+		htxd_truncate_error_file();
 		htxd_load_hxsmsg(htxd_instance->p_profile);
 		HTXD_TRACE(LOG_ON, "run started htxsmsg process");
 		htxd_send_message ("System wakeup for responding", 0, HTX_SYS_INFO, HTX_SYS_MSG);
@@ -422,7 +452,7 @@ int htxd_option_method_run_mdt(char **result)
 
 #ifdef __HTX_LINUX__
 	/* start hotplug monitor */
-	if( htxd_is_hotplug_monitor_initialized() != TRUE) {
+	if( htxd_is_hotplug_monitor_initialized() != TRUE && htxd_get_equaliser_wof_test_flag() != 1) {
 		htxd_start_hotplug_monitor(&(htxd_instance->p_hotplug_monitor_thread));
 		HTXD_TRACE(LOG_ON, "run started hotplug monitor");
 	}
@@ -444,7 +474,7 @@ int htxd_option_method_run_mdt(char **result)
 	strcpy(ecg_manager->running_ecg_name, command_ecg_name);
 
 	/* to DEBUG */
-/*	htxd_display_ecg_info_list();	
+/*	htxd_display_ecg_info_list();
 	htxd_display_exer_table();
 */
 	p_ecg_info_to_run = ecg_manager->current_loading_ecg_info;
@@ -496,7 +526,7 @@ int htxd_option_method_select_mdt(char **result)
 		}
 		return 1;
 	}
-	
+
 	if(htxd_instance->run_state == HTXD_DAEMON_RUNNING) {
 		if(strcmp(command_ecg_name, ecg_manager->running_ecg_name) == 0) {
 			sprintf(*result, "Failed to select specified ecg/mdt(%s), same ecg/mdt is being run", command_ecg_name);
@@ -505,7 +535,7 @@ int htxd_option_method_select_mdt(char **result)
 		}
 		return 1;
 	}
-	
+
 	sprintf(trace_str, "ECG name from command = <%s>", command_ecg_name);
 	HTXD_TRACE(LOG_OFF, trace_str);
 
@@ -522,7 +552,7 @@ int htxd_option_method_select_mdt(char **result)
 
 	if(ecg_manager == NULL) {
 		HTXD_TRACE(LOG_OFF, "ecg manager is creating");
-		ecg_manager = create_ecg_manager();		
+		ecg_manager = create_ecg_manager();
 		if(ecg_manager == NULL) {
 			HTXD_TRACE(LOG_OFF, "e_ecg_manager() failed to create ecg manager");
 			return 1;
@@ -550,7 +580,7 @@ int htxd_option_method_select_mdt(char **result)
 
 	/* start hxsmsg process if it is not already started */
 	if(htxd_get_htx_msg_pid() == 0) {
-		htxd_truncate_error_file();	
+		htxd_truncate_error_file();
 		htxd_load_hxsmsg(htxd_instance->p_profile);
 		HTXD_TRACE(LOG_ON, "run started htxsmsg process");
 	}
@@ -560,7 +590,7 @@ int htxd_option_method_select_mdt(char **result)
 	strcpy(ecg_manager->selected_ecg_name, command_ecg_name);
 
 	/* to DEBUG */
-/*	htxd_display_ecg_info_list();	
+/*	htxd_display_ecg_info_list();
 	htxd_display_exer_table();
 */
 	p_ecg_info_to_select = ecg_manager->current_loading_ecg_info;

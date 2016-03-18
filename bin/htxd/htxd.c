@@ -39,7 +39,9 @@ int htxd_trace_level = 2;
 FILE *htxd_trace_fp;
 FILE *htxd_log_fp;
 
-
+#ifdef __HTX_LINUX__
+	int smt, bind_th_num;
+#endif
 
 int htxd_validate_arguments(int argc, char *argv[], htxd *p_htxd_instance)
 {
@@ -47,7 +49,7 @@ int htxd_validate_arguments(int argc, char *argv[], htxd *p_htxd_instance)
 	int ret = 0;;
 
 
-	while ((arg_option = getopt(argc, argv, "ast:")) != -1) 
+	while ((arg_option = getopt(argc, argv, "ast:")) != -1)
 	{
     	switch(arg_option)
 		{
@@ -85,7 +87,7 @@ int main(int argc, char *argv[])
 	HTXD_FUNCTION_TRACE(FUN_ENTRY, "main");
 
 	htxd_global_instance = htxd_create_instance();
-	init_htxd_instance(htxd_global_instance); 
+	init_htxd_instance(htxd_global_instance);
 
 	HTXD_TRACE(LOG_ON, "validate arguments to daemon launcher");
 	ret = htxd_validate_arguments(argc, argv, htxd_global_instance);
@@ -105,7 +107,7 @@ int main(int argc, char *argv[])
 	system("errlogger --- HTXD Started ---");
 #endif
 
-	HTXD_TRACE(LOG_ON, "forking daemon process");	
+	HTXD_TRACE(LOG_ON, "forking daemon process");
 	htxd_global_instance->daemon_pid = fork();
 	switch (htxd_global_instance->daemon_pid)
 	{

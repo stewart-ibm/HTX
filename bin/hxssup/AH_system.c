@@ -505,7 +505,11 @@ void AH_system(int autoflag)
 			default:	/* parent process                  */
 				hxstats_PID = frkpid;
 				if (wof_test_enabled) { /* Bind to core any thread of core 0 */
-				    do_the_bind_proc(hxstats_PID);
+				    rc = do_the_bind_proc(hxstats_PID);
+				    if (rc < 0) {
+						sprintf(workstr, "Unable to bind hxstats process to core 0.\n");
+						send_message(workstr, 0, HTX_SYS_INFO, HTX_SYS_MSG);
+					}
 				}
 				break;
 
@@ -552,7 +556,11 @@ void AH_system(int autoflag)
 				default:	/* parent process */
 					hang_mon_PID = frkpid;
 					if (wof_test_enabled) { /* bind to any thread of core 0 */
-					    do_the_bind_proc(hang_mon_PID);
+					    rc = do_the_bind_proc(hang_mon_PID);
+					    if (rc < 0) {
+							sprintf(workstr, "Unable to bind hang_monitor process to core 0.\n");
+							send_message(workstr, 0, HTX_SYS_INFO, HTX_SYS_MSG);
+						}
 					}
 					break;
 			}	/* endswitch */
@@ -581,7 +589,11 @@ void AH_system(int autoflag)
                                 default:        /* parent process */
                                         random_ahd_PID =  frkpid;
                                         if (wof_test_enabled) { /* bind to any thread of core 0 */
-                                            do_the_bind_proc(random_ahd_PID);
+                                            rc = do_the_bind_proc(random_ahd_PID);
+										    if (rc < 0) {
+												sprintf(workstr, "Unable to bind random_ahd process to core 0.\n");
+												send_message(workstr, 0, HTX_SYS_INFO, HTX_SYS_MSG);
+											}
                                         }
                                         break;
                         }       /* endswitch     */
@@ -605,7 +617,11 @@ void AH_system(int autoflag)
 				default:        /* parent process */
 					equaliser_PID = frkpid;
 					if (wof_test_enabled) { /* bind to any thread of core 0 */
-					    do_the_bind_proc(equaliser_PID);
+					    rc = do_the_bind_proc(equaliser_PID);
+					    if (rc < 0) {
+							sprintf(workstr, "Unable to bind equaliser process to core 0.\n");
+							send_message(workstr, 0, HTX_SYS_INFO, HTX_SYS_MSG);
+						}
 					}
 					break;
 			}       /* endswitch     */

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# @(#)33        1.8.2.20     src/htx/usr/lpp/htx/etc/scripts/runsup, htxconf, htxubuntu 7/17/15 06:21:36
+# @(#)33        1.8.2.21     src/htx/usr/lpp/htx/etc/scripts/runsup, htxconf, htxubuntu 3/20/16 13:17:25
 #
 # COMPONENT_NAME: htx_conf_lx
 #
@@ -52,10 +52,10 @@ if [  -f ${HTXLPP}.autostart ]
 		hxecom_present=`grep "hxecom" ${HTXMDT}bootme_prev_mdt | wc -l`
 		if [ ${hxecom_present} -ne 0 ]
 		then
-			/usr/lpp/htx/mdt/mdt_net mdt
+			/usr/lpp/htx/mdt/mdt_net ${BOOTME_MDT}
 		fi	
 		
-        MDTFILE=mdt
+        MDTFILE=`basename ${BOOTME_MDT}`
 else
   	[ "$HTXLPP" ] || { echo "you must be logged in as htx to execute this command" | tee -a $HTXNoise && exit
   	}

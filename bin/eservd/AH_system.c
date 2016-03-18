@@ -147,6 +147,7 @@ int AH_system(int autoflag, char *result_msg)
     int exer_shm_entries;
     int all_exer_stopped;
 
+    extern int wof_test_enabled;          /* Flag to check if WOF testing is enabled in equaliser */
 
 #ifdef HTX_REL_tu320
     static struct hfchgdsp hfchgdsp =
@@ -564,7 +565,7 @@ int AH_system(int autoflag, char *result_msg)
 
 	       default:  /* parent process                  */
 		   hxstats_PID = frkpid;
-                   print_log(LOGMSG,"default HTXPATH = %s ,statspid = %d\n",HTXPATH, hxstats_PID); fflush(stdout);
+		   print_log(LOGMSG,"default HTXPATH = %s ,statspid = %d\n",HTXPATH, hxstats_PID); fflush(stdout);
 		   //rem_shm_addr->misc_data_addr->hxstats_PID = frkpid;
 		   break;
 
@@ -622,7 +623,14 @@ int AH_system(int autoflag, char *result_msg)
 		    break;
 		default :                      /* parent process                  */
 		    hxstats_PID = frkpid;
-		    print_log(LOGMSG,"default HTXPATH = %s ,statspid = %d\n",HTXPATH, hxstats_PID); fflush(stdout);
+		    if (wof_test_enabled) { /* Bind to core any thread of core 0 */
+		        rc = do_the_bind_proc(hxstats_PID);
+		        if (rc < 0) {
+					sprintf(workstr, "Binding of hxstats process to core 0 failed.\n");
+					send_message(workstr, 0, HTX_SYS_INFO, HTX_SYS_MSG);
+				}
+	        }
+	        print_log(LOGMSG,"default HTXPATH = %s ,statspid = %d\n",HTXPATH, hxstats_PID); fflush(stdout);
 		    break;
 	    } /* endswitch */
 	}
@@ -657,6 +665,13 @@ int AH_system(int autoflag, char *result_msg)
 		    break;
 		default :                      /* parent process                  */
 		    hang_mon_PID = frkpid;
+		    if (wof_test_enabled) { /* bind to any thread of core 0 */
+		        rc = do_the_bind_proc(hang_mon_PID);
+		        if (rc < 0) {
+					sprintf(workstr, "Binding of hang_monitor process to core 0 failed.\n");
+					send_message(workstr, 0, HTX_SYS_INFO, HTX_SYS_MSG);
+				}
+			}
 		    break;
 	    } /* endswitch */
 	} /* endif */
@@ -675,7 +690,14 @@ int AH_system(int autoflag, char *result_msg)
 				break;
 			default:        /* parent process */
 				equaliser_PID = frkpid;
-				break;
+				if (wof_test_enabled) { /* bind to any thread of core 0 */
+		            rc = do_the_bind_proc(equaliser_PID);
+			        if (rc < 0) {
+						sprintf(workstr, "Binding of equaliser process to core 0 failed.\n");
+						send_message(workstr, 0, HTX_SYS_INFO, HTX_SYS_MSG);
+					}
+		        }
+		        break;
 		} /* end switch */
 	} /* endif */
 
@@ -751,7 +773,7 @@ int AH_system(int autoflag, char *result_msg)
 			while(delay_counter < max_wait_tm) {
 				memset(semctl_arg.array, 0, (sem_length * sizeof(ushort) ) );
 				semctl(semhe_id, 0, GETALL, semctl_arg);
-				
+
 				exer_count = exer_system_halted = exer_error_halted = exer_operation_halted = exer_exited = 0;
 				while(exer_count < exer_shm_entries) {
 					if(semctl_arg.array[(exer_count * SEM_PER_EXER + SEM_GLOBAL + 2)] == 1) {

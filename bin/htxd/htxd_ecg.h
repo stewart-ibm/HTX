@@ -45,6 +45,7 @@ typedef struct
 {
 	int	enable_flag;
 	int	debug_flag;
+	int wof_test;
 	char	config_file[128];
 }htxd_ecg_equaliser_details;
 
@@ -62,7 +63,7 @@ typedef struct htxd_ecg_info_struct
 	int								ecg_shm_id;
 	int								ecg_sem_id;
 	int								ecg_device_count;
-	union shm_pointers				ecg_shm_addr; 
+	union shm_pointers				ecg_shm_addr;
 	int								ecg_exerciser_entries;		/* device entrie present in ecg */
 	int								ecg_max_exerciser_entries;
 	int								ecg_shm_exerciser_entries;	/* actual devices loaded in shm */
@@ -82,7 +83,7 @@ typedef struct
 	int			ecg_list_shm_key;
 	int			ecg_list_shm_id;
 	texer_list *		exer_table;
-	int			exer_table_shm_id;	
+	int			exer_table_shm_id;
 	int			exer_table_length;
 	tsys_hdr *		system_header_info;
 	int			system_header_info_shm_id;

@@ -18,11 +18,8 @@
 /* IBM_PROLOG_END_TAG */
 /* @(#)45	1.1  src/htx/usr/lpp/htx/bin/htxd/htxd_equaliser.h, htxd, htxubuntu 7/17/13 08:48:07 */
 
-
-
 #ifndef HTXD__EQUALISER__HEADER
 #define HTXD__EQUALISER__HEADER
-
 
 #define UTILIZATION_QUEUE_LENGTH     20
 #define MAX_UTIL_SEQUENCE_LENGTH     10
@@ -46,25 +43,33 @@ struct run_time_data {
 };
 typedef struct run_time_data run_time_data;
 
-struct thread_config_structure {
-	char        dev_name[16];
-	uint32      util_pattern;
-	uint32      utilization_pattern;
-	uint16      pattern_length;
-	uint16      sequence_length;
-	uint16      utilization_sequence[MAX_UTIL_SEQUENCE_LENGTH];
-	run_time_data   data;
+struct thread_config_parameters {
+    char        dev_name[16];
+    int         lcpu;
+    int         pcpu;
+    uint32      util_pattern;
+    uint32      utilization_pattern;
+    uint16      pattern_length;
+    uint16      sequence_length;
+    uint16      utilization_sequence[MAX_UTIL_SEQUENCE_LENGTH];
 };
-typedef struct thread_config_structure thread_config_struct;
+typedef struct thread_config_parameters thread_config_params;
+
+struct run_time_thread_config_structure {
+    thread_config_params    th_config;
+    run_time_data           data;
+};
+typedef struct run_time_thread_config_structure run_time_thread_config;
+
 struct test_config_structure {
-    uint32              time_quantum;
-    uint16              num_tests_configured;
-    uint32              startup_time_delay;
-    uint32              log_duration;
-    thread_config_struct    *thread;
+    uint32                      time_quantum;
+    uint16                      num_tests_configured;
+    uint32                      wof_test;
+    uint32                      startup_time_delay;
+    uint32                      log_duration;
+    run_time_thread_config      *thread;
 };
 typedef struct test_config_structure test_config_struct;
-
 
 extern void htxd_equaliser(void);
 

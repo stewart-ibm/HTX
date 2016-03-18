@@ -42,4 +42,9 @@ extern short send_message(char *, int, int, mtyp_t);
 extern int 	htxd_execute_shell_profile(void);
 extern int	htxd_truncate_error_file(void);
 
+#ifdef __HTX_LINUX__
+	extern int do_the_bind_proc(pid_t);
+	extern int do_the_bind_thread(pthread_t);
+#endif
+
 #endif

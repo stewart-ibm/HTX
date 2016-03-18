@@ -88,7 +88,7 @@ short	start_msg_hdl(int autostart)
 	int errno_save;		/* errno save variable                 */
 	int exec_rc;		/* exec() return code                  */
 	int frkpid;		/* PID from fork()                     */
-	int i;			/* loop counter                        */
+	int rc = 0, i;			/* loop counter                        */
 
 	short return_code;	/* The function's return code          */
 
@@ -149,7 +149,10 @@ short	start_msg_hdl(int autostart)
 		default:
 			hxsmsg_PID = frkpid;
        		if (wof_test_enabled) { /* bind to any thread of core 0 */
-       		    do_the_bind_proc(hxsmsg_PID);
+       		    rc = do_the_bind_proc(hxsmsg_PID);
+       		    if (rc < 0) {
+					PRTMSG(MSGLINE, 0, ("Unable to bind hxsmsg process to core 0.\n"));
+				}
        		}
        		sleep((unsigned int) 2);	/* give the hxsmsg child process a chance to start */
 			break;

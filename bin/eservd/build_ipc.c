@@ -375,8 +375,8 @@ build_ipc (char *result_msg)
     char stanza[4096];           /* attribute file stanza        */
     char tag[40];                /* add-on char string           */
 
-    int i, ii, dup_dev = 0; /* general counter              */
-    int rc, retcod;                      /* return code                  */
+    int i, rc, ii, dup_dev = 0;  /* general counter              */
+    int retcod;                  /* return code                  */
     int workint;                 /* work integer                 */
     int shm_entries;             /* # of entries in the shm      */
     int prev_ecg_pos;
@@ -615,6 +615,13 @@ build_ipc (char *result_msg)
 			   retcod = cfgcskwd("wof_test", default_mdt_snz, workstr);
 			   if(retcod ==  CFG_SUCC) {
 				   wof_test_enabled = atoi(unquote(workstr));
+				   if (wof_test_enabled) { /* bind main process i.e. eservd to core 0 */
+						rc = do_the_bind_proc(getpid());
+						if (rc < 0) {
+							sprintf( result_msg, "binding of eservd daemon to core 0 failed.\n");
+							LOG_MSG (20, result_msg, (CFG__SFT **) &mdt_fd);
+						}
+				   }
 		       }
 		  } else {
 			  system_call = TRUE;
