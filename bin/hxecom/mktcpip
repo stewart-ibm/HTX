@@ -43,7 +43,7 @@ if ($DISTRO  =~  /ubuntu/i) {
 	$suse = 1; 
 }elsif ($DISTRO =~ /fedora/i) { 
 	$fedora = 1; 
-} elsif ($DISTRO =~ /red/i || $DISTRO =~ /redhatenterpriseworkstation/i|| $DISTRO =~  /rhel/i) { 
+} elsif ($DISTRO =~ /red/i || $DISTRO =~ /redhatenterpriseworkstation/i|| $DISTRO =~  /rhel/i || $DISTRO =~ /centos/i) { 
 	$redhat = 1; 
 } else { 
 	print DEBUG_FILE (" mktcpip Cannot detect your Distro version, distro=$DISTRO. This script would exit !! \n"); 	
@@ -242,6 +242,10 @@ sub configure_network_for_ubuntu {
 	close(TMP_FILE); 
 	`cp $tmp_file $config_file`;  
 	`rm $tmp_file`; 
+
+	print DEBUG_FILE ("ifdown $iface 2>/dev/null \n");
+	$res = `ifdown $iface 2>/dev/null`;
+
 	print DEBUG_FILE ("ifup $iface --force 2>/dev/null \n"); 
 	$res = `ifup $iface --force 2>/dev/null`;
 	&out(0); 
@@ -379,6 +383,7 @@ sub build_ifcfg {
 	$num_lines=0; 
 	$ipaddr_found = 0; 
 	$netmask_found = 0;
+	$broadcast_found = 0;
 	$nm_controlled = 0; 
 	$type_found = 0; 
 	$mode_found = 0; 
@@ -389,6 +394,9 @@ sub build_ifcfg {
 		} elsif($line =~ /NETMASK/) { 
 			print TMP_OUT ("NETMASK=$netmask \n"); 
 			$netmask_found = 1; 
+		} elsif($line =~ /BROADCAST/) {
+			print TMP_OUT ("BROADCAST=$broadcast \n");
+			$broadcast_found = 1;
 		} elsif($line =~ /ONBOOT/) { # For redhat 
 			print TMP_OUT ("ONBOOT=yes\n");
            	$num_lines++;
@@ -451,6 +459,9 @@ sub build_ifcfg {
 	if($netmask_found == 0) { 
 		print TMP_OUT ("NETMASK=$netmask\n");
 	} 
+	if($broadcast_found == 0) {
+		print TMP_OUT ("BROADCAST=$broadcast\n");
+	}
 	if($nm_controlled == 0 && $redhat == 1) {
 		if($ifname !~ /tm/) { 
 			#Network Team interface
@@ -467,6 +478,10 @@ sub build_ifcfg {
 		&out(-6); 
 	}
    	$result = `rm /tmp/tmp_out 2>/dev/null`;
+
+	print DEBUG_FILE ("ifdown $ifname 2>/dev/null \n");
+	$res = `ifdown $ifname 2>/dev/null`;
+
 	print DEBUG_FILE ("ifup $ifname 2>/dev/null \n"); 
 
 	if($ifname =~ /tm/) {
