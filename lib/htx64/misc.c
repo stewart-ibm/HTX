@@ -95,8 +95,13 @@ int get_cpu_version(void)
 		return pvr;
 	}
 
-	fgets(str, 80, fp);
-	pclose(fp);
+	if(fgets(str, 80, fp) != NULL) {
+		pclose(fp);
+	} else {
+		printf("Could not get the os pvr value \n ");
+		pclose(fp);
+	}
+
 
 	if ((TempPvr == 0x3e) && (!strncmp(str,"POWER5",6))) {
 		pvr = 0x003b0300; // P6 running in P5 mode
@@ -403,6 +408,7 @@ int htx_unbind_process(void)
 	CPU_FREE(cpu_mask);
 	return 0;
 }
+
 
 /* This function returns mask of currently online cpus. */
 int get_online_cpu_mask(cpu_set_t *ptr_mask,size_t size)
