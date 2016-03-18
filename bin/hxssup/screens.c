@@ -512,8 +512,6 @@ void	htx_scn(void)
 	int level_str_len = 0;
 
 
-	display_scn(stdscr, 0, 0, LINES, COLS, "IBM_copyright", 1, &row, &column, 23, 81, 'y');
-	sleep(5);
 	display_scn(stdscr, 0, 0, LINES, COLS, "htx_scn", 1, &row, &column, 23, 81, 'n');
 	htx_strncpy(level_str, "", 79);
 

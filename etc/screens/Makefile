@@ -24,9 +24,7 @@ TARGET= AD_scn     \
         mmenu_scn  \
         mmhelp_scn.a \
         ddsrch_scn \
-        ddsrch_scn.a \
-        IBM_copyright \
-        IBM_copyright.a 
+        ddsrch_scn.a 
  
 
 .PHONY: all clean

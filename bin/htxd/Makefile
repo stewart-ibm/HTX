@@ -41,10 +41,6 @@ htxcmdline_SRCS = $(patsubst %.o, %.c, $(htxcmdline_OBJECTS))
 
 all= htxd htxcmdline 
 
-ifneq "${HTX_RELEASE}" "htxltsbml"
-#        CFLAGS += -DLIC_ENABLE
-endif
-
 CFLAGS += -D__HTX_LINUX_ -D_GNU_SOURCE -DTRUE=1 -DFALSE=0
 
 LIBS += -Wl,--start-group

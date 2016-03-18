@@ -292,11 +292,4 @@ char * htx_ctime(const time_t *p_time);
 
 #endif
 
-static const char IBM_copyright_string[]="\n\
-	Licensed Materials - Property of IBM\n\
-	(C) Copyright IBM Corp. 2010, 2013,  All rights reserved.\n\
-\n\
-	US Government Users Restricted Rights - Use, duplication or\n\
-	disclosure restricted by GSA ADP Schedule Contract with IBM Corp.\n";
-
 #endif  /* HTXLIBDEF_H */
