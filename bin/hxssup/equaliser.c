@@ -96,7 +96,7 @@ void update_thread_config(char *affinity, thread_config_params cur_config)
 {
     char *chr_ptr[4], *ptr, msg[128], dev_name_str[32];
     char tmp_str[10], tmp[4];
-    int i, k, exer_found;
+    int i, j, k, l, m, exer_found;
     int node_num, chip_num, core_num, thread_num;
     int num_of_nodes, num_of_chips, num_of_cores, num_of_threads;
     run_time_thread_config *th;
@@ -114,8 +114,8 @@ void update_thread_config(char *affinity, thread_config_params cur_config)
             }
         }
     }
-    sprintf (msg, "Inside update_thread_config\n");
-    send_message (msg, 0, HTX_SYS_INFO, HTX_SYS_MSG);
+    /* sprintf (msg, "Inside update_thread_config\n");
+    send_message (msg, 0, HTX_SYS_INFO, HTX_SYS_MSG); */
     shm_addr_wk.hdr_addr = shm_addr.hdr_addr;  /* copy addr to work space  */
     (shm_addr_wk.hdr_addr)++;         /* skip over header                  */
 
@@ -123,7 +123,7 @@ void update_thread_config(char *affinity, thread_config_params cur_config)
     if (tmp_str[0] == '*') {
         node_num = 0;
         num_of_nodes = get_num_of_nodes_in_sys();
-    } else if (strchr(tmp_str, "[") != NULL) { /* means a range of nodes is given */
+    } else if (strchr(tmp_str, '[') != NULL) { /* means a range of nodes is given */
         ptr = strtok(tmp_str, "[]-");
         node_num = atoi(ptr);
         ptr = strtok(NULL, "[]-");
@@ -136,13 +136,13 @@ void update_thread_config(char *affinity, thread_config_params cur_config)
         }
     } else {
         node_num = atoi(chr_ptr[0]);
-        num_of_nodes = node_num + 1;
+        num_of_nodes = 1;
     }
-    for (; node_num < num_of_nodes; node_num++) {
+    for (i = 0; i < num_of_nodes; i++, node_num++) {
         if (chr_ptr[1][0] == '*') {
             chip_num = 0;
             num_of_chips = get_num_of_chips_in_node(node_num);
-        } else if (strchr(chr_ptr[1], "[") != NULL) { /* means a range of chips is given */
+        } else if (strchr(chr_ptr[1], '[') != NULL) { /* means a range of chips is given */
             strcpy(tmp_str, chr_ptr[1]);
             ptr = strtok(tmp_str, "[]-");
             chip_num = atoi(ptr);
@@ -156,13 +156,13 @@ void update_thread_config(char *affinity, thread_config_params cur_config)
             }
         } else {
            chip_num = atoi(chr_ptr[1]);
-           num_of_chips = chip_num + 1;
+           num_of_chips = 1;
         }
-        for (; chip_num < num_of_chips; chip_num++) {
+        for (j = 0; j < num_of_chips; j++, chip_num++) {
             if (chr_ptr[2][0] == '*') {
                 core_num = 0;
                 num_of_cores = get_num_of_cores_in_chip(node_num, chip_num);
-            } else if (strchr(chr_ptr[2], "[") != NULL) { /* means a range of cores is defined */
+            } else if (strchr(chr_ptr[2], '[') != NULL) { /* means a range of cores is defined */
                 strcpy(tmp_str, chr_ptr[2]);
                 ptr = strtok(tmp_str, "[]-");
                 core_num = atoi(ptr);
@@ -176,9 +176,9 @@ void update_thread_config(char *affinity, thread_config_params cur_config)
                 }
             } else {
                 core_num = atoi(chr_ptr[2]);
-                num_of_cores = core_num + 1;
+                num_of_cores = 1;
             }
-            for (; core_num < num_of_cores; core_num++) {
+            for (l = 0; l < num_of_cores; l++, core_num++) {
                 /* Exclude N0P0C0T* if wof testing is enabled */
                 if (test_config.wof_test && core_num == 0 && chip_num == 0 && node_num == 0) {
                     continue;
@@ -186,7 +186,7 @@ void update_thread_config(char *affinity, thread_config_params cur_config)
                 if (chr_ptr[3][0] == '*') {
                     thread_num = 0;
                     num_of_threads = get_num_of_cpus_in_core(node_num, chip_num, core_num);
-                } else if (strchr(chr_ptr[3], "[") != NULL) {
+                } else if (strchr(chr_ptr[3], '[') != NULL) {
                     strcpy(tmp_str, chr_ptr[3]);
                     ptr = strtok(tmp_str, "[]-");
                     thread_num = atoi(ptr);
@@ -200,15 +200,15 @@ void update_thread_config(char *affinity, thread_config_params cur_config)
                     }
                 } else {
                     thread_num =  atoi(chr_ptr[3]);
-                    num_of_threads = thread_num + 1;
+                    num_of_threads = 1;
                 }
-                for (; thread_num < num_of_threads; thread_num++) {
+                for (m = 0; m < num_of_threads; m++, thread_num++) {
                     th = &test_config.thread[num_tests];
                     memcpy(&(th->th_config), &cur_config, sizeof(thread_config_params));
                     th->th_config.lcpu = get_logical_cpu_num(node_num, chip_num, core_num, thread_num);
                     th->th_config.pcpu = get_logical_2_physical(th->th_config.lcpu);
                     sprintf(dev_name_str, "%s%d", th->th_config.dev_name, th->th_config.lcpu);
-                    send_message (dev_name_str, 0, HTX_SYS_INFO, HTX_SYS_MSG);
+                    /* send_message (dev_name_str, 0, HTX_SYS_INFO, HTX_SYS_MSG); */
                     strcpy(th->th_config.dev_name, dev_name_str);
 
                     /* Check if exer entry exist in mdt file being run, otherwise, exit out */
@@ -275,22 +275,21 @@ int read_config()
 		}
 		else {  /* got some good data  */
 			i = j = k = 0;
-			sprintf(msg, "Got line: %s\n", line);
-            send_message(msg, 0, HTX_SYS_INFO, HTX_SYS_MSG);
-            printf("line is: %s", line);
-			sscanf(line,"%s", keywd);
+			/* sprintf(msg, "Got line: %s\n", line);
+            send_message(msg, 0, HTX_SYS_INFO, HTX_SYS_MSG); */
+            sscanf(line,"%s", keywd);
             if (strcmp(keywd, "time_quantum") == 0) {
                 sscanf(line, "%*s %*s %d", &test_config.time_quantum);
-                printf("time_quantum: %d\n", test_config.time_quantum);
+                /* printf("time_quantum: %d\n", test_config.time_quantum); */
                 found_quantum = 1;
             }
             else if (strcmp(keywd, "startup_time_delay") == 0) {
                 sscanf(line, "%*s %*s %d", &test_config.startup_time_delay);
-                printf("startup_time_delay: %d\n", test_config.startup_time_delay);
+                /* printf("startup_time_delay: %d\n", test_config.startup_time_delay); */
             }
             else if (strcmp(keywd, "log_duration") == 0) {
                 sscanf(line, "%*s %*s %d", &test_config.log_duration);
-                printf("log_duration: %d\n", test_config.log_duration);
+                /* printf("log_duration: %d\n", test_config.log_duration); */
             }
             else if (strcmp(keywd, "pattern_length") == 0) {
                 sscanf(line, "%*s %*s %d", &pattern_length);
@@ -702,27 +701,6 @@ void equaliser()
 /***********************************************************************/
 /****** Function to Handles SIGTERM,SIGQUIT and SIGINT signals  ********/
 /***********************************************************************/
-
-#if 0
-void equaliser()
-{
-    int i;
-
-    test_config.thread = (run_time_thread_config *) malloc(sizeof(run_time_thread_config) * 4);
-    if( test_config.thread == NULL) {
-        printf("Error (errno = %d) in allocating memory for equaliser process.\nProcess will exit now.", errno);
-        exit(1);
-    }
-
-     read_config();
-     for (i = 0; i < test_config.num_tests_configured; i ++) {
-         printf ("dev_name: %s, lcpu: %d, utilization_pattern: %d, utilization_sequence: %d, time_quantum: %d,"
-                "startup_time_delay: %d, log_duration: %d\n", test_config.thread[i].th_config.dev_name, test_config.thread[i].th_config.lcpu,
-                 test_config.thread[i].th_config.utilization_pattern, test_config.thread[i].th_config.utilization_sequence[0], test_config.time_quantum,
-                 test_config.startup_time_delay, test_config.log_duration);
-    }
-}
-#endif
 
 void equaliser_sig_end(int signal_number, int code, struct sigcontext *scp)
      /*

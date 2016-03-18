@@ -885,6 +885,12 @@ int	build_ipc(void)
 			retcod = cfgcskwd("wof_test", default_mdt_snz, workstr);
 			if(retcod ==  CFG_SUCC) {
 				wof_test_enabled = atoi(unquote(workstr));
+				if (wof_test_enabled == 1) {
+					rc = do_the_bind_proc(getpid());
+					if (rc < 0) {
+						PRTMSG(MSGLINE, 0, ("Unable to bind hxssup process to core 0. \n"));
+					}
+				}
 			}
 		} else {
 			system_call = TRUE;

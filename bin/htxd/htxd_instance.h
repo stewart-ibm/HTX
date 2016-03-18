@@ -75,6 +75,8 @@ extern void			htxd_set_equaliser_conf_file(char *);
 extern char *			htxd_get_equaliser_conf_file(void);
 extern void			htxd_set_equaliser_debug_flag(int);
 extern int			htxd_get_equaliser_debug_flag(void);
+extern void			htxd_set_equaliser_wof_test_flag(int);
+extern int			htxd_get_equaliser_wof_test_flag(void);
 extern int			htxd_is_hang_monitor_initialized(void);
 extern void			htxd_remove_hang_monitor(void);
 extern int			htxd_is_hotplug_monitor_initialized(void);

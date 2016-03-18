@@ -47,7 +47,7 @@ void htxd_correct_device_list_for_all_devices(char *device_name_list)
 {
 	char *p_device_name;
 	char temp_device_name_list[MAX_OPTION_LIST_LENGTH];
-	
+
 	if(strlen(device_name_list) > 0) {
 		strcpy(temp_device_name_list, device_name_list);
 		p_device_name = strtok(temp_device_name_list, " ");
@@ -55,7 +55,7 @@ void htxd_correct_device_list_for_all_devices(char *device_name_list)
 		while(p_device_name != NULL) {
 			if(strcmp(p_device_name, "all") == 0) {
 				device_name_list[0] = '\0';
-			}	 	
+			}
 
 			p_device_name = strtok(NULL, " ");
 		}
@@ -76,12 +76,12 @@ int htxd_is_all_device_found(char *device_name_list)
 	while(p_device_name != NULL) {
 		if(strcmp(p_device_name, "all") == 0) {
 			return TRUE;
-		} 	
+		}
 
 		p_device_name = strtok(NULL, " ");
 	}
 
-	return FALSE;	
+	return FALSE;
 }
 
 
@@ -111,7 +111,7 @@ int htxd_get_time_details(time_t epoch_time, char *formatted_date, char *day_of_
 	} else {
 		year2000 = time_var.tm_year;
 	}
-	
+
 	if(formatted_date != NULL) {
 		sprintf(formatted_date, "%.2d/%.2d/%.2d", (time_var.tm_mon + 1), time_var.tm_mday, year2000);
 	}
@@ -138,11 +138,11 @@ int htxd_is_file_exist(char *filename)
 	return_code = stat(filename, &file_status);
 	if( return_code == 0) {
 		return TRUE;
-	} 
+	}
 
 	sprintf(trace_string, "stat() failed at htxd_is_file_exist with return value = <%d>, errno = <%d>, filename <%s>, return", return_code, errno, filename);
-	HTXD_TRACE(LOG_OFF, trace_string);	
-	return FALSE;	
+	HTXD_TRACE(LOG_OFF, trace_string);
+	return FALSE;
 }
 
 
@@ -168,7 +168,7 @@ char *htxd_unquote(char *s)
 	} /* end while */
 
 	return(s_save);
-} 
+}
 
 
 void htxd_set_FD_close_on_exec_flag(void)
@@ -228,36 +228,36 @@ int htxd_read_file(char *filename, char **read_buffer)
 		sprintf(trace_string, "Error : htxd_read_file() open() return  = <%d>,  errno  = <%d>, filename = <%s>\n", return_code, errno, filename);
 		HTXD_TRACE(LOG_ON, trace_string);
 		return -1;
-	}	
+	}
 
 	read_file_fd = open(filename, O_RDONLY);
 	if(read_file_fd == -1) {
 		sprintf(trace_string, "Error : htxd_read_file() open() return  = <%d>,  errno  = <%d>, filename = <%s>\n", return_code, errno, filename);
 		HTXD_TRACE(LOG_ON, trace_string);
 		return -1;
-	}	
+	}
 
 	size_of_read_buffer = read_file_stat.st_size + 1024;
-	
+
 	*read_buffer = malloc(size_of_read_buffer);
 	if(*read_buffer == NULL) {
-		sprintf(trace_string, "Error : htxd_read_file() malloc(%d) return NULL, errno  = <%d>, filename = <%s>\n", size_of_read_buffer, errno, filename); 
+		sprintf(trace_string, "Error : htxd_read_file() malloc(%d) return NULL, errno  = <%d>, filename = <%s>\n", size_of_read_buffer, errno, filename);
 		HTXD_TRACE(LOG_ON, trace_string);
 		close(read_file_fd);
 		return -1;
 	}
-		
+
 	memset(*read_buffer, 0, size_of_read_buffer);
 
 	number_of_byes_read = read(read_file_fd, *read_buffer, size_of_read_buffer - 1024);
 	if(number_of_byes_read == -1) {
-		sprintf(trace_string, "Error : htxd_read_file() read() return <%d>, errno <%d>, filename = <%s>\n", number_of_byes_read, errno, filename); 
+		sprintf(trace_string, "Error : htxd_read_file() read() return <%d>, errno <%d>, filename = <%s>\n", number_of_byes_read, errno, filename);
 		HTXD_TRACE(LOG_ON, trace_string);
-	}	
+	}
 	if(number_of_byes_read == 0) {
 		sprintf(*read_buffer, "file <%s> is empty", filename);
 	}
-	
+
 	close(read_file_fd);
 
 	return 0;
@@ -286,7 +286,7 @@ int htxd_get_regular_file_count(char *path_name)
 		perror("dir close failed");
 		return -1;
 	}
-	return file_count;	
+	return file_count;
 }
 
 
@@ -301,7 +301,7 @@ int htxd_wrtie_mdt_list(char *mdt_dir, char *mdt_list_file, int mdt_count, char 
 	if(p_file == NULL) {
 		return -1;
 	}
-	
+
 	p_dir = opendir(mdt_dir);
 	if(p_dir == NULL) {
 		perror("dir open failed");
@@ -309,8 +309,8 @@ int htxd_wrtie_mdt_list(char *mdt_dir, char *mdt_list_file, int mdt_count, char 
 	}
 	if( (strcmp(write_mode, "w") == 0) || (strcmp(write_mode, "w+") == 0)) {
 		fprintf(p_file, "Total ECG = %d\n", mdt_count);
-	}		
-	
+	}
+
 	while ( (p_dir_entry = readdir(p_dir) ) != NULL) {
 		fprintf(p_file, "%s%s", p_dir_entry->d_name, separator);
 	}
@@ -350,10 +350,10 @@ short htxd_send_message(char *msg_text, int errno_val, int  severity, mtyp_t msg
 			msg_text[MAX_TEXT_MSG] = '\0';
 			exit_code |= MSG_TOO_LONG;
 		}
-		
+
 		errno = 0;
 
-		program_name = htxd_get_program_name(); 
+		program_name = htxd_get_program_name();
 
 #ifdef __HTX_LINUX__
 		system_time = time((time_t *) NULL);
@@ -372,15 +372,15 @@ short htxd_send_message(char *msg_text, int errno_val, int  severity, mtyp_t msg
 		} else {
 			str_time_ptr = ctime((time_t *) (&system_time));
 			strncpy(char_time, "", sizeof(char_time));
-			strncpy(char_time, (str_time_ptr + 4), 20); 
+			strncpy(char_time, (str_time_ptr + 4), 20);
 		}
 #endif
 
 
-/*		strcpy(msg_buffer.htx_data.sdev_id, "htx_messages"); 
+/*		strcpy(msg_buffer.htx_data.sdev_id, "htx_messages");
 		msg_buffer.htx_data.error_code = errno_val;
-		msg_buffer.htx_data.severity_code = severity;	
-		strcpy(msg_buffer.htx_data.HE_name, program_name); 
+		msg_buffer.htx_data.severity_code = severity;
+		strcpy(msg_buffer.htx_data.HE_name, program_name);
 
 */
 
@@ -425,7 +425,7 @@ short htxd_send_message(char *msg_text, int errno_val, int  severity, mtyp_t msg
 		fflush(stderr);
 		exit_code |= NO_MSG_QUEUE;
 	}
-		
+
 	return(exit_code);
 }
 
@@ -462,3 +462,28 @@ int htxd_truncate_error_file(void)
 
 	return return_code;
 }
+
+#ifdef __HTX_LINUX__
+/* Function binds a given TID  to any thread of core 0 */
+int do_the_bind_proc(pid_t pid)
+{
+    int lcpu, rc = 0;
+
+    lcpu = get_logical_cpu_num(0, 0, 0, bind_th_num); /* Bind to N0P0C0T* */
+    rc = bind_process(pid, lcpu, -1);
+    bind_th_num = (bind_th_num + 1) % smt;
+    return rc;
+}
+
+/* Function binds a given TID  to any thread of core 0 */
+int do_the_bind_thread(pthread_t tid)
+{
+    int lcpu, rc = 0;
+
+    lcpu = get_logical_cpu_num(0, 0, 0, bind_th_num); /* Bind to N0P0C0T* */
+    rc = bind_thread(tid, lcpu, -1);
+    bind_th_num = (bind_th_num + 1) % smt;
+    return rc;
+}
+#endif
+

@@ -90,7 +90,7 @@ short start_msg_hdl(int autostart)
     int errno_save;                     /* errno save variable                 */
     int exec_rc;                        /* exec() return code                  */
     int frkpid;                         /* PID from fork()                     */
-    int i;                              /* loop counter                        */
+    int rc, i;                          /* loop counter                        */
 
     short return_code;                  /* The function's return code          */
 
@@ -146,7 +146,10 @@ short start_msg_hdl(int autostart)
 	    hxsmsg_PID = frkpid;
 #ifdef __HTX_LINUX__
         if (wof_test_enabled) { /* bind to any thread of core 0  - currently on linux only.*/
-	        do_the_bind_proc(hxsmsg_PID);
+	        rc = do_the_bind_proc(hxsmsg_PID);
+	        if ( rc < 0) {
+				print_log(LOGERR,"Binding of hxsmsg process to core 0 failed.\n");
+			}
 	    }
 #endif
         sleep((unsigned int) 2);	/* give the hxsmsg child process a chance to start */

@@ -1128,9 +1128,6 @@ int do_the_bind_proc(pid_t pid)
     smt = get_smt_status(0); /* get smt threads for core 0 */
     lcpu = get_logical_cpu_num(0, 0, 0, th_num); /* Bind to N0P0C0T* */
     rc = bind_process(pid, lcpu, -1);
-    if (rc < 0) {
-
-    }
     th_num = (th_num + 1) % smt;
     return rc;
 }

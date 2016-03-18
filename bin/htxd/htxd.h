@@ -83,6 +83,7 @@ typedef struct
 	int			dr_reconfig_restart;
 	int			dr_is_done; /* check usage */
 	int			equaliser_debug_flag;
+	int         wof_test;
 	union shm_pointers	equaliser_shm_addr;
 	int			equaliser_semhe_id;
 	char *			equaliser_conf_file;
@@ -93,5 +94,9 @@ typedef struct
 extern htxd *htxd_global_instance;
 
 extern int htxd_start_daemon(htxd*);
+
+#ifdef __HTX_LINUX__
+	extern int smt, bind_th_num;
+#endif
 
 #endif
