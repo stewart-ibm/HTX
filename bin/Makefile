@@ -2,7 +2,7 @@ include ../htx.mk
 
 SUBDIRS= hxssup hxsmsg hxstats eservd eserv_cmd stxclient htxd hxesamp show_syscfg \
 	hxestorage hxecom hxedapl hxemem64 hxetape hxesctu hxefpu64 hxecd  \
-	hxecache hxerng bufdisp hxeasy hxefpscr hxefabricbus
+	hxecache hxerng bufdisp hxeasy hxefabricbus
 
 ifeq ($(HTX_RELEASE), $(filter ${HTX_RELEASE},"htxrhel72le" "htxrhel7"))
 	SUBDIRS+=hxecorsa

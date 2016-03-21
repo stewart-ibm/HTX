@@ -33,8 +33,8 @@
 
 
   cat ${HTXMDT}mdt.all | create_mdt_with_devices.awk  sctu > ${HTXMDT}mdt.sctu
-  cat ${HTXMDT}mdt.all | create_mdt_with_devices.awk  fpscr fpu cache cpu rng tlbie > ${HTXMDT}mdt.cpu
-  cat ${HTXMDT}mdt.all | create_mdt_without_devices.awk sctu fpscr mem tlbie fpu cache cpu rng > ${HTXMDT}mdt.io
+  cat ${HTXMDT}mdt.all | create_mdt_with_devices.awk  fpu cache cpu rng tlbie > ${HTXMDT}mdt.cpu
+  cat ${HTXMDT}mdt.all | create_mdt_without_devices.awk sctu mem tlbie fpu cache cpu rng > ${HTXMDT}mdt.io
 
  
   echo "Creating ecg.bu Please wait a moment."
@@ -116,9 +116,9 @@
 	fi
 
 
-	create_my_mdt fpu: cpu:rules.default fpscr:default > ${HTXMDT}/mdt.core
+	create_my_mdt fpu: cpu:rules.default > ${HTXMDT}/mdt.core
 	# assuming core.GB (which is derived out of mdt.core_wo_cpu) does not run on P7 system. (hardcoding rulefile to fpu_cpu_combo.p8)
-	create_my_mdt fpu:fpu_cpu_combo.p8 fpscr:default > ${HTXMDT}/mdt.core_wo_cpu
+	create_my_mdt fpu:fpu_cpu_combo.p8 > ${HTXMDT}/mdt.core_wo_cpu
 	
 	echo "Creating mdt.maxpwr ..."
 	/usr/lpp/htx/etc/scripts/create_mdt_maxpower.pl >${HTXMDT}/mdt.maxpwr

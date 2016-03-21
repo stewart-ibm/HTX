@@ -427,20 +427,6 @@ BEGIN {
 		}
 	}
 
-# NOTE: the rfdir field (#5) will not be used to create the relative path for the rules file. 
-#       the he_name field(#1) is used. not sure why this was designed like this....  
-
-# fpscr stanza
-
-    no_of_procs = num_cpus;
-    i = 0;
-    while (no_of_procs > 0) {
-		fp_name=sprintf("fpscr%d",i); 
-		mkstanza("hxefpscr","fp","floating point",fp_name,"hxefpscr","default","default"); 
-    	cont_on_err("NO"); 
-    	no_of_procs -= 32;
-    	i++;
-    }
 # HXECACHE Stanza
 
 	y = 0 ;
