@@ -543,14 +543,14 @@ get_iface_index(const int8_t *device) {
     int sock;
 	struct ifreq ifr;
 	/* Open a generic IP socket for querying the stack */
-	sock = socket(PF_INET, SOCK_RAW, htons(ETH_P_ALL));
+	sock = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (sock < 0) {
     	printf("Unable to open socket sock = %d, errno = %d \n", sock, errno);
     	return(-1);
      }
 	/* Get interface index */
 	memset(&ifr, 0, sizeof(ifr));
-	ifr.ifr_addr.sa_family = PF_INET;
+	ifr.ifr_addr.sa_family = AF_PACKET;
     strncpy (ifr.ifr_name, device, sizeof(ifr.ifr_name) - 1);
     ifr.ifr_name[sizeof(ifr.ifr_name)-1] = '\0';
     if (ioctl(sock, SIOCGIFINDEX, &ifr) == -1) { 
