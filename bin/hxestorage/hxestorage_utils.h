@@ -1,12 +1,12 @@
 /* IBM_PROLOG_BEGIN_TAG */
-/* 
+/*
  * Copyright 2003,2016 IBM International Business Machines Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *               http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,36 +16,37 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-/* @(#)54	1.7  src/htx/usr/lpp/htx/bin/hxestorage/hxestorage_utils.h, exer_storage, htxubuntu 8/31/15 05:53:59 */
+
+/* @(#)54	1.9  src/htx/usr/lpp/htx/bin/hxestorage/hxestorage_utils.h, exer_storage, htxubuntu 3/16/16 00:05:15 */
 
 /********************************************************************/
-/* File name - hxestorage_utils.h                                      	*/
+/* File name - hxestorage_utils.h                              	    */
 /* Header file to include all the strcuture/variables/functions     */
-/* declaration associated with hxestorage_utils.c                      	*/
+/* declaration associated with hxestorage_utils.c                   */
 /********************************************************************/
 
 #include "hxestorage.h"
 
 /** Pre-prcoessor declarations for HEADER **/
-#define HEADER_SIZE				64
-#define LBA_POS					0
+#define HEADER_SIZE			64
+#define LBA_POS				0
 #define TIME_STAMP_POS			8
 #define DEV_NAME_POS			12
 #define STANZA_ID_POS			22
 #define HOSTNAME_POS			34
 #define WRITE_STAMP_POS			48
 #define RESERVED_BYTES_POS		50
-#define BUFSIG_POS				58
+#define BUFSIG_POS			58
 #define CHECKSUM_POS			62
 
-#define LBA_LEN                 8
+#define LBA_LEN				8
 #define TIME_STAMP_LEN			4
 #define DEV_NAME_LEN			10
 #define STANZA_ID_LEN			12
 #define HOSTNAME_LEN			14
-#define WRITE_STAMP_LEN         2
+#define WRITE_STAMP_LEN			2
 #define RESERVED_BYTES_LEN		8
-#define BUFSIG_LEN				4
+#define BUFSIG_LEN			4
 
 #define BUFSIG              "MDHF"
 #define OVERHEAD            (HEADER_SIZE/2)
@@ -97,14 +98,10 @@
 	{ *(unsigned short *)buf = ~(cksum & 0xffff ) + 1; \
 	}
 
-#define SET_DO_PARTIAL(tctx) \
-{ \
-    if (tctx->num_writes > 1 && tctx->transfer_sz.increment == -1) { \
-        tctx->do_partial = 2; \
-    } else { \
-        tctx->do_partial = 1; \
-   } \
-}
+
+#define AIO_COMPLETED       0
+#define AIO_ERROR           1
+#define AIO_INPROGRESS      EINPROGRESS
 
 extern unsigned long long saved_data_len;
 extern int volatile collisions;
@@ -175,3 +172,8 @@ void hang_monitor (struct htx_data *);
 char get_write_status(unsigned long long);
 void set_write_status(unsigned long long, char);
 void update_state_table (unsigned long long, int);
+
+void update_aio_req_queue(int index, struct thread_context *tctx, char *buf);
+int wait_for_aio_completion(struct htx_data *htx_ds, struct thread_context *tctx, char flag);
+
+
