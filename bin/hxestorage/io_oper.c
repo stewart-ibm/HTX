@@ -1,12 +1,12 @@
 /* IBM_PROLOG_BEGIN_TAG */
-/* 
+/*
  * Copyright 2003,2016 IBM International Business Machines Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *               http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,8 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-/* @(#)06	1.10  src/htx/usr/lpp/htx/bin/hxestorage/io_oper.c, exer_storage, htxubuntu 11/10/15 23:54:39 */
+
+/* @(#)06	1.13  src/htx/usr/lpp/htx/bin/hxestorage/io_oper.c, exer_storage, htxubuntu 3/16/16 00:05:18 */
 
 /****************************************************************/
 /*  Filename:   io_oper.c                                       */
@@ -61,7 +62,7 @@ int set_addr(struct htx_data *htx_ds, struct thread_context *tctx, int loop)
 {
     offset_t rcode = -1, addr;
     char msg[256];
-    int err_no;
+    int err_no = 0;
     unsigned int temp_retries = eeh_retries;
 
     addr = (offset_t)(tctx->blkno[0]) * (offset_t)(dev_info.blksize);
@@ -100,7 +101,7 @@ int do_ioctl (struct htx_data *htx_ds, int fd, int command, void *arg)
 {
     int rcode = -1;
     char msg[256];
-    int err_no;
+    int err_no = 0;
     unsigned int temp_retries = eeh_retries;
 
     do {
@@ -129,7 +130,7 @@ int open_disk (struct htx_data *htx_ds, const char * pathname, struct thread_con
 {
     int rc = 0;
     char msg[256];
-    int err_no;
+    int err_no = 0;
     unsigned int temp_retries = eeh_retries;
 
     do {
@@ -161,7 +162,7 @@ int close_disk (struct htx_data *htx_ds, struct thread_context * tctx)
 
     int rc = 0;
     char msg[256];
-    int err_no;
+    int err_no = 0;
     unsigned int temp_retries = eeh_retries;
 
     do {
@@ -675,7 +676,7 @@ int disk_read_operation(struct htx_data *htx_ds, int filedes, void *buf, unsigne
 {
     int rc = -1;
     char msg[512];
-    int err_no;
+    int err_no = 0;
     unsigned int temp_retries = eeh_retries;
 
     do {
@@ -699,7 +700,7 @@ int disk_read_operation(struct htx_data *htx_ds, int filedes, void *buf, unsigne
 int read_disk (struct htx_data *htx_ds, struct thread_context *tctx, int loop)
 {
     long long rc = 0;
-    int err_no;
+    int err_no = 0;
     char msg[512], *rbuf;
 
     rbuf = tctx->rbuf;
@@ -746,7 +747,7 @@ int read_disk (struct htx_data *htx_ds, struct thread_context *tctx, int loop)
 /******************************************************/
 int disk_write_operation(struct htx_data *htx_ds, int filedes, void *buf, unsigned int len)
 {
-    int rc = -1, err_no;
+    int rc = -1, err_no = 0;
     char msg[512];
     unsigned int temp_retries = eeh_retries;
 
@@ -910,7 +911,11 @@ int do_compare (struct htx_data *htx_ds, struct thread_context *tctx, char *wbuf
             while (offset++ < cmp_bytes) {
                 if (wbuf[j] != rbuf[j]) {
                      if (tctx->mis_log_buf == NULL) {
-                        tctx->mis_log_buf = (char *) malloc(MIS_LOG_SIZE + 30);
+                        /* For 1 block, it takes apprx. blk_sz * 8 bytes and we need space for
+                         * 4 such blocks. Extra 4K is for additional info in the beginning.
+                         * So, wee need to malloc those many bytes.
+                         */
+                        tctx->mis_log_buf = (char *) malloc((dev_info.blksize * 8 * 4) + (4 * KB));
                         if (tctx->mis_log_buf == NULL) {
                             sprintf(msg, "Malloc failed while allocating memory for miscompare log buffer. errno: %d\n", errno);
                             user_msg(htx_ds, errno, SYS_HARD, msg);
@@ -959,7 +964,7 @@ int do_compare (struct htx_data *htx_ds, struct thread_context *tctx, char *wbuf
 int compare_buffers(struct htx_data *htx_ds, struct thread_context *tctx, int loop)
 {
     long long offs, offs_reread = -1; /* Offset of miscompare if found                */
-    int badsig = 0, cksum = 0, rc, err_no, bufrem;
+    int badsig = 0, cksum = 0, rc = 0, err_no = 0, bufrem;
     char *save_reread_buf; /* Pointer to a reread-buffer (if necessary) */
     static unsigned short miscompare_count = 0; /* miscompare count */
     unsigned int alignment, cnt = 0;
@@ -971,9 +976,11 @@ int compare_buffers(struct htx_data *htx_ds, struct thread_context *tctx, int lo
     char err_str[ERR_STR_SZ];
     FILE *fp;
 
+    strcpy(msg, "");
     offs = do_compare(htx_ds, tctx, wbuf, rbuf, loop, &badsig, &cksum, msg);
     if (offs != -1) { /* problem with the compare?  */
         htx_ds->bad_others++;
+
 
         /********* Below section of code if reread is defined  ***********/
         if (tctx->run_reread == 'Y') {
@@ -1112,20 +1119,28 @@ int compare_buffers(struct htx_data *htx_ds, struct thread_context *tctx, int lo
                     free(save_reread_buf);
                 }
             }
-            user_msg(htx_ds, -1, MISCOMPARE, msg);
+            if (dev_info.cont_on_misc == NO) {
+                user_msg(htx_ds, -1, IO_HARD, msg);
+            } else {
+				user_msg(htx_ds, -1, MISCOM, msg);
+            }
         } else {
             sprintf(msg1, "The maximum number of saved miscompare "
                             "buffers (%d) have already\nbeen saved. "
                             "The read and write buffers for this miscompare "
                             "will\nnot be saved to disk.\n", MAX_MISCOMPARES);
             strcat(msg, msg1);
-            user_msg(htx_ds, -1, MISCOMPARE, msg);
+            if (dev_info.cont_on_misc == NO) {
+                user_msg(htx_ds, -1, IO_HARD, msg);
+            } else {
+                user_msg(htx_ds, -1, MISCOM, msg);
+            }
             if (tctx->run_reread == 'Y') {
                 if (tctx->reread_buf != NULL) {
                     free(save_reread_buf);
                 }
             }
-            RETURN(-1, MISCOMPARE);
+            RETURN(-1, MISCOM);
         }
         if (tctx->mis_log_buf != NULL) {
             free(tctx->mis_log_buf);
@@ -1140,7 +1155,25 @@ int compare_buffers(struct htx_data *htx_ds, struct thread_context *tctx, int lo
 /*******************************************************/
 int read_async_disk(struct htx_data *htx_ds, struct thread_context *tctx, int loop)
 {
-    return 0;
+    int index, err_no, rc = 0;
+    char msg[128];
+
+    index = wait_for_aio_completion(htx_ds, tctx, AIO_SINGLE);
+    if (index == -1) {
+        return(index);
+    }
+
+    update_aio_req_queue(index, tctx, tctx->rbuf);
+    rc = aio_read(&tctx->aio_req_queue[index].aio_req);
+    if (rc != 0) {
+        err_no = errno;
+        sprintf(msg, "aio_read error. errno: %d\n", err_no);
+        prt_msg(htx_ds, tctx, loop, err_no, HARD, msg);
+        return rc;
+    } else {
+        tctx->num_outstandings++;
+    }
+    return rc;
 }
 
 /*******************************************************/
@@ -1148,7 +1181,25 @@ int read_async_disk(struct htx_data *htx_ds, struct thread_context *tctx, int lo
 /*******************************************************/
 int write_async_disk(struct htx_data *htx_ds, struct thread_context *tctx, int loop)
 {
-    return 0;
+    int index, err_no, rc = 0;
+    char msg[128];
+
+    index = wait_for_aio_completion(htx_ds, tctx, AIO_SINGLE);
+    if (index == -1) {
+        return(index);
+    }
+
+    update_aio_req_queue(index, tctx, tctx->wbuf);
+    rc = aio_write(&tctx->aio_req_queue[index].aio_req);
+    if (rc != 0) {
+        err_no = errno;
+        sprintf(msg, "aio_write error. errno: %d\n", err_no);
+        prt_msg(htx_ds, tctx, loop, err_no, HARD, msg);
+        return rc;
+    } else {
+        tctx->num_outstandings++;
+    }
+    return rc;
 }
 
 /*******************************************************/
@@ -1747,13 +1798,13 @@ int compare_cache(struct htx_data *htx_ds, struct thread_context *tctx, int loop
         sprintf(cmp_str, "\nwbuf(0x%llx)", (unsigned long long)tctx->wbuf);
         strcat(msg, cmp_str);
         for ( j = cmp_cnt; ((j - cmp_cnt) < MAX_MSG_DUMP) && (j < tctx->dlen); j++ ) {
-            sprintf(s, "%0.2x", tctx->wbuf[j]);
+            sprintf(s, "%.2x", tctx->wbuf[j]);
             strcat(msg, s);
         }
         sprintf(cmp_str, "\nrbuf(0x%llx)", (unsigned long long)tctx->rbuf);
         strcat(msg, cmp_str);
         for ( j = cmp_cnt; ((j - cmp_cnt) < MAX_MSG_DUMP) && (j < tctx->dlen); j++) {
-            sprintf(s, "%0.2x", tctx->rbuf[j]);
+            sprintf(s, "%.2x", tctx->rbuf[j]);
             strcat(msg, s);
         }
         strcat(msg, "\n");
@@ -1857,7 +1908,7 @@ int compare_cache(struct htx_data *htx_ds, struct thread_context *tctx, int loop
                 }
                 free(tctx->reread_buf);
             }
-            user_msg(htx_ds, -1, MISCOMPARE, msg);
+            user_msg(htx_ds, -1, MISCOM, msg);
         } else {
             sprintf(cmp_str, "The maximum number of saved miscompare buffers " "in the CACHE rules (%d) have already\nbeen saved."
                     " The read (CRBUF) and write (CWBUF) buffers for this" "\nmiscompare will not be saved to the disk.\n", MAX_MISCOMPARES);
@@ -1874,7 +1925,7 @@ int compare_cache(struct htx_data *htx_ds, struct thread_context *tctx, int loop
 /********************************************/
 /*  Function to write directly to memory.   */
 /********************************************/
-int write_mem(struct cache_thread *c_th)
+void write_mem(struct cache_thread *c_th)
 {
     int rc = 0;
     long long i;
@@ -1968,7 +2019,7 @@ int write_mem(struct cache_thread *c_th)
 /****************************************************/
 /*   Function to read directly from memory.     *****/
 /****************************************************/
-int read_mem(struct cache_thread *c_th)
+void read_mem(struct cache_thread *c_th)
 {
     int rc = 0;
     long long i;
@@ -2032,7 +2083,7 @@ int read_mem(struct cache_thread *c_th)
 /*****************************************************************************/
 int read_cache_disk(struct htx_data *htx_ds, struct thread_context *tctx)
 {
-    char msg[MSG_TEXT_SIZE];
+    char msg[256];
     struct cache_thread c_th[MAX_NUM_CACHE_THREADS];
     int rc = 0, th_index = 0;
 
@@ -2054,21 +2105,29 @@ int read_cache_disk(struct htx_data *htx_ds, struct thread_context *tctx)
             rc = pthread_create(&(cache_threads[th_index]), &thread_attrs_detached, (void *(*)(void *))read_mem,
                 (void*)(&c_th[th_index]));
         }
+        if (rc) {
+            sprintf(msg, "pthread_create failed for creating cache threads in read_cache_disk()."
+                         " errno is: %d\n", rc);
+            user_msg(htx_ds, rc, SYS_HARD, msg);
+            exit(1);
+	    }
         th_index++;
     }
     while (c_th_info[tctx->th_num].num_cache_threads_waiting != c_th_info[tctx->th_num].cache_threads_created) {
         usleep(10000);
     }
+    return rc;
 }
 
 /****************************************************************************/
-/* Process to write to disk and at the same time write from the CPU to      */
+/* Function to write to disk and at the same time write from the CPU to     */
 /* memory. To check cache processing.                                       */
 /****************************************************************************/
 int write_cache_disk(struct htx_data *htx_ds, struct thread_context *tctx)
 {
     int th_index = 0;
-    int rc;
+    int rc = 0;
+    char msg[128];
     struct cache_thread c_th[MAX_NUM_CACHE_THREADS];
 
     pthread_mutex_init(&(c_th_info[tctx->th_num].cache_mutex), DEFAULT_MUTEX_ATTR_PTR);
@@ -2089,21 +2148,66 @@ int write_cache_disk(struct htx_data *htx_ds, struct thread_context *tctx)
             rc = pthread_create(&(cache_threads[th_index]), &thread_attrs_detached, (void *(*)(void *))read_mem,
                                 (void *)(&c_th[th_index]));
         }
-        th_index++;
+        if (rc != 0) {
+            sprintf(msg, "pthread_create failed for creating cache threads in write_cache_disk()."
+                         " errno is: %d\n", rc);
+            user_msg(htx_ds, rc, SYS_HARD, msg);
+            exit(1);
+		}
+		th_index++;
     }
     while (c_th_info[tctx->th_num].num_cache_threads_waiting != c_th_info[tctx->th_num].cache_threads_created) {
         usleep(10000);
     }
 
-    return 0;
+    return rc;
 }
+
+#ifdef __HTX_LINUX__
+/*******************************************************************/
+/*   Function to do SYNC_CACHE ioctl if write cache is enabled     */
+/*******************************************************************/
+int sync_cache_operation(struct htx_data *htx_ds, int fd)
+{
+    unsigned char cdb[10] = {SYNCHRONIZE_CACHE, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    struct sg_io_hdr io_hdr;
+    int i, rc = 0;
+    char msg[128];
+
+    memset(&io_hdr, 0, sizeof(struct sg_io_hdr));
+    io_hdr.interface_id = 'S';
+    io_hdr.dxfer_direction = SG_DXFER_NONE;
+    io_hdr.cmdp = cdb;
+    io_hdr.cmd_len = sizeof(cdb);
+
+    /* printf("sync_cache cdb: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x \n",
+                     cdb[0], cdb[1], cdb[2], cdb[3], cdb[4],
+                     cdb[5], cdb[6], cdb[7], cdb[8], cdb[9]);
+    */
+    rc = ioctl(fd, SG_IO, &io_hdr);
+    if (rc) {
+        sprintf(msg, "SG_IO ioctl for SYNC_CACHE failed. errno: %d\n", errno);
+        hxfmsg(htx_ds, errno, HTX_HE_HARD_ERROR, msg);
+        return -1;
+    }
+    return rc;
+}
+
+int sync_cache(struct htx_data *htx_ds, struct thread_context *tctx, int loop)
+{
+    int rc = 0;
+
+    rc = sync_cache_operation(htx_ds, tctx->fd);
+    return rc;
+}
+#endif
 
 /*******************************************************************/
 /****   Execute a system command from a psuedo command line     ****/
 /*******************************************************************/
 int run_cmd(struct htx_data *htx_ds, char *cmd_line)
 {
-    char msg[256], cmd[256], msg1[128];
+    char msg[256], cmd[256], msg1[512];
     int a, b, c, d, rc;
     int flag = 0;
     char filename[30] = "/tmp/cmdout.";
@@ -2188,7 +2292,7 @@ int run_cmd(struct htx_data *htx_ds, char *cmd_line)
                     rc, cmd);
         } else {
             sprintf(msg, "COMMAND: %s FAILED\n with the Following Error " "Information:\n", cmd);
-            read(filedes, msg1, 600);
+            rc = read(filedes, msg1, 512);
             strcat(msg, msg1);
             close(filedes);
         }

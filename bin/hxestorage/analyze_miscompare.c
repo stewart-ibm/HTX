@@ -1,12 +1,12 @@
 /* IBM_PROLOG_BEGIN_TAG */
-/* 
+/*
  * Copyright 2003,2016 IBM International Business Machines Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *               http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
+
 /* @(#)98	1.3  src/htx/usr/lpp/htx/bin/hxestorage/analyze_miscompare.c, exer_storage, htxubuntu 8/7/15 05:25:08 */
 
 #include "hxestorage_utils.h"
@@ -111,14 +112,14 @@ void generate_miscompare_report (struct thread_context *tctx, int mis_offset, ch
 
     strcat(msg, "\nExpected data (at miscomapre offset): ");
     for (i = 0; i < 16; i++) {
-        sprintf(msg1, "%0.2x", tctx->wbuf[mis_offset + i]);
+        sprintf(msg1, "%.2x", tctx->wbuf[mis_offset + i]);
         strcat(msg, msg1);
     }
     strcat(msg, "\n");
 
     strcat(msg, "Actual data (at miscomapre offset):   ");
     for (i = 0; i < 16; i++) {
-        sprintf(msg1, "%0.2x", tctx->rbuf[mis_offset + i]);
+        sprintf(msg1, "%.2x", tctx->rbuf[mis_offset + i]);
         strcat(msg, msg1 );
     }
     strcat(msg, "\n");

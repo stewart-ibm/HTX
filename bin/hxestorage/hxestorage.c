@@ -1,12 +1,12 @@
 /* IBM_PROLOG_BEGIN_TAG */
-/* 
+/*
  * Copyright 2003,2016 IBM International Business Machines Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *               http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,8 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-/* @(#)10	1.20  src/htx/usr/lpp/htx/bin/hxestorage/hxestorage.c, exer_storage, htxubuntu 1/4/16 00:02:15 */
+
+/* @(#)10	1.22  src/htx/usr/lpp/htx/bin/hxestorage/hxestorage.c, exer_storage, htxubuntu 2/18/16 04:51:24 */
 
 /************************************************************/
 /*  Filename:   hxestorage.c                                */
@@ -26,7 +27,7 @@
 #include "io_oper.h"
 
 time_t time_mark;
-pthread_t hang_monitor_thread;
+pthread_t hang_monitor_thread, sync_cache_th;
 
 pthread_attr_t thread_attrs_detached;    /* threads created detached */
 pthread_cond_t  create_thread_cond_var, do_oper_cond_var, segment_do_oper;
@@ -38,7 +39,7 @@ struct device_info dev_info;
 int total_BWRC_threads, num_non_BWRC_threads;
 int free_BWRC_th_mem_index = 0;
 int threshold = DEFAULT_THRESHOLD, hang_time = DEFAULT_HANG_TIME;
-int enable_state_table = NO;
+int sync_cache_flag = 0, randomize_sync_cache = 1, enable_state_table = NO;
 int eeh_retries = 1, turn_attention_on = 0, read_rules_file_count;
 volatile char exit_flag = 'N', signal_flag = 'N', int_signal_flag = 'N';
 char misc_run_cmd[100], run_on_misc = 'N';
@@ -96,6 +97,7 @@ int main(int argc, char *argv[])
     sigaction(SIGINT, &sigdata, NULL); /* set signal handler for SIGINT */
 
     bzero(&dev_info, sizeof(dev_info));
+    dev_info.cont_on_misc = UNINITIALIZED;
 
     /************************************************/
     /*******   Read command line arguments    *******/
@@ -317,6 +319,31 @@ int main(int argc, char *argv[])
 			exit(1);
 	    }
     }
+
+#ifdef __HTX_LINUX__
+    /* Check if write cahce is enabled if sync_cache is set to yes in any
+     * of the rule. This will set dev_info.write_cache to 1 if enabled,
+     * otherwise 0.
+     */
+    dev_info.write_cache = 0;
+    if (sync_cache_flag == 1) {
+        dev_info.write_cache = check_write_cache (&data);
+        /* Create a separate thread to issue CACHE_SYNC ioctl at regular interval */
+        if (dev_info.write_cache == 1 && randomize_sync_cache == 1) {
+            rc = pthread_create(&sync_cache_th, &thread_attrs_detached, (void *(*)(void *))sync_cache_thread, (void *)(&data));
+            if (rc != 0) {
+                sprintf(msg, "pthread_create failed for sync_cache threas. errno. set is: %d\n", rc);
+                user_msg(&data, rc, SYS_HARD, msg);
+                exit(1);
+		    }
+        } else if (dev_info.write_cache == 0) {
+            sprintf(msg, "Write cache is is not enabled. Will not run sync_cache thread.");
+            user_msg(&data, 0, INFO, msg);
+        }
+        sprintf(msg, "write cache is : %d\n", dev_info.write_cache);
+        user_msg(&data, 0, INFO, msg);
+    }
+#endif
 
     /*****************************************************************/
     /* Allocate memory for BWRC threads. Since lifetime of BWRC      */
@@ -582,7 +609,7 @@ int main(int argc, char *argv[])
     /********************************************/
     /*****      Cleanup threads memory      *****/
     /********************************************/
-    cleanup_threads_mem(BWRC_threads_mem, non_BWRC_threads_mem);
+    cleanup_threads_mem();
 
     pthread_attr_destroy(&thread_attrs_detached);
     return rc;
@@ -1231,7 +1258,7 @@ int execute_performance_test (struct htx_data *htx_ds, struct thread_context *tc
         if(tctx->aio_req_queue == NULL) {
             sprintf(msg, "In performace test - malloc for aio_req_queue failed, errno = %d \n", errno);
             user_msg(htx_ds, errno, SYS_HARD, msg);
-            rc = NULL;
+            rc = -1;
             goto cleanup_pattern_buffer ;
         }
         memset(tctx->aio_req_queue, 0, (sizeof(struct aio_ops) * tctx->max_outstanding));
@@ -1477,6 +1504,51 @@ int create_cache_threads(struct htx_data *htx_ds, struct thread_context *tctx)
 	}
 	return 0;
 }
+
+#ifdef __HTX_LINUX__
+/*********************************************************************/
+/**  Creates thread for doing sync_cache ioctl at regular interval  **/
+/*********************************************************************/
+int sync_cache_thread(struct htx_data *htx_ds)
+{
+    int rc = 0, sync_fd, random_sleep_time;
+    long seed, tmp;
+	char msg[128];
+	struct drand48_data drand_buf;
+
+    sync_fd = open(htx_ds->sdev_id, O_RDWR);
+    if (sync_fd == -1) {
+        sprintf(msg, "open for device %s failed in sync_cache_thread. errno is: %d\n", htx_ds->sdev_id, errno);
+        user_msg(htx_ds, 0, HARD, msg);
+        return (-1);
+    }
+    /* Initialize the random no. generator structure */
+    seed = (long) (time(0));
+    srand48_r (seed, &drand_buf);
+
+    while (1) {
+        if (exit_flag == 'Y' || int_signal_flag == 'Y') {
+            break;
+	    }
+
+	    /* This thread will wakeup at random intervals between 15 sec. - 90 sec and
+	     * does sync_cache operation
+	     */
+	    lrand48_r (&drand_buf, &tmp);
+	    random_sleep_time = MIN_SLEEP_TIME + (tmp % (MAX_SLEEP_TIME - MIN_SLEEP_TIME));
+	    /* printf("Sleeping for %d sec\n", random_sleep_time); */
+	    sleep(random_sleep_time);
+
+	    rc = sync_cache_operation(htx_ds, sync_fd);
+	    if (rc) {
+            close(sync_fd);
+            return rc;
+	    }
+    }
+    close(sync_fd);
+    return (rc);
+}
+#endif
 
 /********************************************************************/
 /*  Fills the data in pattern_buffer based on pattern_id defined    */
@@ -2322,7 +2394,7 @@ int get_disk_info(struct htx_data *data, char *dev_name)
 
     /* Get device info */
 #ifdef __HTX_LINUX__
-    	rc = htx_ioctl(filedes, IOCINFO, &info);
+    	rc = htx_ioctl(data, filedes, IOCINFO, (void *) &info);
 #else
     	rc = do_ioctl(data, filedes, IOCINFO, &info);
 #endif
@@ -2406,6 +2478,31 @@ int get_disk_info(struct htx_data *data, char *dev_name)
     return 0;
 }
 
+#ifdef __HTX_LINUX__
+/**************************************************/
+/** Function to check if write cache is enabled  **/
+/** for the device. Returns 1 if enabled, other  **/
+/** wise 0.                                      **/
+/**************************************************/
+int check_write_cache(struct htx_data *data)
+{
+    int fd, WCE_bit = 0;
+    char msg[256];
+
+    fd = open(data->sdev_id, O_RDWR);
+    if (fd == -1) {
+        sprintf(msg, "Error opening device %s for checking if write_cache is enabled. errno: %d\n"
+                     "Will not run sync_cache thread", data->sdev_id, errno);
+        hxfmsg(data, 0, HTX_HE_INFO, msg);
+        return (0);
+    }
+
+    WCE_bit = htx_ioctl(data, fd, CHECK_WRITE_CACHE, NULL);
+    close(fd);
+    return WCE_bit;
+}
+#endif
+
 /************************************************/
 /*  Function to initialize the state table i.e. */
 /*  Read the state table from the disk if table */
@@ -2434,7 +2531,7 @@ int initialize_state_table (struct htx_data *data, char *dev_name)
         user_msg(data, err_no, HARD, msg);
         exit(1);
     }
-    DPRINT("buffer addr: 0x%llx\n", s_tbl.blk_write_status);
+    DPRINT("buffer addr: 0x%llx\n", (unsigned long long)s_tbl.blk_write_status);
     bzero(s_tbl.blk_write_status, s_tbl.size);
 
     /* Open the device and read block #0 which has info about state table */

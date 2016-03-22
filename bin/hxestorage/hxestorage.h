@@ -1,12 +1,12 @@
 /* IBM_PROLOG_BEGIN_TAG */
-/* 
+/*
  * Copyright 2003,2016 IBM International Business Machines Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *               http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
+
 /* @(#)98	1.8  src/htx/usr/lpp/htx/bin/hxestorage/hxestorage.h, exer_storage, htxubuntu, htxubuntu_349 8/10/15 05:30:11 */
 
 /********************************************************************/
@@ -62,9 +63,7 @@
     #include <sys/cfgdb.h>
     #include <lvm.h>
     #include <sys/scsi_buf.h>
-    #include <sys/scsi.h>
-    #include <sys/scdisk.h>
-	#include <sys/mdio.h>
+    #include <sys/mdio.h>
 #endif
 
 #define PATLIB_PATH "/usr/lpp/htx/pattern/"
@@ -86,6 +85,9 @@
 
 #define MAX_BUFFERS                 256
 #define MAX_PATTERN_LENGTH          32
+
+#define MIN_SLEEP_TIME              15
+#define MAX_SLEEP_TIME              90
 
 /*
  * MAX_THREADS defines threads spawned by this exer, BITS_USED is
@@ -117,7 +119,7 @@
 #define RETURN(retcod, sev) \
     { \
         if ((dev_info.cont_on_err == YES && sev >= IO_HARD) || \
-            (dev_info.cont_on_err == MISCOMP && sev >= MISCOMPARE)) { \
+            (dev_info.cont_on_misc == YES && sev == MISCOM)) { \
             return (0); \
         } else { \
             return (retcod); \
@@ -500,16 +502,19 @@ int get_disk_info(struct htx_data *, char *);
 int check_disk(unsigned char *, char *, int);
 
 void update_blkno(struct htx_data *, struct ruleinfo *, struct thread_context *);
-void update_min_blkno();
+void update_min_blkno(void);
 void initialize_fencepost(struct thread_context *);
 int initialize_state_table (struct htx_data *, char *);
 int sync_state_table(struct htx_data *, char *);
+
+int check_write_cache(struct htx_data *);
+int sync_cache_thread(struct htx_data *);
 
 void analyze_miscompare(struct thread_context *, int, char *);
 void sig_function(int, int, struct sigcontext *);
 void int_sig_function(int, int, struct sigcontext *);
 void SIGTERM_hdl(int, int, struct sigcontext *);
-void cleanup_threads_mem();
-void cleanup_resources();
+void cleanup_threads_mem(void);
+void cleanup_resources(void);
 void print_thread_context(struct thread_context *);
 

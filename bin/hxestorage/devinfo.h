@@ -1,12 +1,12 @@
 /* IBM_PROLOG_BEGIN_TAG */
-/* 
+/*
  * Copyright 2003,2016 IBM International Business Machines Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *              http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,16 +16,23 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-/* @(#)09	1.1  src/htx/usr/lpp/htx/bin/hxestorage/devinfo.h, exer_storage, htxubuntu 11/26/14 03:45:57 */
+
+/* @(#)09	1.2  src/htx/usr/lpp/htx/bin/hxestorage/devinfo.h, exer_storage, htxubuntu 2/15/16 22:55:05 */
 
 #ifndef _H_DEVINFO
 #define _H_DEVINFO
 
-#include <sys/types.h>
-#ifdef  __HTX_LINUX__
+#include "hxihtx64.h"
+
+#define CACHING_MODE_PAGE       8
+#define MODE_SENSE_REPLY        8
+#define DISABLE_DESC_BLOCK      8
+
+#define WCE_MASK                0x4
+#define WCE_SHIFT               0x2
+
 #undef  uchar
 typedef unsigned char uchar;
-#endif
 
 /*
  * Device information
@@ -76,11 +83,9 @@ struct devinfo {
 #define DF_FAST  04
 #define DF_CONC  0x08           /* Concurrent mode supported */
 
+#define IOCINFO            0x1
+#define CHECK_WRITE_CACHE  0x2
 
-#ifdef  __HTX_LINUX__
-extern  int     htx_ioctl(int d, int request, struct devinfo *info);
-#define IOCINFO 0x01
-#define BLKSSZGET  _IO(0x12,104)/* get block device sector size */
-#endif
+extern  int htx_ioctl(struct htx_data *data, int d, int request, void *ptr);
 
 #endif                          /* _H_DEVINFO */
