@@ -1,12 +1,12 @@
 /* IBM_PROLOG_BEGIN_TAG */
-/* 
+/*
  * Copyright 2003,2016 IBM International Business Machines Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *               http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,8 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-/* @(#)05	1.10  src/htx/usr/lpp/htx/bin/hxestorage/hxestorage_rf.c, exer_storage, htxubuntu 8/31/15 05:54:09 */
+
+/* @(#)05	1.12  src/htx/usr/lpp/htx/bin/hxestorage/hxestorage_rf.c, exer_storage, htxubuntu 2/18/16 04:51:18 */
 
 /************************************************************/
 /* File name - hxestorage_rf.c                              */
@@ -25,7 +26,7 @@
 /************************************************************/
 #include "hxestorage_rf.h"
 
-extern int total_BWRC_threads;
+extern int sync_cache_flag, randomize_sync_cache, total_BWRC_threads;
 int seeds_were_saved = 0, num_sub_blks_psect = 0;
 char fsync_flag ='N';
 struct device_info dev_info;
@@ -72,7 +73,7 @@ void set_rule_defaults(struct ruleinfo *ruleptr, unsigned long long maxblk, unsi
     ruleptr->repeat_neg = 0;
     ruleptr->sleep = 0;
     ruleptr->num_cache_threads = DEFAULT_CACHE_THREADS;
-	ruleptr->max_outstanding = DEFAULT_AIO_REQ_QUEUE_DEPTH;
+    ruleptr->max_outstanding = DEFAULT_AIO_REQ_QUEUE_DEPTH;
 #ifdef __CAPI_FLASH__
 	ruleptr->open_flag = CBLK_SHR_LUN;
 #endif
@@ -1010,6 +1011,28 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
             user_msg(ps, 0, SOFT, msg);
             return -1;
         }
+    } else if (strcasecmp(keywd, "SYNC_CACHE") == 0) {
+        sscanf(str, "%*s %s", varstr);
+        if (strcasecmp(varstr, "YES") == 0) {
+            sync_cache_flag = 1;
+        } else if (strcasecmp(varstr, "NO") == 0) {
+            sync_cache_flag = 0;
+        } else {
+            sprintf(msg, "line# %d keywd = %s (invalid). Valid values are YES/NO.\n", *line, keywd);
+            user_msg(ps, 0, SOFT, msg);
+            return -1;
+        }
+    } else if (strcasecmp(keywd, "RANDOMIZE_SYNC_CACHE") == 0) {
+        sscanf(str, "%*s %s", varstr);
+        if (strcasecmp(varstr, "YES") == 0) {
+            randomize_sync_cache = 1;
+        } else if (strcasecmp(varstr, "NO") == 0) {
+            randomize_sync_cache = 0;
+        } else {
+            sprintf(msg, "line# %d keywd = %s (invalid). Valid values are YES/NO.\n", *line, keywd);
+            user_msg(ps, 0, SOFT, msg);
+            return -1;
+        }
 	#ifdef __CAPI_FLASH__
 	} else if ( (strcasecmp(keywd, "OPEN_FLAG")) == 0) {
     	sscanf(str, "%*s %s", varstr);
@@ -1075,7 +1098,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
             dev_info.debug_flag = NO;
         }
 	} else if (strcasecmp(keywd, "MAX_OUTSTANDING") == 0) {
-		sscanf("%*s %s", varstr);
+		sscanf(str, "%*s %s", varstr);
 		rule->max_outstanding = atoi(varstr);
     } else if (strcasecmp(keywd, "NUM_CACHE_THREADS") == 0) {
         sscanf(str, "%*s %s", varstr);
@@ -1093,6 +1116,13 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
             dev_info.cont_on_err = YES;
         } else if (strcasecmp(varstr, "MISCOMPARE") == 0) {
             dev_info.cont_on_err = MISCOMP;
+        }
+    } else if (strcasecmp(keywd, "CONT_ON_MISC") == 0) {
+        sscanf(str, "%*s %s", varstr);
+        if (strcasecmp(varstr, "NO") == 0) {
+            dev_info.cont_on_misc = NO;
+        } else if (strcasecmp(varstr, "YES") == 0) {
+            dev_info.cont_on_misc = YES;
         }
     } else if (strcasecmp(keywd, "ENABLE_STATE_TABLE") == 0) {
         sscanf(str, "%*s %s", varstr);
@@ -1136,7 +1166,7 @@ int get_queue_depth(struct htx_data *ps)
         }
     }
     dev_name[j] = '\0';
-    if (strncmp(dev_name, "sd", 2) != NULL) {
+    if (strncmp(dev_name, "sd", 2) != 0) {
         sprintf(msg, "Setting the queue depth to default (i.e. 16)\n");
         user_msg(ps, 0, INFO, msg);
         q_depth = DEFAULT_QUEUE_DEPTH;

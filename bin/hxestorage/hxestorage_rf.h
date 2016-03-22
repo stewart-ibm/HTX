@@ -1,12 +1,12 @@
 /* IBM_PROLOG_BEGIN_TAG */
-/* 
+/*
  * Copyright 2003,2016 IBM International Business Machines Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *               http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,8 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-/* @(#)21	1.9  src/htx/usr/lpp/htx/bin/hxestorage/hxestorage_rf.h, exer_storage, htxubuntu 8/31/15 05:54:02 */
+
+/* @(#)21	1.11  src/htx/usr/lpp/htx/bin/hxestorage/hxestorage_rf.h, exer_storage, htxubuntu 2/18/16 04:51:12 */
 
 /********************************************************************/
 /* File name - hxestorage_rf.h                                      */
@@ -30,7 +31,6 @@
 #include <libgen.h>
 #include <string.h>
 #include "hxiipc64.h"
-#include "hxihtx64.h"
 #include "hxihtxmp.h"
 #include <sys/time.h>
 #ifdef __HTX_LINUX__
@@ -80,6 +80,7 @@
 /**********************************************/
 #define DEFAULT_NUM_KEYWDS      1
 #define UNDEFINED               -1
+#define UNINITIALIZED           -1
 #define DEFAULT_STARTING_BLOCK  BOT
 #define DEFAULT_DIRECTION       UP
 #define DEFAULT_MIN_BLKNO       0
@@ -100,7 +101,6 @@
 #define DEFAULT_BWRC_THREADS    4
 #define DEFAULT_QUEUE_DEPTH     16
 #define DEFAULT_CACHE_THREADS   2
-#define DEFAULT_CONT_ON_ERR     NO
 #define DEFAULT_AIO_REQ_QUEUE_DEPTH 32
 #define TEMPLATE_STANZA         0
 #define RULE_STANZA             1
@@ -108,7 +108,7 @@
 #define SYS_HARD    HTX_SYS_HARD_ERROR
 #define HARD        HTX_SYS_SOFT_ERROR
 #define IO_HARD     HTX_HE_HARD_ERROR
-#define MISCOMPARE  HTX_HE_MISCOMPARE
+#define MISCOM      HTX_HE_MISCOMPARE
 #define SOFT        HTX_HE_SOFT_ERROR
 #define INFO        HTX_HE_INFO
 
@@ -228,7 +228,9 @@ struct device_info {
     int crash_on_anyerr;                        /* Flag to trap to KDB on any error */
     int crash_on_miscom;                        /* flag to trap to KDB on miscomapre */
     int crash_on_hang;                          /* flag to trap to KDB on HANG */
+    int write_cache;                            /* flag to enable syncing of write cache */
     int cont_on_err;                            /* flag to enable continue test on error */
+    int cont_on_misc;                           /* whether to continue on miscompare or NOT */
     int debug_flag;                             /* flag to enable debug prints */
     unsigned int blksize;                       /* Block size for the device */
     unsigned long long maxblk;                  /* Max. no. of blocks on the disk */

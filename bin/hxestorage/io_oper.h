@@ -1,12 +1,12 @@
 /* IBM_PROLOG_BEGIN_TAG */
-/* 
+/*
  * Copyright 2003,2016 IBM International Business Machines Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *               http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,8 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-/* @(#)07	1.5  src/htx/usr/lpp/htx/bin/hxestorage/io_oper.h, exer_storage, htxubuntu 8/10/15 05:30:22 */
+
+/* @(#)07	1.6  src/htx/usr/lpp/htx/bin/hxestorage/io_oper.h, exer_storage, htxubuntu 2/15/16 22:54:09 */
 
 /********************************************************************/
 /* File name - io_oper.h                                            */
@@ -25,6 +26,10 @@
 /********************************************************************/
 
 #include "hxestorage_utils.h"
+#ifdef __HTX_LINUX__
+    #include <scsi/sg.h>
+    #include <scsi/scsi.h>
+#endif
 
 #define DUMP_PATH "/tmp/"
 #define MAX_MSG_DUMP 20
@@ -49,7 +54,7 @@ extern char fsync_flag;
     mask |= __thread_id__ << (sizeof(uint64_t) - BITS_USED);         \
     mask |= __index__;                                              \
     mask;                                                   \
-    } );                                                              
+    } );
 
 #define GET_INDEX_FROM_TAG(__tag__) (__tag__ & INDEX_MASK) \
 
@@ -92,16 +97,22 @@ int verify_passth_disk (struct htx_data *, struct thread_context *, int);
 int read_cache (struct htx_data *, struct thread_context *, int);
 int write_cache (struct htx_data *, struct thread_context *, int);
 int compare_cache (struct htx_data *, struct thread_context *, int);
-int read_cache_disk(struct htx_data *htx_ds, struct thread_context *tctx);
-int write_cache_disk(struct htx_data *htx_ds, struct thread_context *tctx);
+int read_cache_disk(struct htx_data *, struct thread_context *);
+int write_cache_disk(struct htx_data *, struct thread_context *);
+void write_mem(struct cache_thread *);
+void read_mem(struct cache_thread *);
+
+/* SYNC cache functions */
+int sync_cache(struct htx_data *, struct thread_context *, int);
+int sync_cache_operation(struct htx_data *, int);
 
 #ifdef __CAPI_FLASH__
-int open_lun(struct htx_data *htx_ds, const char * capi_device, struct thread_context * ); 
-int close_lun(struct htx_data *htx_ds, struct thread_context * ); 
-int cflsh_write_operation(struct htx_data * htx_ds, struct thread_context *tctx, int loop ); 
-int cflsh_read_operation(struct htx_data * htx_ds, struct thread_context *tctx, int loop ); 
-int cflsh_awrite_operation(struct htx_data * htx_ds, struct thread_context *tctx, int loop ); 
+int open_lun(struct htx_data *htx_ds, const char * capi_device, struct thread_context * );
+int close_lun(struct htx_data *htx_ds, struct thread_context * );
+int cflsh_write_operation(struct htx_data * htx_ds, struct thread_context *tctx, int loop );
+int cflsh_read_operation(struct htx_data * htx_ds, struct thread_context *tctx, int loop );
+int cflsh_awrite_operation(struct htx_data * htx_ds, struct thread_context *tctx, int loop );
 int cflsh_aread_operation(struct htx_data * htx_ds, struct thread_context *tctx, int loop );
-int cflsh_aresult_operation(struct htx_data * htx_ds, struct thread_context *tctx, int loop ); 
-#endif 
+int cflsh_aresult_operation(struct htx_data * htx_ds, struct thread_context *tctx, int loop );
+#endif
 

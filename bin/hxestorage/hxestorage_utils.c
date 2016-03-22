@@ -1,12 +1,12 @@
 /* IBM_PROLOG_BEGIN_TAG */
-/* 
+/*
  * Copyright 2003,2016 IBM International Business Machines Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *               http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,8 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-/* @(#)11	1.15  src/htx/usr/lpp/htx/bin/hxestorage/hxestorage_utils.c, exer_storage, htxubuntu 11/8/15 21:51:18 */
+
+/* @(#)11	1.19  src/htx/usr/lpp/htx/bin/hxestorage/hxestorage_utils.c, exer_storage, htxubuntu 3/16/16 00:05:21 */
 
 /****************************************************************/
 /*	Filename: 	hxestorage_utils.c                              */
@@ -438,16 +439,22 @@ int wrap (struct thread_context *tctx)
 	if (tctx->direction == UP) {
 		/* If num_blks goes beyong max_blkno. Need to reset or do partial transfer */
 		if (tctx->blkno[1] + tctx->num_blks - 1 > tctx->max_blkno) {
-			if (tctx->blkno[1] <= tctx->max_blkno) {
-				SET_DO_PARTIAL(tctx);
+			if ((tctx->num_writes > 1 && tctx->transfer_sz.increment == -1) ||
+                (tctx->blkno[1] > tctx->max_blkno)) {
+				tctx->do_partial = 2;
+            } else {
+				tctx->do_partial = 1;
 			}
 			rc = 1;
 		}
 	} else if (tctx->direction == DOWN) {
 		/* if min_blkno is less than 0 or min_blkno, need to do reset or do partial transfer */
 		if (tctx->blkno[2] < tctx->min_blkno || (long long) tctx->blkno[2] < 0) {
-			if (((long long)(tctx->blkno[2]) + tctx->num_blks - 1) >= (long long)tctx->min_blkno) {
-				SET_DO_PARTIAL(tctx);
+			if ((tctx->num_writes > 1 && tctx->transfer_sz.increment == -1) ||
+                (((long long)(tctx->blkno[2]) + tctx->num_blks - 1) < (long long)tctx->min_blkno)) {
+                tctx->do_partial = 2;
+		    } else {
+                tctx->do_partial = 1;
 			}
 			rc = 1;
 		}
@@ -1253,8 +1260,7 @@ void prt_msg(struct htx_data *htx_ds, struct thread_context *tctx, int loop,
      * if set to MISCOMP, continue only for MISCOMPARE and stop for any other type of error
      * (i.e. IO error as well as SYS_HARD err).
      */
-    if ((dev_info.cont_on_err == YES && sev >= IO_HARD) ||
-        (dev_info.cont_on_err == MISCOMP && sev >= MISCOMPARE)) {
+    if (dev_info.cont_on_err == YES && sev >= IO_HARD) {
         sev = INFO;
     } else {
         if ( dev_info.crash_on_anyerr ) {
@@ -1288,9 +1294,8 @@ void user_msg(struct htx_data *htx_ds, int err, int sev, char *text)
 	 * if set to MISCOMP, continue only for MISCOMPARE and stop for any other type of error
 	 * (i.e. IO error as well as SYS_HARD err).
 	 */
-	if ((dev_info.cont_on_err == YES && sev >= IO_HARD) ||
-	    (dev_info.cont_on_err == MISCOMP && sev >= MISCOMPARE)) {
-        sev = INFO;
+	if (dev_info.cont_on_err == YES && sev >= IO_HARD) {
+	    sev = INFO;
     } else {
         if ((sev == HARD) && (dev_info.crash_on_anyerr) ) {
 	        #ifdef __HTX_LINUX__
@@ -1819,7 +1824,7 @@ void hang_monitor (struct htx_data *htx_ds)
 			}
 			for (i = 0; i < seg_table_entries; i++ ) {
 				if (seg_table[i].in_use) {
-					sprintf(msg, "%#16llx    %6llx     %8llx      %d    %d \n", seg_table[i].flba, seg_table[i].llba - seg_table[i].flba,
+					sprintf(msg, "%#16llx    %6llx     %8llx      %d    %d \n", seg_table[i].flba, seg_table[i].llba - seg_table[i].flba + 1,
 								(unsigned long long)seg_table[i].tid, seg_table[i].hang_count, (unsigned int) (current_time - seg_table[i].thread_time));
 					if (strlen(msg1) + strlen(msg) < MSG1_LIMIT ) {
 						strcat(msg1, msg);
@@ -1988,3 +1993,82 @@ void update_state_table (unsigned long long block_num, int num_blks)
         block_num++;
     }
 }
+
+void update_aio_req_queue(int index, struct thread_context *tctx, char *buf)
+{
+    tctx->aio_req_queue[index].aio_req.aio_fildes = tctx->fd;
+    tctx->aio_req_queue[index].aio_req.aio_offset = tctx->blkno[0] * dev_info.blksize;
+    tctx->aio_req_queue[index].aio_req.aio_nbytes = tctx->dlen;
+    tctx->aio_req_queue[index].aio_req.aio_buf = buf;
+    tctx->aio_req_queue[index].status = AIO_INPROGRESS;
+    tctx->aio_req_queue[index].op = tctx->oper[0];
+}
+
+int wait_for_aio_completion(struct htx_data *htx_ds, struct thread_context *tctx, char flag)
+{
+    int rc =0, index = 0;
+    int i, err_no;
+    char got_index = 'N', msg[256];
+
+    if (tctx->num_outstandings < tctx->max_outstanding) {
+        index = tctx->num_outstandings;
+    } else {
+        while (tctx->num_outstandings) {
+            for (i = 0; i < tctx->max_outstanding; i++) {
+                if (tctx->aio_req_queue[i].status == AIO_INPROGRESS) {
+                    rc = aio_error(&tctx->aio_req_queue[i].aio_req);
+                    if (rc != AIO_INPROGRESS) {
+                        tctx->num_outstandings--;
+                        if (rc > 0) {
+                            err_no = errno;
+                            tctx->aio_req_queue[i].status = AIO_ERROR;
+                            if (tctx->aio_req_queue[i].op == 'R') {
+                                htx_ds->bad_reads++;
+                            } else {
+                                htx_ds->bad_writes++;
+                            }
+                            sprintf(msg, "error in aio_error(), errno: %d\n", errno);
+                            user_msg(htx_ds, err_no, HARD, msg);
+                            index = -1;
+                            return index;
+                        } else if (rc == 0) { /* means IO completed */
+                            tctx->aio_req_queue[i].status = AIO_COMPLETED;
+                            rc = aio_return(&tctx->aio_req_queue[i].aio_req);
+                            if (rc == -1) {
+                                err_no = errno;
+                                if (tctx->aio_req_queue[i].op == 'R') {
+                                    htx_ds->bad_reads++;
+                                } else {
+                                    htx_ds->bad_writes++;
+                                }
+                                sprintf(msg, "error in aio_return, errno: %d\n", err_no);
+                                user_msg(htx_ds, err_no, HARD, msg);
+                                index = -1;
+                                return index;
+                            } else if (rc != tctx->aio_req_queue[i].aio_req.aio_nbytes) {
+                                sprintf(msg, "Attempted bytes is not equal to actual bytes\n");
+                                user_msg(htx_ds, err_no, HARD, msg);
+                                index = -1;
+                                return index;
+                            } else {
+                                if (tctx->aio_req_queue[i].op == 'R') {
+                                    htx_ds->bytes_read += tctx->aio_req_queue[index].aio_req.aio_nbytes;
+                                    htx_ds->good_reads++;
+                                } else {
+                                    htx_ds->bytes_writ += tctx->aio_req_queue[index].aio_req.aio_nbytes;
+                                    htx_ds->good_writes++;
+                                }
+                            }
+                            if (flag == AIO_SINGLE) {
+                                index = i;
+                                return index;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return index;
+}
+
