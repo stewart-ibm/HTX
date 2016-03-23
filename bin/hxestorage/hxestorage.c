@@ -32,7 +32,7 @@ pthread_t hang_monitor_thread, sync_cache_th;
 pthread_attr_t thread_attrs_detached;    /* threads created detached */
 pthread_cond_t  create_thread_cond_var, do_oper_cond_var, segment_do_oper;
 pthread_cond_t threads_finished_cond_var;
-pthread_mutex_t thread_create_mutex, cache_mutex, segment_mutex;
+pthread_mutex_t thread_create_mutex, cache_mutex, segment_mutex, log_mutex;
 
 struct device_info dev_info;
 
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
     int wait_count = DEFAULT_WAIT_COUNT, skip_flag;
     char *kdblevel = NULL, *eeh_env = NULL;
     struct ruleinfo *current_ruleptr;
-    char msg_str[100], msg[MAX_TEXT_MSG], cmd_str[128];
+    char msg_str[100], msg[MAX_TEXT_MSG], script_path[64], cmd_str[128];
     struct thread_context *current_tctx;
 
     struct sigaction sigvector, sigdata;
@@ -95,6 +95,22 @@ int main(int argc, char *argv[])
 
     sigdata.sa_handler = (void(*)(int))int_sig_function;
     sigaction(SIGINT, &sigdata, NULL); /* set signal handler for SIGINT */
+
+    /*********************************************/
+    /** Initialize thread attributes and mutex  **/
+    /*********************************************/
+    pthread_attr_init(&thread_attrs_detached);
+    pthread_attr_setdetachstate(&thread_attrs_detached, PTHREAD_CREATE_DETACHED);
+
+    pthread_mutex_init(&thread_create_mutex, DEFAULT_MUTEX_ATTR_PTR);
+    pthread_mutex_init(&cache_mutex, DEFAULT_MUTEX_ATTR_PTR);
+    pthread_mutex_init(&segment_mutex, DEFAULT_MUTEX_ATTR_PTR);
+    rc = pthread_mutex_init(&log_mutex, DEFAULT_MUTEX_ATTR_PTR);
+
+    pthread_cond_init(&create_thread_cond_var, DEFAULT_COND_ATTR_PTR);
+    pthread_cond_init(&do_oper_cond_var, DEFAULT_COND_ATTR_PTR);
+    pthread_cond_init(&threads_finished_cond_var, DEFAULT_COND_ATTR_PTR);
+    pthread_cond_init(&segment_do_oper, DEFAULT_COND_ATTR_PTR);
 
     bzero(&dev_info, sizeof(dev_info));
     dev_info.cont_on_misc = UNINITIALIZED;
@@ -132,7 +148,10 @@ int main(int argc, char *argv[])
         exit(1);
     }
 #else
-    sprintf(cmd_str, "/usr/lpp/htx/etc/scripts/check_disk %s", data.sdev_id);
+    if (strlen (strcpy(script_path, getenv("HTXSCRIPTS"))) == 0) {
+        strcpy(script_path, "/usr/lpp/htx/etc/scripts/");
+    }
+    sprintf(cmd_str, "%scheck_disk %s", script_path, data.sdev_id);
     rc = system(cmd_str);
     if (WIFEXITED(rc)) {
         if (WEXITSTATUS(rc) == 1) {
@@ -146,21 +165,6 @@ int main(int argc, char *argv[])
         exit(1);
     }
 #endif
-
-    /*********************************************/
-    /** Initialize thread attributes and mutex  **/
-    /*********************************************/
-    pthread_attr_init(&thread_attrs_detached);
-    pthread_attr_setdetachstate(&thread_attrs_detached, PTHREAD_CREATE_DETACHED);
-
-    pthread_mutex_init(&thread_create_mutex, DEFAULT_MUTEX_ATTR_PTR);
-    pthread_mutex_init(&cache_mutex, DEFAULT_MUTEX_ATTR_PTR);
-    pthread_mutex_init(&segment_mutex, DEFAULT_MUTEX_ATTR_PTR);
-
-    pthread_cond_init(&create_thread_cond_var, DEFAULT_COND_ATTR_PTR);
-    pthread_cond_init(&do_oper_cond_var, DEFAULT_COND_ATTR_PTR);
-    pthread_cond_init(&threads_finished_cond_var, DEFAULT_COND_ATTR_PTR);
-    pthread_cond_init(&segment_do_oper, DEFAULT_COND_ATTR_PTR);
 
     /****************************************************/
     /****** Get hostname for machine running code *******/
@@ -1635,7 +1639,9 @@ int fill_pattern_details(struct htx_data *htx_ds, struct thread_context *tctx)
             return (-1);
         }
         tctx->pattern_size = tctx->transfer_sz.max_len + dev_info.blksize + 128;
-        strcpy (path, PATLIB_PATH);
+        if (strlen (strcpy (path, getenv("HTXPATTERNS"))) == 0) {
+            strcpy(path, "/usr/lpp/htx/pattern/");
+        }
         strcat (path, tctx->pattern_id);
         rc = hxfpat(path, tctx->pattern_buffer, tctx->pattern_size);
         if (rc == 1) {

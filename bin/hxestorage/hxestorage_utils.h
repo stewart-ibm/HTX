@@ -173,7 +173,8 @@ char get_write_status(unsigned long long);
 void set_write_status(unsigned long long, char);
 void update_state_table (unsigned long long, int);
 
+#ifndef __CAPI_FLASH__
 void update_aio_req_queue(int index, struct thread_context *tctx, char *buf);
 int wait_for_aio_completion(struct htx_data *htx_ds, struct thread_context *tctx, char flag);
-
+#endif
 

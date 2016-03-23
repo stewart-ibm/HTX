@@ -1150,6 +1150,7 @@ int compare_buffers(struct htx_data *htx_ds, struct thread_context *tctx, int lo
     return (0);
 }
 
+#ifndef __CAPI_FLASH__
 /*******************************************************/
 /*****  Function to read from disk for ASYNC I/O    ****/
 /*******************************************************/
@@ -1209,6 +1210,7 @@ int cmp_async_disk(struct htx_data *htx_ds, struct thread_context *tctx, int loo
 {
     return 0;
 }
+#endif
 
 /***************************************************************/
 /****   Function to handle open system call for passthrough ****/

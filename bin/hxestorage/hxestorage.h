@@ -66,7 +66,6 @@
     #include <sys/mdio.h>
 #endif
 
-#define PATLIB_PATH "/usr/lpp/htx/pattern/"
 
 #define MAX_OPER_COUNT      6
 #define NOP					-1
@@ -250,7 +249,7 @@ typedef int (*close_fptr)(struct htx_data *, struct thread_context *);
 typedef int (*oper_fptr)(struct htx_data *, struct thread_context *, int);
 
 extern int read_rules_file_count;
-extern pthread_mutex_t cache_mutex, segment_mutex;
+extern pthread_mutex_t cache_mutex, segment_mutex, log_mutex;
 extern int eeh_retries, turn_attention_on;
 extern char misc_run_cmd[100], run_on_misc;
 extern time_t time_mark;
