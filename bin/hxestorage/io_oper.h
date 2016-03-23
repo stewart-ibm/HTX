@@ -82,9 +82,11 @@ int write_disk (struct htx_data *, struct thread_context *, int);
 int compare_buffers (struct htx_data *, struct thread_context *, int);
 
 /* ASYNC IO functions */
+#ifndef __CAPI_FLASH__
 int read_async_disk(struct htx_data *, struct thread_context *, int);
 int write_async_disk(struct htx_data *, struct thread_context *, int);
 int cmp_async_disk (struct htx_data *, struct thread_context *, int);
+#endif
 
 /* PASSTHROUGH functions */
 int open_passth_disk (struct htx_data *, const char *, struct thread_context *);

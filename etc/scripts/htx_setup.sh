@@ -135,18 +135,18 @@ function ttyis
   export HTXMDT=${HTXLPP}/mdt/
   export HTXBIN=${HTXLPP}/bin/
   export HTXETC=${HTXLPP}/etc/
-  export HTXSCREENS=${HTXLPP}/etc/screens
-  export STXSCREENS=${HTXLPP}/etc/screens_stx
-  export HTXMISC=${HTXLPP}/etc/misc
+  export HTXSCREENS=${HTXLPP}/etc/screens/
+  export STXSCREENS=${HTXLPP}/etc/screens_stx/
+  export HTXMISC=${HTXLPP}/etc/misc/
   export HTXTMP=$HTX_LOG_DIR
-  export HTXSETUP=${HTXLPP}/setup
-  export HTXRUNSETUP=${HTXLPP}/runsetup
-  export HTXRUNCLEANUP=${HTXLPP}/runcleanup
-  export HTXCLEANUP=${HTXLPP}/cleanup
+  export HTXSETUP=${HTXLPP}/setup/
+  export HTXRUNSETUP=${HTXLPP}/runsetup/
+  export HTXRUNCLEANUP=${HTXLPP}/runcleanup/
+  export HTXCLEANUP=${HTXLPP}/cleanup/
   export HTXPROCESSORS=1
-  export HTXSCRIPTS=${HTXLPP}/etc/scripts
-  export HTXSCRIPTS_STX=${HTXLPP}/etc/scripts_stx
-  export HTXNoise=$HTX_LOG_DIR/HTXScreenOutput
+  export HTXSCRIPTS=${HTXLPP}/etc/scripts/
+  export HTXSCRIPTS_STX=${HTXLPP}/etc/scripts_stx/
+  export HTXNoise=$HTX_LOG_DIR/HTXScreenOutput/
 
 # Directory commands
   alias ksh="bash"

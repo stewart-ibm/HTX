@@ -1254,6 +1254,7 @@ void prt_msg(struct htx_data *htx_ds, struct thread_context *tctx, int loop,
 {
   	char msg[MSG_TEXT_SIZE], msg1[128];
 	char err_str[ERR_STR_SZ];
+    int rc = 0;
 
 	/* If continue on err is set to yes means continue on MISCOMAPRE as well as IO error (Only
      * stop on SYS_HARD err).
@@ -1278,7 +1279,21 @@ void prt_msg(struct htx_data *htx_ds, struct thread_context *tctx, int loop,
 		sprintf(msg1, "errno: %d(%s)\n", err, err_str);
 		strcat(msg, msg1);
 	}
-	hxfmsg(htx_ds, err, sev, msg);
+    rc = pthread_mutex_lock(&log_mutex);
+    if (rc) {
+        strerror_r(rc, err_str, ERR_STR_SZ);
+        sprintf(msg, "Mutex lock failed in function prt_msg, rc %d (%s)", rc, err_str);
+        user_msg(htx_ds, rc, SYS_HARD, msg);
+        exit(1);
+    }
+    hxfmsg(htx_ds, err, sev, msg);
+    rc = pthread_mutex_unlock(&log_mutex);
+    if (rc) {
+        strerror_r(rc, err_str, ERR_STR_SZ);
+        sprintf(msg, "Mutex unlock failed in function prt_msg, rc %d (%s)", rc, err_str);
+        user_msg(htx_ds, rc, SYS_HARD, msg);
+        exit(1);
+    }
 	return;
 }
 
@@ -1288,6 +1303,7 @@ void prt_msg(struct htx_data *htx_ds, struct thread_context *tctx, int loop,
 void user_msg(struct htx_data *htx_ds, int err, int sev, char *text)
 {
 	char msg[MSG_TEXT_SIZE], err_str[ERR_STR_SZ];
+    int rc = 0;
 
 	/* If continue on err is set to yes means continue on MISCOMAPRE as well as IO error (Only
 	 * stop on SYS_HARD err).
@@ -1311,7 +1327,21 @@ void user_msg(struct htx_data *htx_ds, int err, int sev, char *text)
 		strcat(msg, err_str);
 		strcat(msg, "\n");
 	}
+    rc = pthread_mutex_lock(&log_mutex);
+    if (rc) {
+        strerror_r(rc, err_str, ERR_STR_SZ);
+        sprintf(msg, "Mutex lock failed in function user_msg, rc %d (%s)", rc, err_str);
+        user_msg(htx_ds, rc, SYS_HARD, msg);
+        exit(1);
+    }
   	hxfmsg(htx_ds, err, sev, msg);
+    rc = pthread_mutex_unlock(&log_mutex);
+    if (rc) {
+        strerror_r(rc, err_str, ERR_STR_SZ);
+        sprintf(msg, "Mutex unlock failed in function user_msg, rc %d (%s)", rc, err_str);
+        user_msg(htx_ds, rc, SYS_HARD, msg);
+        exit(1);
+    }
 }
 
 #ifndef __HTX_LINUX__
@@ -1993,7 +2023,7 @@ void update_state_table (unsigned long long block_num, int num_blks)
         block_num++;
     }
 }
-
+#ifndef __CAPI_FLASH__
 void update_aio_req_queue(int index, struct thread_context *tctx, char *buf)
 {
     tctx->aio_req_queue[index].aio_req.aio_fildes = tctx->fd;
@@ -2071,4 +2101,5 @@ int wait_for_aio_completion(struct htx_data *htx_ds, struct thread_context *tctx
     }
     return index;
 }
+#endif
 
