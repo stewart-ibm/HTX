@@ -8,13 +8,6 @@ case "$1" in
 		[[ -h /bin/htxcmdline ]] && rm -rf /bin/htxcmdline 2>/dev/null
 		[[ -h /bin/esrv ]] && rm -rf /bin/esrv 2>/dev/null
 		[[ -d /usr/lpp/htx ]] &&  rm -rf /usr/lpp/htx 2>/dev/null
-		[[ -s /bin/set_linux_nets ]] && rm -rf /bin/set_linux_nets 
-		[[ -s /etc/cpdir ]] && rm -rf /etc/cpdir
-		[[ -s /etc/gethelp ]] && rm -rf /etc/gethelp
-		[[ -s /etc/gethtx ]] && rm -rf /etc/gethtx
-		[[ -s /etc/getnet ]] && rm -rf /etc/getnet
-		[[ -s /etc/gettools ]] && rm -rf /etc/gettools
-		[[ -s /etc/tping ]] && rm -rf /etc/tping
 #		userdel -f htx 2>/dev/null
 #		groupmod -g 999 htx 2>/dev/null
 #		groupdel htx 2>/dev/null

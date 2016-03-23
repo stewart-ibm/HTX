@@ -1,9 +1,0 @@
-#!/bin/ksh
-# @(#)64	1.2  src/htx/usr/lpp/htx/bin/hxecom/cpdir, exer_com, htxubuntu 5/24/04 10:13:24
-#########################################################################
-#
-# reads form stdin  one line at a time and cpies files to $1 dir. 
-while read -r file
-do    [ -f $file ] && { echo "cp "$file" to" $1; cp "$file" "$1"; }
-done
-
