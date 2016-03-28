@@ -22,8 +22,6 @@ TARGET = \
 	exer_setup \
 	create.trial.log.linux	\
 	ver \
-	devlist.awk \
-	rem_usb_floppy.awk \
 	create_mdt_with_devices.awk \
 	create_mdt_without_devices.awk \
 	part.pl	\
@@ -45,11 +43,6 @@ TARGET = \
 	get_mem_pool_details.sh \
 	htx_setup.sh 
 
-ifeq ($(HTX_RELEASE), $(filter ${HTX_RELEASE}, "htxfedoraBE" "htxltsbml"))
-	TARGET += create_mdt_mpp
-endif
- 
- 
 
 all: ${TARGET}
 	@echo "making dir - "${SCRIPTS}

@@ -146,7 +146,7 @@ function ttyis
   export HTXPROCESSORS=1
   export HTXSCRIPTS=${HTXLPP}/etc/scripts/
   export HTXSCRIPTS_STX=${HTXLPP}/etc/scripts_stx/
-  export HTXNoise=$HTX_LOG_DIR/HTXScreenOutput/
+  export HTXNoise=$HTX_LOG_DIR/HTXScreenOutput
 
 # Directory commands
   alias ksh="bash"
@@ -208,7 +208,7 @@ function ttyis
 
 # HTXNoise is a repository for HTX screen activity during login and runsup commands.
 # This is an attempt to capture errors that may otherwise be lost
-  print_htx_log "1st HTX message."
+  echo "[`date`]: 1st HTX message." | tee $HTXNoise
 
 # Check whether HTX is already running on system
   [ "`ps -ef | grep hxssup | grep -v grep`" ] && {
@@ -235,11 +235,12 @@ function ttyis
   export PATH
   print_htx_log "exporting PATH=$PATH"
 
-  if [ -f ${HTXETC}/version ] 
+  os_distribution=`grep ^NAME /etc/os-release | cut -f2 -d= | sed s/\"//g`
+  if [ $os_distribution == "Ubuntu" ]
   then
-    export HTX_RELEASE=`cat ${HTXETC}/version | cut -d- -f1`
+    export HTX_RELEASE=htxubuntu
   else
-    export HTX_RELEASE=$(rpm -qi $(rpm -qa 2>/dev/null | grep ^htx) 2>/dev/null | grep Name | head -n1 | awk '{print $3}')
+    export HTX_RELEASE=`rpm -qa | grep ^htx | cut -f1 -d-`
   fi
 
   export CMVC_RELEASE=$HTX_RELEASE
@@ -336,14 +337,6 @@ function ttyis
  	fi 
 	   
   
-  # Run htx.setup script which loads miscex kernel extension. Miscex kernel
-  # extension is required to be loaded before any setup is done.
-
-  if [ -f ${HTXSETUP}/htx.setup ]; then
-    print_htx_log "Running htx.setup"
-    ${HTXSETUP}/htx.setup | tee -a $HTXNoise
-  fi
-
   print_htx_log "Collecting LPAR configuration details ..."
   ${HTXBIN}/show_syscfg > ${HTX_LOG_DIR}/htx_syscfg 2>/dev/null
   

@@ -1,6 +1,6 @@
 # Please read Documentation/building_htx.txt for info about how to build HTX.
 
-#Ser HTX_RLEASE to the distro you want to build for
+#Set HTX_RLEASE to the distro you want to build for
 HTX_RELEASE="htxubuntu"
 ifeq ($(HTX_RELEASE), $(filter ${HTX_RELEASE},"htxubuntu" "htxsles12" "htxrhel72le" "htxfedorale"))
 ARCH=ppc64le
@@ -20,16 +20,16 @@ ifeq ($(HTX_RELEASE), $(filter ${HTX_RELEASE},"htxubuntu" "htxsles12" "htxrhel72
 	CFLAGS+= -D__HTX_LE__
 endif
 #Set the TOPDIR before starting build 
-TOPDIR=.
+TOPDIR=
 SHIPDIR=${TOPDIR}/install/${ARCH}/
 HTXOBJDIR=${TOPDIR}/obj/
 SHIPTOPDIR=${SHIPDIR}/usr/lpp/htx/
 SHIPDOCDIR=${SHIPTOPDIR}/Documentation/
 PACKAGINGDIR=${TOPDIR}/packaging/
-INCLUDES=-I./ -I/usr/include/ -I${EXPINC}
 EXPORT=${TOPDIR}/export/${ARCH}/
 EXPINC=${EXPORT}/include/
 EXPLIB=${EXPORT}/lib/
+INCLUDES=-I./ -I/usr/include/ -I${EXPINC}
 LIBPATH=-L${EXPLIB}/
 SHIPBIN=${SHIPTOPDIR}/bin/
 RUNCLEANUP=${SHIPTOPDIR}/runcleanup/

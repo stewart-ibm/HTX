@@ -14,9 +14,6 @@ ulimit -c unlimited
           
 . /usr/lpp/htx/.bash_profile
 
-/bin/bash /usr/lpp/htx/etc/scripts_stx/runsyslogd
-
-
 cd ${HTXLPP}/bin
 #pwd
 

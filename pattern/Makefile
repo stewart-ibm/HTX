@@ -33,7 +33,6 @@ TARGET= ALTPADS   \
         HXPPAT2  \
         POPTIONS  \
         DCUTEST  \
-        tmdef00  \
         CDDVD001 \
         CDDVD002 \
         CDDVD101 \
