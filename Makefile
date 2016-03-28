@@ -36,6 +36,6 @@ ${SUBDIRS_CLEAN}:
 	@make -C $< clean
 
 deb:
-	@echo "Making Debian package..."
+	@echo "Making HTX Debian package..."
 	cp -r $(PACKAGINGDIR)/ubuntu/* $(SHIPDIR)/
 	dpkg-deb -b $(SHIPDIR)  $(TOPDIR)/htxubuntu.deb

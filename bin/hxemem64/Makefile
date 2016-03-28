@@ -16,7 +16,7 @@ SRCS = $(patsubst %.o, %.c, $(OBJECTS))
 
 CFLAGS += -D__64_LINUX__ -D_GNU_SOURCE -DKERNEL_2_6 -D_REENTRANT -g -O5 -D__HTX_LINUX_ -D__USE_GNU -DTRUE=1 -DFALSE=0 
  
-LIBS = -lhtx64 -lpthread 
+LIBS = -lhtx64 -lpthread
 
 .PHONY: all clean
 

@@ -1,6 +1,6 @@
 include ../htx.mk
 
-TARGET= htx.setup mem.setup equaliser.setup hxecom.setup
+TARGET= mem.setup equaliser.setup hxecom.setup
 
 .PHONY: all clean
 

@@ -1,6 +1,6 @@
 include ../htx.mk
 
-SUBDIRS= hxssup hxsmsg hxstats eservd eserv_cmd stxclient htxd hxesamp show_syscfg \
+SUBDIRS= hxssup hxsmsg hxstats htxd hxesamp show_syscfg  hxetlbie \
 	hxestorage hxecom hxedapl hxemem64 hxetape hxesctu hxefpu64 hxecd  \
 	hxecache hxerng bufdisp hxeasy hxefabricbus create_eq_cfg create_eq_mdt
 

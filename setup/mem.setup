@@ -1,15 +1,15 @@
 ###### This script is used to collect the required memory statistics for hxemem64 exerciser.
 ###### Collect the large and huge page memory required memory statistics 
-###### into the file /tmp/freepages
+###### into the file ${HTX_LOG_DIR}/freepages
 Hugepagesize=`cat /proc/meminfo |grep Hugepagesize |awk '{print $2}'`
 if [[ $Hugepagesize -ne 16384 ]]
 then
     echo "Hugepagesize is not equal to 16M"
     echo "cache instances will not be created."
-    echo "avail_16M=0,avail_16G=0,free_16M=0,free_16G=0" >  /tmp/freepages
-    echo "mem_16M=0" >>  /tmp/freepages
-    echo "cache_16M=0" >>  /tmp/freepages
-    echo "tlbie_16M=0" >> /tmp/freepages
+    echo "avail_16M=0,avail_16G=0,free_16M=0,free_16G=0" >  ${HTX_LOG_DIR}/freepages
+    echo "mem_16M=0" >>  ${HTX_LOG_DIR}/freepages
+    echo "cache_16M=0" >>  ${HTX_LOG_DIR}/freepages
+    echo "tlbie_16M=0" >> ${HTX_LOG_DIR}/freepages
     exit
 fi
 
@@ -29,13 +29,13 @@ mem_16M_l4=0
 
 # Check the highest SMT of all the cores. If the highest value is
 # more than 1, it means SMT is enabled
-maxSMT=`cat /tmp/htx_syscfg 2> /dev/null | grep core|awk -F'(' '{print $2}'|awk -F')' '{print $1}'|sort -n -r| head -1`
-num_cores=`cat /tmp/htx_syscfg 2> /dev/null | awk ' /Number of Cores/ {print $5}'`
-percent_cores=`grep 'percent_hw_threads' /usr/lpp/htx/rules/reg/hxetlbie/tlbie | awk '{ print $3 }' | head -1`
+maxSMT=`cat ${HTX_LOG_DIR}/htx_syscfg 2> /dev/null | grep core|awk -F'(' '{print $2}'|awk -F')' '{print $1}'|sort -n -r| head -1`
+num_cores=`cat ${HTX_LOG_DIR}/htx_syscfg 2> /dev/null | awk ' /Number of Cores/ {print $5}'`
+percent_cores=`grep 'percent_hw_threads' ${HTXREGRULES}/hxetlbie/tlbie | awk '{ print $3 }' | head -1`
 # Processor Version i.e will be 003e for p6 & 003f for p7
 ###proc_ver=`cat /proc/cpuinfo |grep -m 1 revision |awk {'print $5'}`
-proc_ver=`grep 'Processor Version' /tmp/htx_syscfg | awk '{ print $4 }'`
-shared_processor_mode=`grep shared_processor_mode /tmp/htx_syscfg | awk '{print $3}'`
+proc_ver=`grep 'Processor Version' ${HTX_LOG_DIR}/htx_syscfg | awk '{ print $4 }'`
+shared_processor_mode=`grep shared_processor_mode ${HTX_LOG_DIR}/htx_syscfg | awk '{print $3}'`
 
 if [ "$shared_processor_mode" =  "no" ]
 then
@@ -64,10 +64,10 @@ then
 
 	# For hxecache .
 	# Find the number of cache instances runnning 
-	num_instances=`grep chips /tmp/htx_syscfg | awk -F: '{print $2}'`
+	num_instances=`grep chips ${HTX_LOG_DIR}/htx_syscfg | awk -F: '{print $2}'`
 
 	# Find the instance with the maximum number of cpus in it.
-	max_cpus_in_instance=`cat /tmp/htx_syscfg | grep "chip "|awk -F'(' '{print $2}'|awk -F')' '{print $1}'|sort -n -r| head -1`
+	max_cpus_in_instance=`cat ${HTX_LOG_DIR}/htx_syscfg | grep "chip "|awk -F'(' '{print $2}'|awk -F')' '{print $1}'|sort -n -r| head -1`
 
 	    if [ "$proc_ver" = "0x3e" ]
 	    then
@@ -236,10 +236,23 @@ if [ $free_16G -lt 0 ]; then free_16G=0
 fi
 
 free_16M=`expr $free_16M + $mem_16M`
-echo "avail_16M=$avail_16M,avail_16G=$avail_16G,free_16M=$free_16M,free_16G=$free_16G" >  /tmp/freepages
+echo "avail_16M=$avail_16M,avail_16G=$avail_16G,free_16M=$free_16M,free_16G=$free_16G" >  ${HTX_LOG_DIR}/freepages
 #add details on freepages designated for cache for ablink.runsetup
-echo "mem_16M=$mem_16M" >>  /tmp/freepages
-echo "cache_16M=$cache_16M" >>  /tmp/freepages
-echo "tlbie_16M=$tlbie_16M" >> /tmp/freepages
+echo "mem_16M=$mem_16M" >>  ${HTX_LOG_DIR}/freepages
+echo "cache_16M=$cache_16M" >>  ${HTX_LOG_DIR}/freepages
+echo "tlbie_16M=$tlbie_16M" >> ${HTX_LOG_DIR}/freepages
 #Increasing /proc/sys/kernel/shmmax value to 1GB,considering cache exer worst case requirement for chip with 16cores.
+echo "Setting /proc/sys/kernel/shmmax to 1GB"
 echo 1073741824 > /proc/sys/kernel/shmmax
+
+# Writing $shmall_4K to /proc/sys/kernel/shmall
+# so that memory exerciser can allocate upto 90%
+# of system memory through shared memory constructs.
+
+total_mem=`cat /proc/meminfo | grep MemTotal | awk '{print $2}'`
+shmall_new=`expr $total_mem \* 9 / 10` # Taking 90% of total memory.
+shmall_4K=`expr $shmall_new / 4`  # in terms of 4K
+
+echo "Writing $shmall_4K to /proc/sys/kernel/shmall"
+echo $shmall_4K > /proc/sys/kernel/shmall
+

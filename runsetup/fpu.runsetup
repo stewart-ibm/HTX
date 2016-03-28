@@ -1,18 +1,7 @@
-##=============================================================================
-## Package:     hxefpu64
-## Component:   exer_fpu
-##
-## Program(s):  fpu.runsetup
-## File:        fpu.runsetup.sh
-## Abstract:    Performs hxecpu environment setup required at runtime
-##
-## Description: This script creates the hxecpu global semaphores each time that
-##      an HTX run is started.
-##==============================================================================
-# Setup the hxecpu environment
+# Cleanup hxefpu64 previous run's seed list
 
-echo "-------------------------------------------------------------------------------" >>/tmp/fpuLog
+echo "-------------------------------------------------------------------------------" >>${HTX_LOG_DIR}/fpuLog
 
-echo "Executing CPU runsetup on $(date)" >>/tmp/fpuLog
-rm -rf /tmp/fpu_seedlist.txt 2>/dev/null
+echo "Executing CPU runsetup on $(date)" >> ${HTX_LOG_DIR}/fpuLog
+rm -rf ${HTX_LOG_DIR}/fpu*_seedlist.txt 2>/dev/null
 
