@@ -79,7 +79,7 @@ BEGIN {
     create_axon_stanza = 0
 
     system("${HTXSCRIPTS}/part.pl >/dev/null"); 
-    system("${HTXSCRIPTS}/htxinfo.pl > ../../htxlinuxlevel ");
+    system("${HTXSCRIPTS}/htxinfo.pl > ${HTXLINUXLEVEL} ");
     system("(echo 1 > /proc/sys/kernel/kdb) 2> /dev/null");
     system("mkdir ${HTX_LOG_DIR}/htxraw 2> /dev/null ");
  
@@ -96,10 +96,15 @@ BEGIN {
     intrpt_lev(0) 
     load_seq(32768); 
     max_run_tm(7200); 
-    priority(19); 
+    port("0");
+    priority(19);
+    slot("0");
+    max_cycles("0");
+    hft(0); 
     cont_on_err("NO"); 
     halt_level("1"); 
-    start_halted("n"); 
+    start_halted("n");
+    dup_device("n");
     log_vpd("n"); 
 
     create_memory_stanzas(); 

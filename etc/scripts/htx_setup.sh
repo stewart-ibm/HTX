@@ -127,7 +127,7 @@ function ttyis
 
   export HTXLPP=$HTX_HOME_DIR
   export HTXPATH=$HTX_HOME_DIR
-  export HTXLINUXLEVEL=${HTXLPP}/htxlinuxlevel/
+  export HTXLINUXLEVEL=${HTXLPP}/htxlinuxlevel # Its a file. Last / should not be there.
   export HTXPATTERNS=${HTXLPP}/pattern/
   export HTXRULES=${HTXLPP}/rules/
   export HTXREGRULES=${HTXRULES}/reg/
@@ -146,7 +146,7 @@ function ttyis
   export HTXPROCESSORS=1
   export HTXSCRIPTS=${HTXLPP}/etc/scripts/
   export HTXSCRIPTS_STX=${HTXLPP}/etc/scripts_stx/
-  export HTXNoise=$HTX_LOG_DIR/HTXScreenOutput
+  export HTXNoise=$HTX_LOG_DIR/HTXScreenOutput # Its a file. Last / should not be there
 
 # Directory commands
   alias ksh="bash"
