@@ -32,6 +32,7 @@
 #define HOSTNAME_OPTION			"-sut"
 #define PORT_NUMBER_OPTION		"-port"
 #define ECG_NAME_OPTION			"-ecg"
+#define MDT_NAME_OPTION			"-mdt"
 
 #define CMD_COMMAND "-cmd"
 
