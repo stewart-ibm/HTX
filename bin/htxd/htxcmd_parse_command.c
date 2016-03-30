@@ -176,6 +176,7 @@ int htxcmd_get_command_name(int argument_count, char *argument_vector[], htxcmd_
 	for (i = 1; i < argument_count; i++) {
 		if( 	( (strcmp(argument_vector[i], HOSTNAME_OPTION) ) == 0) 		||
 			( (strcmp(argument_vector[i], PORT_NUMBER_OPTION) ) == 0) 	||
+			( (strcmp(argument_vector[i], MDT_NAME_OPTION) ) == 0)		||
 			( (strcmp(argument_vector[i], ECG_NAME_OPTION) ) == 0) ) {
 			i++;
 			continue;
@@ -204,7 +205,7 @@ char * htxcmd_get_ecg_name(int argument_count, char *argument_vector[], char *ec
 	ecg_name[0] = '\0';
 
 	for (i = 1; i < argument_count; i++) {
-		if( (strncmp(ECG_NAME_OPTION, argument_vector[i], strlen(ECG_NAME_OPTION) ) ) == 0) { 
+		if( ( (strncmp(ECG_NAME_OPTION, argument_vector[i], strlen(ECG_NAME_OPTION) ) ) == 0) || ( (strncmp(MDT_NAME_OPTION, argument_vector[i], strlen(MDT_NAME_OPTION) ) ) == 0) ){ 
 			i++;
 			if( i >= argument_count) {
 				htxcmd_display_usage("Error : ECG name is not provided with <-ecg> option");
