@@ -5,7 +5,7 @@
 usage(){
 	BASENAME=$(basename $0)
 	echo "htx: Run HTX supervisor."
-	echo "     Prompts for Machine Device Table file and whether to save previous run."
+	echo "     Prompts for Master Device Table file and whether to save previous run."
 	echo " usage: htx [[-n] [-s] [-S] [-f mdt file [...]] "
 	echo "        htx [-h] | [-g] [-S] [-k] [-b mdt file] "
 	echo "	-h - help\n\t-? - usage"
@@ -32,26 +32,27 @@ if [  -f ${HTX_HOME_DIR}/.autostart ]
 	then
 		cp ${HTXMDT}/mdt ${HTXMDT}/bootme_prev_mdt
 
-     	if [ -e ${HTXMDT}/.run_mdt_name ] 
-     	then
-			BOOTME_MDT=`cat ${HTXMDT}/.run_mdt_name`
-			if [ -e ${BOOTME_MDT} ] ; then
-				cp ${BOOTME_MDT} ${HTXMDT}/mdt
-			else
-				cp ${HTXMDT}/mdt.all ${HTXMDT}/mdt
-			fi
-     	else
-        	cp ${HTXMDT}/mdt.all ${HTXMDT}/mdt
-     	fi
+	if [ -e ${HTXMDT}/.run_mdt_name ] 
+	then
+		BOOTME_MDT=`cat ${HTXMDT}/.run_mdt_name`
+		if [ -e ${BOOTME_MDT} ] ; then
+			cp ${BOOTME_MDT} ${HTXMDT}/mdt
+		else
+			cp ${HTXMDT}/mdt.all ${HTXMDT}/mdt
+		fi
+	else
+		cp ${HTXMDT}/mdt.all ${HTXMDT}/mdt
+	fi
 
-		# if previous bootme MDT contains any hxecom device append those devices into current bootme mdt  
-		hxecom_present=`grep "hxecom" ${HTXMDT}bootme_prev_mdt | wc -l`
-		if [ ${hxecom_present} -ne 0 ]
-		then
-			${HTXMDT}/mdt_net mdt
-		fi	
-		
-        MDTFILE=mdt
+	MDTFILE=`basename ${BOOTME_MDT}`
+	# if previous bootme MDT contains any hxecom device append those devices into current bootme mdt  
+	hxecom_present=`grep "hxecom" ${HTXMDT}bootme_prev_mdt | wc -l`
+	if [ ${hxecom_present} -ne 0 ]
+	then
+		${HTXMDT}/mdt_net ${MDTFILE}
+	fi	
+	cp ${HTXMDT}/$MDTFILE ${HTXMDT}/mdt
+
 else
   	[ "$HTX_HOME_DIR" ] || { echo "you must be logged in as htx to execute this command" | tee -a $HTXNoise && exit
   	}
