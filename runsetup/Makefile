@@ -1,6 +1,7 @@
 include ../htx.mk
 
-TARGET= ablink.runsetup xyzlink.runsetup cpu.runsetup fpu.runsetup
+TARGET= ablink.runsetup xyzlink.runsetup cpu.runsetup fpu.runsetup \
+	mem.runsetup hxecom.runsetup
 
 .PHONY: all clean
 

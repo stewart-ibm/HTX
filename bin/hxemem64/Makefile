@@ -23,11 +23,9 @@ LIBS = -lhtx64 -lpthread
 all: ${OBJECTS}
 	${CC} ${LDFLAGS} ${LIBPATH} ${OBJECTS} ${LIBS} -o ${TARGET}
 	${CP} ${TARGET} ${SHIPBIN}
-	-${CP} mem.runsetup ${RUNSETUP}
 
 %.o: %.c
 	${CC} ${CFLAGS} ${INCLUDES} -c $< -o $@
 
 clean:
-	${RM} -f ${RUNSETUP}/mem.runsetup 
 	${RM} -f *.o ${TARGET} ${SHIPBIN}/${TARGET}

@@ -355,8 +355,6 @@ function ttyis
   
   [ ! -f ${HTXMDT}/mdt ] && cp ${HTXMDT}/mdt.all ${HTXMDT}/mdt
   
-  cat /tmp/devlist_warning 2>/dev/null
-
 # Work-around for autostartup problems
   if [ -f ${HTXLPP}.autostart ];
   then

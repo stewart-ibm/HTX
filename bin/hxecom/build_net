@@ -178,7 +178,6 @@ $ia="";
 $BPT=$ENV{"HOME"} ."/bpt";
 # Name of mdt to be created 
 $mdtname="/usr/lpp/htx/mdt/net.mdt";
-$ecgname="/usr/lpp/htx/ecg/net.ecg";
 
 @nets_used="";
 %nets="";
@@ -437,9 +436,6 @@ $savename="$saveprofname" . ".bak";
 `cp $saveprofname $savename`;
 
 $res = `cp /etc/hosts /etc/hosts.htx`;
-if($ecgname) {
-	$res = `cp $mdtname $ecgname`;
-}
 `echo "done" >/tmp/bndone`;
 
 if($opensm_pingum_delay == 1) {

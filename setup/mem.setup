@@ -161,7 +161,7 @@ free_16G=$((free_16G-leave_16G))
 # Check if VRM is enabled.
 if [ ! "$CMVC_RELEASE" = "htxltsbml" ]
 then
-	 MEMORY_MODE=`cat /proc/ppc64/lparcfg | grep cmo_enabled | cut -f2 -d=`
+	 MEMORY_MODE=`cat /proc/ppc64/lparcfg 2> /dev/null | grep cmo_enabled | cut -f2 -d=`
 fi
 
 if [ $((MEMORY_MODE)) -eq 1 ]

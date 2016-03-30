@@ -1,6 +1,7 @@
 include htx.mk
 
-SUBDIRS= inc lib bin rules etc mdt cleanup pattern setup runsetup Documentation
+SUBDIRS= inc lib bin rules etc mdt cleanup pattern setup runsetup \
+	runcleanup Documentation
 SUBDIRS_CLEAN = $(patsubst %,%.clean,$(SUBDIRS))
 
 TARGET= .htx_profile \

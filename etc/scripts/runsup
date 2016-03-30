@@ -167,19 +167,6 @@ fi
 
 sync;sync;
 
-# Run exerciser runsetup scripts
-#for file in `/bin/ls $HTXRUNSETUP[a-zA-Z]*.runsetup 2>/dev/null| sort`
-# do
-#    aa=`basename $file`
-#    echo Preparing ${aa%.runsetup} ....
-#    . $file
-# done
-
-# If device is in mdt, run exerciser runsetup scripts
-
-# if [[ -n $(grep "hxesystime" ${HTXMDT}$MDTFILE 2>/dev/null) ]]
-#     then [ -f ${HTXRUNSETUP}systime.runsetup ] && { . ${HTXRUNSETUP}systime.runsetup }
-
 if [[ $MDTFILE == "mdt.eq_th_trans_switch" || $MDTFILE == "mdt.eq_th_trans_mix" ]]
 then
    if [ -f /proc/sys/kernel/powersave-nap ]
@@ -200,6 +187,7 @@ then
 fi
 
 export MDTFILE
+# Run exerciser runsetup scripts
 
 if [[ -n $(grep "hxecom" ${HTXMDT}$MDTFILE 2>/dev/null) ]]
    then [ -f ${HTXRUNSETUP}hxecom.runsetup ] && { 
