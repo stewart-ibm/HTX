@@ -635,7 +635,7 @@ function create_memory_stanzas() {
 
 	ams=0
 	if (CMVC_RELEASE != "htxltsbml") {
-		ams=snarf("cat /proc/ppc64/lparcfg | grep cmo_enabled | awk -F= '{print $2}'")
+		ams=snarf("cat /proc/ppc64/lparcfg 2> /dev/null | grep cmo_enabled | awk -F= '{print $2}'")
 		if (ams == "1") {
 			system("awk '/.*/ { if ($0 ~ /^max_mem/ )printf(\"max_mem = yes\\nmem_percent = 40\\n\"); else print $0; }' ${HTXREGRULES}/hxemem64/maxmem > ${HTXREGRULES}/hxemem64/maxmem.ams");
 			mkstanza("hxemem64","64bit","memory","mem","hxemem64","maxmem.ams","maxmem.ams");

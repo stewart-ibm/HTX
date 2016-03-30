@@ -54,13 +54,11 @@ move_scripts:
 	mkdir -p ${SHIPDIR}/usr/bin/
 	mkdir -p ${SHIPDIR}/usr/sbin/
 	mkdir -p ${MDT}
+	mkdir -p ${SCRIPTS}
 	${CP} build_net htx_build_net pingum fixrules ${SHIPDIR}/usr/bin/
+	${CP} pscheck ${SCRIPTS}/
 	${CP} mdt_net net.default ${MDT}/
 	${CP} mktcpip ${SHIPDIR}/usr/sbin/
-	mkdir -p ${RUNSETUP}
-	${CP} hxecom.runsetup ${RUNSETUP}
-	mkdir -p ${RUNCLEANUP}
-	${CP} hxecom.runcleanup ${RUNCLEANUP}
 	mkdir -p ${REGRULES}/hxecom/
 	${CP} nethost1 nethost2 ${REGRULES}/hxecom/
 

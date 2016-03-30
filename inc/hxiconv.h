@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-/* @(#)32	1.3.4.1  src/htx/usr/lpp/htx/inc/hxiconv.h, htx_sup, htxubuntu 9/14/12 03:28:17 */
 
 /*
  *   FUNCTIONS: CLRLIN
@@ -26,8 +25,6 @@
 */
 
 /*
-****************************************************************************
-*****  I B M   I n t e r n a l   U s e   O n l y  **************************
 ****************************************************************************
 *                                                                          *
 *  Module Name: hxiconv.h                                                  *

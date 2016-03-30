@@ -14,9 +14,12 @@ case "$1" in
 		[[ -s /etc/getnet ]] && rm -rf /etc/getnet 2>/dev/null
 		[[ -s /etc/gettools ]] && rm -rf /etc/gettools 2>/dev/null
 		[[ -s /etc/tping ]] && rm -rf /etc/tping 2>/dev/null
-		userdel -f htx 2>/dev/null
-		groupmod -g 999 htx 2>/dev/null
-		groupdel htx 2>/dev/null
+		[[ id htx ]] &&  userdel -f htx 2>/dev/null
+		sync
+		sleep 1
+		[[ id -g htx ]] && groupmod -g 999 htx 2>/dev/null
+		sync
+		[[ id -g htx ]] && groupdel htx 2>/dev/null
 		rm -rf /etc/init.d/htx.d 2>/dev/null
 	;;
 
@@ -25,7 +28,7 @@ case "$1" in
 	;;
 
 	*)
-		echo "postinst called with unknown argument \`\$1'" >&2
+		echo "postrm called with unknown argument \`\$1'" >&2
 		exit 0
 	;;
 esac
