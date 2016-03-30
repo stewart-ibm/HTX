@@ -1,5 +1,5 @@
 Steps to build HTX:
-1. Download the source from git
+1. Download the source from github
 2. Edit htx.mk file to point TOPDIR to downloaded HTX source.
    Also set HTX_RELEASE variable to appropriate distro for which you 
    are building HTX source for. Possible values are:

@@ -1,0 +1,443 @@
+HTX User Manual
+===============
+
+1.0 Overview
+
+	The Hardware Test Executive (HTX) is a suite of test tools for hardware
+	validation of OpenPOWER system. The HTX stress tests the system by exercising
+	all or selected hardware components concurrently to uncover any hardware
+	design flaws and hardware-hardware or hardware-software interaction issues.
+	The HTX consists of test programs (a.k.a exercisers) to test processor, memory
+	and IO subsystem of POWER system. The HTX runs on PowerKVM guests (Linux 
+	distributions like Ubuntu, SuSE and Redhat), and OPAL-based Linux distributions
+	(like Ubuntu) and on Linux host machine. HTX supports two types of control
+	interfaces to exercisers, user interactive and command line.
+
+1.1 Obtaining and building HTX source 
+
+	HTX source can be downloaded from Github (https://github.com/open-power/HTX).
+	To build HTX source, please refer, <HTX source>/Documentation/building_htx.txt.
+
+1.2 Setting up the System to Install HTX 
+
+	Make sure that the following conditions are satisfied before you install the HTX: 
+
+	• The /tmp directory must have a few gigabytes of free disk space because the
+		HTX logs are saved in that directory. 
+	• The minimum system memory that is required per logical processor is 1 GB. 
+	• The swap space on the test system is enabled according to operating system norms. 
+	• The optical media drives to be tested have appropriate test media (for example
+		CD or DVD-ROM). 
+	• The HTX test machine environment (for e.g. glibc) and HTX build machine
+		environment should be similar if not exactly same.
+
+1.3 Installing HTX 
+
+	HTX images can be built in .rpm or .deb format depending upon the Linux
+	distribution. First, uninstall the existing version of HTX, if one exists,
+	and then install the new version. 
+
+	1.3.1 Installing an HTX RPM Package 
+
+		To install an HTX RPM package, do the following steps: 
+
+		1. Log in as root. 
+		2. Check if HTX is installed on your test system: 
+			rpm -qa | grep "^htx" 
+
+			a. If HTX is not installed, go to step 3. Otherwise, uninstall it: 
+			rpm -e <htx package name> 
+
+			b. Verify that directory /usr/lpp/htx no longer exists: 
+			ls -al /usr/lpp/htx 
+			
+			c. Remove directory /usr/lpp/htx if it still exists: 
+			rm -rf /usr/lpp/htx 
+
+			3. Install the latest RPM package for your system: 
+			rpm -ivh <rpmfilename> 
+
+	1.3.2 Installing an HTX .deb Package 
+
+		To install an HTX .dep package, do the following steps: 
+
+		1. Log in as root. 
+		2. Check if HTX is installed on your test system: 
+			dpkg --list "htx*" 
+			a. If HTX Linux is not installed, go to step 3. Otherwise, uninstall it: 
+				dpkg -r <htx package name> 
+
+			b. Verify that directory /usr/lpp/htx no longer exists: 
+				ls -al /usr/lpp/htx 
+			c. Remove directory /usr/lpp/htx if it still exists: 
+				rm -rf /usr/lpp/htx 
+		3. Install the latest HTX .deb package for your system: 
+			dpkg -i <HTX debfilename> 
+
+1.4 Running HTX
+
+	HTX has two interfaces to manage the execution part, user interactive menu
+	driven option and automation friendly command line option. Menu driven HTX
+	run options are detailed below. Command line options are described in detail
+	in another document (htx_cmdline_cmds.txt).
+	
+	Steps to start HTX with menu:
+	1. Login as user htx on system under test. During this step HTX detects the
+		hardware configuration on system under test and creates MDT files.
+		#su - htx
+	2. Lanuch HTX
+		# htx
+		During this step, one needs to supply the name of MDT file to run.
+		HTX then presents a main menu.
+	
+	Folloing are the options available on user interactive main menu:
+	 
+	Activate/Halt HTX Supervisor (option 1). 
+		A toggle switch that activates or halts all the hardware exercisers
+		that are defined in the master device table (MD)T file. 
+
+	Activate/Halt Device(s) (option 2) 
+		Activates or halts individual devices. This option opens another page
+		where you can choose the individual exerciser to activate or halt. 
+
+	Set Run Type (REG/EMC) (option 3) 
+		Toggles between EMC1 and REG mode. You cannot use this option after the
+		supervisor is started with option 1. Each device has a unique rule file
+		for each mode. (EMC mode is deprecated.)  
+ 
+	Show/Set/Clear “Continue on Error” Flag(s) for Device(s) (option 4) 
+		Sets up individual devices to stop-on-error (SOE) or continue-on-error
+		(COE). This option opens another screen where you can set the SOE or
+		COE flag of each exerciser. 
+ 
+	Display Device Status Table (option 5) 
+		Opens the HTX status table. This table is explained in detail in Section
+		4.1.3 HTX Status Page (Option 5) on page 25. 
+ 
+	Display Device Statistics (option 6) 
+		Displays the device statistics file (/tmp/htxstats). This file contains
+		the performance information of all the running exercisers. 
+		
+	Edit HTX Error Log (option 7) 
+		Opens the HTX error log (/tmp/htxerr). If an exerciser experiences an
+		error, a corresponding error information entry is made in this file. 
+
+	Edit HTX Message Log (option 8) 
+		Displays the HTX message log (/tmp/htxmsg). All of the important
+		information from the exerciser runs is logged in this file. 
+
+	Edit Master Device Table (MDT) (option 9) 
+		Displays the currently running master device table. 
+
+	Add Device/Restart or Terminate Exercisers (option 10) 
+		Opens the Add/Restart/Terminate Device page. 
+
+	Go to shell command line (option 11) 
+		Opens to the shell command line temporarily. (Type exit to return to the main menu.)
+		
+	To refer to commend options available with command line control program (htxcmdline),
+	please refer to htxd_user_manual.txt file in Documentation dir.
+
+	
+	MDT (Machine Device Table) and Rule File :
+	------------------------------------------
+	MDT is the text file that contains the list of devices that can be tested by the HTX. 
+	Each block (except the default block) inside the MDT file contains device names
+	(pseudo or real), associated exercisers, and a rule file. The rule file is a collection
+	of test cases (rules). The default block contains MDT parameters that are applicable to
+	all devices that are present in the MDT file. However, a particular parameter value
+	can be overridden by specifying a new value in a device-specific block. 
+
+	HTX setup scripts detect devices that can be tested by the HTX on the system under test.
+	The scripts create the mdt.all file in the /usr/lpp/htx/mdt directory. 
+
+	Various other MDT files are derived from the mdt.all file and are placed in the 
+	/usr/lpp/htx/mdt directory. Each MDT file is a plain text file and can be viewed and
+	modified by any text editor. An asterisk (*) works as a line comment character for this
+	file. You must leave at least one blank line between the blocks in the MDT file as a
+	syntax requirement. To run the HTX, one of the available MDT files must be supplied to
+	start the test. 
+
+	The rule file is a text file that is a collection of rules (test cases). Each rule
+	contains various test parameters, called rule parameters. Rule parameters are defined
+	by each exerciser and are specific to that exerciser. All rule files for a particular
+	exerciser can be found in the /usr/lpp/htx/rules/reg/<exerciser name>/ directory. 
+	For more information about each rule parameter, see the exerciser readme file at 
+	/usr/lpp/htx/rules/reg/<exerciser name>/ directory. The naming convention for a readme
+	file is <exerciser name>.readme.
+
+		Please note that certain exercisers are not suitable to run in PowerKVM
+	guest or PowerVM shared LPAR environment. These exerciser entries would not be
+	present in mdt files. Its not a bug. Also some devices may not pass HTX
+	testability check and hence they would not show up in MDT files (for e.g.
+	hard disk partition with any file system on it).
+	
+	HTX Log Files
+	-------------
+	HTX Error Log:
+	All HTX exercisers log errors in a common file. By default its /tmp/htxerr file.
+	
+	HTX Message Log:
+	All HTX exercisers log messages in a common file. By default its /tmp/htxmsg file.
+	
+	HTX Statistics Log:
+	All HTX exercisers log their run time stats in /tmp/htxstats file.
+	
+	HTX Start/Stop Time:
+	Start of test and enf of test (Date and time stamp) are captured in
+	/tmp/htx.start.stop.time file.
+	
+	HTX Setup Scripts Log:
+	/tmp/HTXScreenOutput file captures log of HTX setup scripts execution. This will be
+	handy while debugging.
+	
+	Network setup
+	-------------
+	Network setup for HTX network exerciser (hxecom) is captured in separate document,
+	network_setup_procedure.txt file.
+	
+	Customizing MDT Files
+	---------------------	
+	The interactive script, create_my_mdt, helps you to create an MDT that
+	has devices and a rule file name that you choose. Run this script after
+	you log in as user HTX (su - htx) before you run the htx command. 
+
+	Example: /usr/lpp/htx% create_my_mdt 
+
+	How do you want to create your own mdt file: 
+	With devices of your choice from mdt.all: 1 
+	Without devices of your choice from mdt.all: 2 
+	Note: Chosen devices are selected (if option 1) or dropped (if option 2)
+	from the mdt.all file when you create a new MDT file of your choice. 
+
+	Enter 1 or 2: 1 
+
+	For device names that are used by HTX and their availability on this system,
+	look in the mdt.all file in the /usr/lpp/htx/mdt/ directory. 
+
+	Enter device names, separated by space only: sctu fpu fpscr 
+
+	The mdt files already present in /usr/lpp/htx/mdt/ directory mdt mdt.bsr mdt.io mdt.mem 
+	mdt.readme mdt.tlbie mdt_net mdt.all mdt.bsr.mem mdt.cpu mdt.loopback mdt.misc mdt.sctu 
+	mdt.trace_cpu net.default 
+
+	Enter new mdt file name: mdt.test 
+
+	Creating new mdt file: mdt.test with devices: sctu fpu fpscr 
+	After the completion of this command, a new file with the name mdt.test is
+	created in the /usr/lpp/htx/mdt directory. This MDT file has device entries
+	for SCTU, floating-point unit (FPU), and floating-point status control unit
+	(FPSCR) devices only. 
+
+	If you choose option 2 initially, the MDT that is created has all the
+	devices present in the mdt.all file other than the ones that you specify
+	when you run the create_my_mdt script. 
+
+2.0	HTX Features
+
+	2.1 Bootme tests
+		Bootme are reboot tests. User can configure system under test to reboot at
+		regular interval and restart HTX test automatically. Please refer to bootme
+		documentation in <TOPDIR>/rules/reg/bootme dir.
+		
+	2.2 Equaliser
+		By default HTX exercisers are run uncapped and in a free flowing manner.
+		However, if user wants to run certain exercisers in more orchestrated manner,
+		Equaliser is the feature to use. More details about how to enable and configure
+		Equaliser is captured in <TOPDIR>/Documentation/equaliser.readme.
+		
+3.0 List of HTX Exercisers and their brief description
+	hxefpu64 >
+		Objective: To test VSU (Vector Scalar Unit) of power processors by
+		generating pseudo random sequence of instructions.
+
+		Major features:
+
+			Supports testing of BFP, DFP, VMX, VSX instructions
+			Supports both correctness and consistency checking
+			Supports CPU thread specific instructions biasing and FP data corners biasing (number line)
+			Capable of generating test instructions throughput of few MIPS
+			Seed based test case recreation ability
+			Supports creation and execution of a macro to focus on hand coded list of instructions
+			In case of miscompare, exerciser generates detailed miscompare report
+			At the end of test execution, provides instructions coverage report
+
+		Points to ponder:
+
+			hxefpu64 exer creates one device entry in mdt file per processor core.
+			For each such device there will be a corresponding hxefpu64 process when
+			you kick off mdt file. htxconf.awk script finds out the available processor
+			cores in system using lsdev command and creates fpuXX device for each core.
+			In case of miscompare, hxefpu64 exer would create a detailed miscompare log
+			file, log an error in HTX error log and continues to run.
+
+	hxecpu >
+
+		Objective: To test power processor core by generating pseudo random sequence of instructions.
+
+		Major features:
+
+			Supports testing of most user mode instructions
+			Supports consistency checking
+			Supports CPU thread specific instructions biasing and FP data corners biasing (number line)
+			Capable of generating test instructions throughput of few MIPS
+			Seed based test case recreation ability
+
+		Points to ponder:
+
+			hxecpu exer creates one device entry in mdt file per processor core.
+			For each such device there will be a corresponding hxecpu process
+			when you kick off mdt file. htxconf.awk script finds out the available
+			processor cores in system using lsdev command and creates cpuXX device
+			for each core.
+			In case of miscompare, hxecpu exer would create a detailed miscompare
+			log file, log an error in HTX error log and continues to run.
+
+		 
+	hxesctu >
+
+		Objective: To test processor cache coherency of Power system
+
+		Major features:
+
+			Hits at false shared cache line from upto 8 cpu threads to stress cache coherency logic
+			Supports CPU thread specific instructions biasing
+			Capable of generating testcase using most user mode power processor instructions
+			Seed based test case recreation ability
+
+
+		Points to ponder:
+
+			hxesctu expects affinity between vcpus and pcpus (dedicated mode LPAR config)
+			for effective testing. Hence, in shared config mode (both PowerVM and PowerKVM)
+			sctu is not included in default mdt.
+			hxesctu is required to be cpu hungry due to the fact that it runs upto 8 software
+			threads on 8 distinct hardware threads in parallel and expects all of them to
+			be present on respective cpu at a same time while executing a testcase. Under
+			heavily loaded system when other cpu bound exers are also contending, it causes
+			sctu to run slow. Hence, sctu software threads' priority is bumped up while
+			running testcase and is brought down when done with testcase execution.
+			HTX setup script creates N sctu copies per SCTU gang (upto 8 cores), where N is
+			SMT value configured on system. Each sctu copy creates upto 8 threads for
+			testcase execution and each thread would pick a cpu thread from cores of gang.
+
+	hxemem64 >
+
+		Objective: To stress test memory subsystem of power system.
+
+		Major features:
+
+			Can test large amount of system real memory by allocating it through OS shared memory and performing WRC ops on available memory.
+			Supports variety of patterns (data pattern through file, immediate pattern, special patterns)
+			Can test all available and configured physical page sizes and segment sizes
+			Supports various test operations on memory segments (sequential access, cache line hoping, any size hoping)
+			Support multiple threads
+			Support testing L4 cahce
+
+		Points to ponder:
+		
+	hxecache >
+
+		Objetive: To stress test L1/L2/L3 caches
+
+		Major features:
+
+			Has L2/L3 rollover tests and L2 cache line bouncing test
+			Can run various prefetch irritators alongside cache tests.
+			Supports basic, transient, N stride, Partial prefetch types
+			Rule file tunable to avoid using specified chiplet(s) to indirectly test dynamic ECO
+			Prefetch threads randomizes DSCR fields
+
+	hxefabricbus >
+
+		Objective: To maximize address/data traffic on intra node and inter node fabric buses
+
+		Major features:
+
+			Intra node links test
+			Inter node links test
+			Supports various data patterns to be sent over links
+			Allows to hand code processor/memory mappings to customize stress on links
+
+		Points to ponder:
+
+			Should be run alone for maximum effectiveness
+			Does not make much sense to run on LPAR with shared processors configuration and KVM guests
+			Execiser readme is present in /usr/lpp/htx/rules/reg/hxefabricbus/hxefabricbus.readme on all test machines installed with HTX.
+
+	hxestorage >
+
+		Objective: To test storage subsystem by using end devices as target.
+
+		Major features:
+
+			Performs raw mode storage ops with data integrity checks on variety of storage devices ( LV, RAID, JBOD, SAN, Flash/HDD, Dynamic Tiers, DVDRAM)
+			Multiple threads with capability to control write/read ratio Tunables for transfer length, random/seq access ratio, buffer alignment
+			Metadata for each LBA to isolate data integrity issues
+			Separate performance and validation coverage modes
+
+		Points to ponder:
+
+			hxestorage would not test a device which has file system configured
+			Execiser readme is present in /usr/lpp/htx/rules/reg/hxestorage/hxestorage.readme on all test machines installed with HTX.	
+			
+	hxecom/hxedapl >
+
+		Objective: To test network subsystem
+
+		Majot features:
+
+			Uses TCP sockets or RDMA constructs to generate traffic on eithernet, RoCE, IB, RNIC or CNA adapters
+			Supports testing of network interfaces within single system or across multiple systems
+			Can be configured to create multiple senders/receivers
+			Packet data (application payload) generated are context aware which helps isolate data integrity issues
+			Supports performance mode (optimized buffer use and data patterns)
+			Can auto detect looped back network interfaces on single system and auto configures them for testing
+
+		Points to ponder:
+			Execiser readme is present in /usr/lpp/htx/rules/reg/hxecom/hxecom.readme on all test machines installed with HTX.
+
+	hxecorsa >
+
+		Objective: To perform stress test on Corsa GZIP adapter by issuing deflate/inflate and bypass operations.
+
+		Major Features:
+
+			Operations: deflate/inflate/compare, deflate/deflate/compare, bypass
+			Multithreaded
+			Various data patterns
+
+		Points to Ponder:
+			Currently supported on HTX AIX (all versions) and HTX-Linux (RHEL only).
+
+	Equalizer >
+
+		Objective:
+		Default HTX run would run all exercisers full blown without any restrictions or
+		control. If exercisers are to be run in a controlled manner with specific
+		exerciser to processor thread affinity then Equalizer should be used. Equalizer
+		would allow exercisers to be run according to a utilization pattern specified
+		in Equalizer config file.
+
+		Major features:
+
+			It supports deterministic start/stop of workload (following HTX ecercisers):
+				hxefpu64 - floating point test program.
+				hxecache - cache stress program
+				hxemem64 - memory stress program
+				hxecpu - generic cpu exercsier.
+			Specialised rule file for each supported exerciser.
+			A config file "/usr/lpp/htx/htx_eq.cfg" is provided to configure the equaliser.
+			Provides finer control over workload.
+			Processor utilization can be controlled through a bit mask or through predefined patterns.
+			Affinity control at processor hardware thread level.
+
+	htxd >
+
+		Objective:
+		This is a new and state-of-the-art HTX daemon which will replace current STX eservd.
+		The htxd automatically starts as a service on system boot or HTX install. htxcmdline
+		is a new command line (replacing esrv) utility that can start sending commands to
+		control HTX run on system under test without having a need to get onto system under
+		test. htxcmdline is backward compatible with esrv and hence all the automation scripts
+		written with STX should run as-is with new htxd.

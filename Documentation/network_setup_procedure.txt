@@ -1,0 +1,739 @@
+Network setup procedure for running hxecom exerciser 
+----------------------------------------------------
+hxecom is a network subsystem test porgram (a.k.a exerciser). hxecom supports testing of
+pure ethernet, Infiniband (IB) and RDMA capable adapters. Before hxecom exerciser can
+run on network cards, certain setup is required to be done. This setup is done by
+build_net script. This document describes steps to run build_net.
+
+hxecome can test network ports in two different network setup:
+
+*	Single system network setup
+	Network that is created by connecting network ports of a single system. One can create multiple
+	networks by connecting pair of network ports using back to back cable or through network switch.
+	Each connected pair of network ports is called a test network (a.k.a TESTNET). Each TESTNET has
+	its unique test network id.
+
+*	Multi system network setup
+	A ntwork Network that is created by connecting network ports of two different systems
+	(VMs or machines). One can create multiple networks by connecting pair of network ports from two
+	different machines (VMs) using back to back cable or through network switch. Each connected
+	pair of network ports is called a test network (a.k.a TESTNET).
+
+	For network setup, one network port is required to be set aside and connected to your company's
+	intranet for exchanging control information between hxecom instances. This network port is not
+	considered for test. This network port/interface is called COMNET interface. COMNET is supposed
+	to be a reliable network and is extensively used for control packet exchange. Usually site 
+	network is best suited for this purpose. COMNET must be configured in case of multi system test
+	and is not needed for single system test.
+	
+	If network switch is used to form test networks, please ensure that switch is private and not
+	connected to your company's intranet.
+	
+	HTX uses "build_net" script to identify and setup test/com networks. This script is interactive
+	and ask several questions to perform test setup. Build_net script can be found in "/usr/bin/"
+	after HTX is installed on a system under test.
+	
+
+	Network hardware setup prerequisites:
+	--------------------------------------
+	a) Physically connect the network adapter ports, back to back or through a network switch. 
+	
+	b) Please ensure that network cables used in Step a) are good and compatible with network 
+		adapter used.
+
+	
+	Other setup Prerequisites: 
+	--------------------------
+	"build_net" script relies on system's hostname to detect site network, and takes necessary
+	steps to avoid accidently altering ethernet interface connected to site network. However,
+	if /etc/hosts is not properly capturing the correct hostname, build_net considers COMNET
+	interface as a candidate for test. This results in altering the site network interface
+	IP/hostname configurations. Users need to ascertain that "/etc/hosts" is in good health
+	before starting build_net procedure.
+
+	build_net follows a naming convention for its TESTNET hostname as:
+	[0-9][0-9][0-9]net[0-9][0-9][0-9].
+	If users find any such entry in /etc/hosts where system's hostname points to hxecom TESTNET,
+	it should be removed before starting build_net script. 
+  
+
+	Building Single-system Networks : 
+	---------------------------------
+	Automatic setup and configuration
+	---------------------------------
+	While logging in as user htx, HTX automatically checks to see if there is an existing single
+	system setup available on the system. If so, it automatically detects the connections and
+	creates /tmp/networks file. If user wants to run network tests, along with any other MDT file
+	htx should be run with -b command option.
+	For e.g.:
+	#htx -b <MDT file name to which network devices would be added>
+	This spep will configure all the interfaces and add network devices in MDT file supplied above.
+
+		root@fr70p01:~# su - htx
+		[Tue Mar 29 02:52:26 CDT 2016]: 1st HTX message.
+		..........
+		..........
+		<HTX messages removed>
+		..........
+		..........
+		Discovering test network...
+		Your host com_dev for comname fr70p01 is set to eth0, netmask=255.255.255.0
+		Creating profile template... /usr/lpp/htx//bpt
+		Running command ..
+		 /usr/lpp/htx/bin/auto   eth0 eth1 eth2 eth3
+		Found single system configuration.Your network setup looks like...
+		eth1 -> eth2
+
+		Run command htx -b mdtfile to setup hxecom network.
+		..........
+		..........
+		<HTX messages removed>
+		..........
+		..........
+		(0) htx @ fr70p01: /usr/lpp/htx
+
+		# htx -b mdt.bu
+		Your host com_dev for comname fr70p01 is set to eth0, netmask=255.255.255.0
+		Your network setup looks like ....
+		 eth1 -> eth2
+
+		A real system somewhere on the network is configured with net_id=100. Skipping 100 net_id ....
+		A real system somewhere on the network is configured with net_id=101. Skipping 101 net_id ....
+		Running build_net bpt to configure test networks ....
+		Your host com_dev for comname fr70p01 is set to eth0, netmask=255.255.255.0
+		Running Linux version of build_net.
+		...............................Found eth0 in location N/A
+		eth0.. Detected site network. Skipping it .... .
+		...............................Found eth1 in location N/A
+		...............................Found eth2 in location N/A
+		...............................Found eth3 in location N/A
+		Configuring Unknown, dev=eth1, rule=102net, hostname=102net24,ip address=102.1.1.24
+		Configuring Unknown, dev=eth2, rule=102nets, hostname=102nets24,ip address=102.1.2.24
+
+		Ping network 102.1.1.24 from dev eth2---->OK
+		Ping network 102.1.2.24 from dev eth1---->OK
+		All networks ping Ok
+		Adding 2 devices to mdt
+		Open /usr/lpp/htx/mdt/mdt.bu to insert the new lines
+		Done OK
+
+		Note:
+		Please ensure saveprof file is not present in /tmp folder. We save previous build_net
+		configuration information in /tmp/saveprof file which is used by pingum and also to
+		reconfigure system during bootme. If this file is already present, automation will
+		assume hxecom setup is present and skip running build_net. Hence we cannot setup hxecom
+		network during "su-htx".
+		
+	
+	Manual setup and configuration
+	------------------------------
+	Setup procedure can be summarized in three separate steps as mentioned below : 
+
+		STEP 1.
+		Run "build_net help" to build the template file, bpt. bpt file includes details of 
+		avaliable network interfaces in the system. This step is interactive and asks several 
+		questions about test setup. 
+		Section below provides more details on different questions and possible inputs to 
+		them :  
+
+
+		STEP  1.1
+		Run "build_net help" to dynamically create the template file, bpt, which
+		includes all available network adapters in the system.   
+	
+			Sample run : 
+			----------- 
+	 		# build_net help
+			Is this a one system test? y or n
+			y
+			Expected Inputs : 
+			-----------------
+			1) Enter 'y' if this is single system test. 
+			2) Enter 'n' if this is multi system test. 
+
+
+		STEP 2 : build_net script is capable of detecting network loopback connections autmatically. 
+			 As a next step script would ask whether to use autmation to detect loopback network
+			 topology. 
+
+        Sample run :
+      	----------- 
+        Do you want automation scripts to automatically detect network topology, enter yes(y) or no(n)
+        y  <-- Type 'y' to let build_net automatically detect your network setup.
+
+	    Expected Inputs :
+        -----------------
+        1) Enter 'y' to let build_net automatically detect your network topology.  STEP 2.1 walks through 
+			further details for this user response.  
+        2) Enter 'n' if you wish to generate your custom bpt file. Step 2.2 walks through
+            further details for this user response.
+	
+			STEP 2.1 : build_net automation procedure : 
+				  	   
+			STEP 2.1.1 : Sample output if using automation : 
+
+				root@fr70p01:~# build_net help y y
+				Your host com_dev for comname fr70p01 is set to eth0, netmask=255.255.255.0
+				Creating profile template... /root/bpt
+				onesys=y
+				Automation script will now try to detect your network topology.
+				In case of errors manually edit bpt file and run build_net bpt to setup hxecom networks
+				Running command ..
+				 /usr/lpp/htx/bin/auto  eth1 eth2 eth3
+				Your host com_dev for comname fr70p01 is set to eth0, netmask=255.255.255.0
+				Your network setup looks like ....
+				 eth1 -> eth2
+
+				A real system somewhere on the network is configured with net_id=100. Skipping 100 net_id ....
+				A real system somewhere on the network is configured with net_id=101. Skipping 101 net_id ....
+				Running build_net bpt to configure test networks ....
+				Your host com_dev for comname fr70p01 is set to eth0, netmask=255.255.255.0
+				Running Linux version of build_net.
+				...............................Found eth0 in location N/A
+				eth0.. Detected site network. Skipping it .... .
+				...............................Found eth1 in location N/A
+				...............................Found eth2 in location N/A
+				...............................Found eth3 in location N/A
+				Configuring Unknown, dev=eth1, rule=102net, hostname=102net24,ip address=102.1.1.24
+				Configuring Unknown, dev=eth2, rule=102nets, hostname=102nets24,ip address=102.1.2.24
+
+				Ping network 102.1.1.24 from dev eth2---->OK
+				Ping network 102.1.2.24 from dev eth1---->OK
+				All networks ping Ok
+
+    		STEP 2.1.2 :  build_net would assign netids to each detected TESTNET.  
+	
+			build_net will automatically configure netid's in bpt file based on
+    	    network topology detected in STEP 2.1.1. Build_net later invokes "build_net bpt"
+        	to configure test networks.
+
+			Note : 
+			=====
+			In case of automation failure, user can always edit the bpt file manually and run 
+			"build_net bpt". STEP 2.2. walks you through the manual proceudre. 
+			
+			STEP 2.2. : Customizing bpt file : 
+					    ----------------------
+			STEP 2.2.1 : If User responds 'n' to automation in STEP 2, then build_net would
+						generate sample bpt file and exit.   
+
+				Sample bpt file Created  : 
+				--------------------------
+				root@fr70p01:~# build_net help
+				Is this a one system test? y or n
+				y
+				Your host com_dev for comname fr70p01 is set to eth0, netmask=255.255.255.0
+				Creating profile template... /root/bpt
+				onesys=y
+				 Do you want automation scripts to automatically detect network topology, enter yes(y) or no(n)
+				n
+				Manually edit bpt file and run build_net bpt to setup hxecom networks
+				root@fr70p01:~# cat bpt
+				onesys=yes
+				thishostid=24
+				nexthostid=24
+				stresslevel=5
+				comhostname=fr70p01
+
+				#Transmission Control Protocl(TCP) Testcase ..
+				#dev   net_id   dev_type use_defaults mtu jumbo testcase location
+				#ethX XXX/n/com device_name no/yes   XXXX no/yes TCP/RDMA xx.xx.xx.x.x
+				eth0 com Unknown  yes 1500 no TCP N/A
+				eth1 n Unknown  yes 1500 no TCP N/A
+				eth2 n Unknown  yes 1500 no TCP N/A
+				eth3 n Unknown  yes 1500 no TCP N/A
+
+				#Internet Protocol over Infiniband(IPoIB) Testcase ..
+				#DEV NET_ID   DEV_TYPE    DEV     PORT  TESTCASE   LOCATION
+				#ibXXX XXX/n/com device_type mlx[4/5]_X X   IPoIB  xx.xx.xx.x.x
+
+				#Transmission Control Protocl(TCP) Testcase ..
+				#dev   net_id   dev_type use_defaults mtu jumbo testcase location
+				#ethX XXX/n/com device_name no/yes   XXXX no/yes TCP/RDMA xx.xx.xx.x.x
+
+				#Remote Direct Memory Access(RDMA) Testcase ..
+				#DEV NET_ID   DEV_TYPE    IA     PORT  TESTCASE   LOCATION
+				#ibXXX XXX/n/com device_name ibX X   ibX/- RDMA xx.xx.xx.x.x
+
+				#Link Aggregation Testcase ..
+				#dev   net_id   dev_type use_defaults mtu jumbo testcase location
+				#tmX XXX/n/com device_name no/yes   XXXX no/yes TCP/RDMA xx.xx.xx.x.x
+
+				#Link Aggregation Testcase ..
+				#dev   net_id   dev_type use_defaults mtu jumbo testcase location
+				#bondX XXX/n/com device_name no/yes   XXXX no/yes TCP/RDMA xx.xx.xx.x.x
+				root@fr70p01:~#
+
+	
+			STEP 2.2.2 : Edit the bpt file to specify the networks 
+			Network ports that are connected together should be configured with the same NET_ID. 
+			The NET_ID value defaults to 'n' in the file for every interface, except the site connection, 
+			which is set to COM. NET_ID values should range between 100 and 200.
+	
+			Sample Edited Bpt file : 
+			-----------------------
+				root@fr70p01:~# cat bpt
+				onesys=yes
+				thishostid=24
+				nexthostid=24
+				stresslevel=5
+				comhostname=fr70p01
+
+				#Transmission Control Protocl(TCP) Testcase ..
+				#dev   net_id   dev_type use_defaults mtu jumbo testcase location
+				#ethX XXX/n/com device_name no/yes   XXXX no/yes TCP/RDMA xx.xx.xx.x.x
+				eth0 com Unknown  yes 1500 no TCP N/A
+				eth1 101 Unknown  yes 1500 no TCP N/A
+				eth2 101 Unknown  yes 1500 no TCP N/A
+				eth3 n Unknown  yes 1500 no TCP N/A
+
+				#Internet Protocol over Infiniband(IPoIB) Testcase ..
+				#DEV NET_ID   DEV_TYPE    DEV     PORT  TESTCASE   LOCATION
+				#ibXXX XXX/n/com device_type mlx[4/5]_X X   IPoIB  xx.xx.xx.x.x
+
+				#Transmission Control Protocl(TCP) Testcase ..
+				#dev   net_id   dev_type use_defaults mtu jumbo testcase location
+				#ethX XXX/n/com device_name no/yes   XXXX no/yes TCP/RDMA xx.xx.xx.x.x
+
+				#Remote Direct Memory Access(RDMA) Testcase ..
+				#DEV NET_ID   DEV_TYPE    IA     PORT  TESTCASE   LOCATION
+				#ibXXX XXX/n/com device_name ibX X   ibX/- RDMA xx.xx.xx.x.x
+
+				#Link Aggregation Testcase ..
+				#dev   net_id   dev_type use_defaults mtu jumbo testcase location
+				#tmX XXX/n/com device_name no/yes   XXXX no/yes TCP/RDMA xx.xx.xx.x.x
+
+				#Link Aggregation Testcase ..
+				#dev   net_id   dev_type use_defaults mtu jumbo testcase location
+				#bondX XXX/n/com device_name no/yes   XXXX no/yes TCP/RDMA xx.xx.xx.x.x
+
+
+
+			STEP 2.2.3 : After editing the file, run "build_net bpt" to build the networks. 
+	
+			Sample run : 
+			------------
+				root@fr70p01:~# build_net bpt
+				Running build_net bpt to configure test networks ....
+				Your host com_dev for comname fr70p01 is set to eth0, netmask=255.255.255.0
+				Running Linux version of build_net.
+				...............................Found eth0 in location N/A
+				eth0.. Detected site network. Skipping it .... .
+				...............................Found eth1 in location N/A
+				...............................Found eth2 in location N/A
+				...............................Found eth3 in location N/A
+				Configuring Unknown, dev=eth1, rule=101net, hostname=101net24,ip address=101.1.1.24
+				Configuring Unknown, dev=eth2, rule=101nets, hostname=101nets24,ip address=101.1.2.24
+
+				Ping network 101.1.1.24 from dev eth2---->OK
+				Ping network 101.1.2.24 from dev eth1---->OK
+				All networks ping Ok
+				root@fr70p01:~#
+	
+		STEP 3 : Use pingum to verify all the networks are pingable. 
+
+		Sample run : 
+		------------
+		# pingum
+		Ping network 100.1.2.16---->OK
+		Ping network 100.1.2.218---->OK
+		All networks ping ok
+		Step 3 is the basis for running hxecom. Please ensure that all the networks configured in bpt file 
+		passes ping test.
+
+	Building Multi-system Networks : 
+	-------------------------------
+	Multi system setup is similar to single system test, except for STEP 1.   
+	
+	STEP 1 : Run "build_net help" on all the systems to build the template file, bpt, which includes all of 
+		 the available network interfaces in the system.  Enter 'N/n' when prompted if it is a one system 
+		 test. Follow STEP 2 and 3 similar to Single system test. 
+		 
+		Sample run : 
+		------------
+		root@fr70p01:~# build_net help
+		Is this a one system test? y or n
+		n
+		Your host com_dev for comname fr70p01 is set to eth0, netmask=255.255.255.0
+		Creating profile template... /root/bpt
+		onesys=n
+		 
+		Sample BPT file looks like :
+		----------------------------
+			root@fr70p01:~# cat bpt
+			onesys=no
+			thishostid=24
+			other_ids=9.3.183.24:
+			stresslevel=5
+			comhostname=fr70p01
+
+			#Transmission Control Protocl(TCP) Testcase ..
+			#dev   net_id   dev_type use_defaults mtu jumbo testcase location
+			#ethX XXX/n/com device_name no/yes   XXXX no/yes TCP/RDMA xx.xx.xx.x.x
+			eth0 com Unknown  yes 1500 no TCP N/A
+			eth1 n Unknown  yes 1500 no TCP N/A
+			eth2 n Unknown  yes 1500 no TCP N/A
+			eth3 n Unknown  yes 1500 no TCP N/A
+
+			#Internet Protocol over Infiniband(IPoIB) Testcase ..
+			#DEV NET_ID   DEV_TYPE    DEV     PORT  TESTCASE   LOCATION
+			#ibXXX XXX/n/com device_type mlx[4/5]_X X   IPoIB  xx.xx.xx.x.x
+
+			#Transmission Control Protocl(TCP) Testcase ..
+			#dev   net_id   dev_type use_defaults mtu jumbo testcase location
+			#ethX XXX/n/com device_name no/yes   XXXX no/yes TCP/RDMA xx.xx.xx.x.x
+
+			#Remote Direct Memory Access(RDMA) Testcase ..
+			#DEV NET_ID   DEV_TYPE    IA     PORT  TESTCASE   LOCATION
+			#ibXXX XXX/n/com device_name ibX X   ibX/- RDMA xx.xx.xx.x.x
+
+			#Link Aggregation Testcase ..
+			#dev   net_id   dev_type use_defaults mtu jumbo testcase location
+			#tmX XXX/n/com device_name no/yes   XXXX no/yes TCP/RDMA xx.xx.xx.x.x
+
+			#Link Aggregation Testcase ..
+			#dev   net_id   dev_type use_defaults mtu jumbo testcase location
+			#bondX XXX/n/com device_name no/yes   XXXX no/yes TCP/RDMA xx.xx.xx.x.x
+
+	
+	STEP 2 : Edit the bpt file to specify the networks. You need to make sure you fill alteast two entries as mentioned below :   
+		 a) Add the IP addresses of every system participating in hxecom test to the "other_ids" line of the bpt files. 
+		 b) Test network netid should be configured same as mentioned in STEP 4 for single system setup.
+		
+		Sample edited bpt file looks like : 
+		----------------------------------
+		root@fr70p01:~# cat bpt
+		onesys=no
+		thishostid=24
+		other_ids=9.3.183.24:9.3.183.27
+		stresslevel=5
+		comhostname=fr70p01
+
+		#Transmission Control Protocl(TCP) Testcase ..
+		#dev   net_id   dev_type use_defaults mtu jumbo testcase location
+		#ethX XXX/n/com device_name no/yes   XXXX no/yes TCP/RDMA xx.xx.xx.x.x
+		eth0 com Unknown  yes 1500 no TCP N/A
+		eth1 101 Unknown  yes 1500 no TCP N/A
+		eth2 102 Unknown  yes 1500 no TCP N/A
+		eth3 n Unknown  yes 1500 no TCP N/A
+
+		#Internet Protocol over Infiniband(IPoIB) Testcase ..
+		#DEV NET_ID   DEV_TYPE    DEV     PORT  TESTCASE   LOCATION
+		#ibXXX XXX/n/com device_type mlx[4/5]_X X   IPoIB  xx.xx.xx.x.x
+
+		#Transmission Control Protocl(TCP) Testcase ..
+		#dev   net_id   dev_type use_defaults mtu jumbo testcase location
+		#ethX XXX/n/com device_name no/yes   XXXX no/yes TCP/RDMA xx.xx.xx.x.x
+
+		#Remote Direct Memory Access(RDMA) Testcase ..
+		#DEV NET_ID   DEV_TYPE    IA     PORT  TESTCASE   LOCATION
+		#ibXXX XXX/n/com device_name ibX X   ibX/- RDMA xx.xx.xx.x.x
+
+		#Link Aggregation Testcase ..
+		#dev   net_id   dev_type use_defaults mtu jumbo testcase location
+		#tmX XXX/n/com device_name no/yes   XXXX no/yes TCP/RDMA xx.xx.xx.x.x
+
+		#Link Aggregation Testcase ..
+		#dev   net_id   dev_type use_defaults mtu jumbo testcase location
+		#bondX XXX/n/com device_name no/yes   XXXX no/yes TCP/RDMA xx.xx.xx.x.x
+
+	STEP 3 : After editing the file, run "build_net bpt" to build the networks. 
+		root@fr70p01:~# build_net bpt
+		Running build_net bpt to configure test networks ....
+		Your host com_dev for comname fr70p01 is set to eth0, netmask=255.255.255.0
+		Running Linux version of build_net.
+		...............................Found eth0 in location N/A
+		eth0.. Detected site network. Skipping it .... .
+		...............................Found eth1 in location N/A
+		...............................Found eth2 in location N/A
+		...............................Found eth3 in location N/A
+		grep: /.rhosts: No such file or directory
+		Configuring Unknown, dev=eth1, rule=101net, hostname=101net24,ip address=101.1.1.24
+		Configuring Unknown, dev=eth2, rule=102net, hostname=102net24,ip address=102.1.1.24
+
+		Ping Com 9.3.183.24---->OK
+		Ping Com 9.3.183.27---->OK
+		Ping Test 101net27---->OK
+		Ping Test 102net27---->OK
+		All networks ping ok
+
+		
+		User Note : 
+		==========
+			1. Step 1 to 3 has to be done on all systems participating in Multi System Test. 
+
+=====================================================================================================================		
+
+Understanding bpt file : 
+------------------------
+Section below gives detailed description of parameters used in bpt file :   	
+
+	1) ONESYS
+	----------
+	  	This variable is set by build_net based on the way you answer the question "Is this a one 
+	   	systems test". If single system test setup then this paramter is set to yes and for mutli
+	   	system test it is set to no. 
+		Possible Values : 'y' or 'n' 	
+
+	2) SEED
+	--------	
+		This is the random seed selected by build_net to create this profile. If you wish to rerun 
+		build_net help and produce this exact same profile, you must supply this same seed when 
+		asked for a seed.You should not need to supply a seed unless you are trying to reproduce a 
+		defect. Even then, you can just rerun build_net on the original bpt file to produce the 
+		same test.
+		Possible Vaules : Positive Integer.	
+	
+	3) THISHOSTID
+	-------------	
+		This value is set by build_net. It comes from the ip address of the comnet. In most cases 
+		this is the site connections ip address. The hostid is the last octet. For example for 
+		ip 9.3.50.23, the hostid is 23.
+		ip 9.3.50.23, the hostid is 50.23 for class B addresses.
+		Possible Values : 0 - 254. 
+	
+	4) OTHER_IDS
+	------------
+		This line you have to edit.The first host id will already be here, build_net supply it. 
+		It is the ip address of this systems comnet. You have to supply the ip or hostname of the 
+		comnet for all the other systems in the test. In this example there is only one other system, 
+		with comnet name of iofrocketsp04.
+		Example : 9.3.12.34:iofrocketsp04.
+		Possible Values : pingable ipaddresses of the participating test machines. 
+	
+	5) STRESSLEVEL
+	--------------
+		If you wish to increase the system stress level you can set this value from 1-6. If you 
+		have a lot of networks, you should have stress level b/w 1 to 4. Stress level 5 is designed  
+		for high network bandwidth utilization and uses incremental buffer sizes, buffer size is 
+		calculated as : 
+			for(bsize = rule[stanza].bufmin ; bsize < rule[stanza].bufmax; bsize += rule[stanza].bufinc) { 
+				Send/Recv bzise Bytes,  rule[stanza].num_oper times. 
+         	}        
+		Stress level 6 generates random buffer sizes between rule[stanza].bufmin and 
+		rule[stanza].bufmax. If rule[stanza].bufmin equals rule[stanza].bufmax then random packets 
+		sizes are generated between 0 and rule[stanza].bufmax.  
+
+		Possible Values : 1 to 6. 
+		Default Vaule : 5 or 6(randomly selected).
+	
+	6) COMHOSTNAME
+	--------------
+		The comnet hostname will be filled in for you if you have a site ring connection already
+		configured.This is the easiest way to run build_net and hxecom. Use the site ring as comnet
+		when ever you can If you don't have a site connection you can use any of you networks in the 
+		test as a comnet. You just have to put its hostname here and set the next var use_site_ring=n 
+		and com_configured=n, then supply the compared and commask.
+		Possible Values : Hostname of the current machine.	
+
+	7) Device line  
+	---------------
+	
+		Sample Device line in bpt file : 
+		-------------------------------- 
+
+		#dev net_id type use_defaults mtu jumbo testcase tx_tcp_reseg rx_tcp_reseg cksum location PdDvLn
+		----------------------------------------------------------------------------------------------------
+		
+		Brief description of these parameters are : 
+		a)dev :
+		--------
+			This is the device name, ent0, tok1, fddi3, etc. This is put in by build_net based on the
+			devices in the system.
+			
+		b)net_id :
+		----------
+			This is a number between 100 and 200. It identifies a network for test. Each adapter 
+			assigned the same net_id must be physically on the same network. This net_id is used 
+			as part of the ip address for the device. EX: a net_id of 100 has this ip address. 
+			100.1.2.XX.
+			NOTE: XX is the last nibble of the comnet for this test system. So, the net_id identifies 
+			the network and XX identifies the system on the network.
+			
+		c)device_type :
+		---------------	
+			This parameter describes the code name of the device. 
+			
+		d)use_defaults :
+		----------------
+			Set to yes or no. When set to yes, the remainder of the adapter parms are set to the default
+			values.
+			
+		f)mtu :
+		-------
+			The maximum transmit unit, This sets the largest packet that will be transmitted from this
+			device. The default is different for each device. Build_net will pick a random, legal value
+			for mtu size. To find the legal values for each device you can use the smit pannels in AIX.
+			
+		g)jumbo :
+		---------
+			Jumbo frames enable adpater to send large packets in one shot. Once enabled adpater can send 
+			packet of size 1500 to 9000 bytes in one shot. Always enable this paramter for better performance.  
+			Default - Existing adapter settings. 
+			Expected Inputs : 
+			1. yes 
+			2. no 
+			When set to yes jumbo_frames is turned on. This is an ethernet option only.
+
+		
+		h) testcase :
+		-------------
+			hxecom exerciser has been updated to support RDMA testcase for IB adapters. Different adapters 
+			can support multiple testcases at the same time, for example an RoCE Travis-En adapter can be 
+			seen as a ethernet device as well can behave as RDMA capable IB adapter. 
+			Similarly IB adpaters can be configured to run hxecom TCP/IP testcase on IPoIB or hxecom RDMA
+			testcase for IB interface. This paramter allows users to specify which testcase to be configured
+			in case of multi function devices. 
+			Default - TCP. 
+			Expected user Inputs : 
+			1. TCP
+			2. IPoIB
+			3. RDMA
+			Users must be careful while selecting the testcase paramter, they need to ensure adpater 
+			supports the testcase. 
+
+		i) tx_tcp_reseg	:
+		-----------------
+			The TCP large send offload option allows the TCP layer to build a TCP message up to 64 KB long. 
+			The adapter sends the message in one call down the stack through IP and the Ethernet device driver.
+			The adapter then breaks the message into multiple TCP frames to transmit data on the cable. 
+			The TCP packets sent on the cable are either 1500 byte frames for an Media Transmission Unit 
+			(MTU) of 1500 or up to 9000 byte frames for an MTU of 9000 (jumbo frames).
+			Default - Existing adapter value. 
+			Expected inputs : 
+			1. yes 
+			2. no 
+			If adapter supports large send facility then users should enable it for better performance. 
+			Set the bpt paramter to "yes" to let build_net enable this adapter capability. 
+
+		j) rx_tcp_reseg : 
+		-----------------
+			Enables coalescing receive packets into a larger packet before passing to the upper layer for enhanced performance. 
+			Default - Existing adapter value.
+			Expected inputs :
+			1. yes
+			2. no
+
+		k) cksum :
+		----------	
+			Set to yes or no. When set to yes, the adapter will take on the job of creating and checking tcp check sum. 
+			The default is yes.
+			
+		l) location :
+		--------------
+			This value is assinged by build_net. It is not used by build_net. Its there to help the user 
+			locate the physical slot location of the adapter, so they know which card is plugged into which network.
+			
+		m) PdDvLn : 
+		-----------
+			This value is entered by build_net. It comes from the odm and it shows the device id for this device. 
+			You can use this to find out what device driver package is used for this device. 
+			
+		The line by line descriptions are the same for this profile as they are for the the multiple systems test, 
+		except for the net_id description. For a multiple systems test there should only be one instance of each
+		net_id value. For the one systems there will be 2, and only 2, instances of each net_id. That forms one
+		network for test.
+	
+
+Please Note :
+=============
+	1. Earlier steps to manually configure test networks in bpt file and run "build_net bpt"
+		are also supported along with automation. 	 	
+	2. If automation fails, user can configure test netid's manually in bpt file and run 
+		"build_net bpt". Please open a defect against htx_screen to get the issue debugged by
+		 HTX Support Team. 
+	3. If User wants to modify specific ethernet parameters, then modify the bpt file 
+		appropriately and rerun "build_net bpt" for the changes to be effective.   
+	4. Interactive build_net setup procedure can be overriden if user supplies all the 
+		required inputs through command line argument. 
+		
+		Syntax			:	build_net  help onesys use_automation
+		Possible Values :       	          y/n      y/n 
+		Example 	 	:   build_net  help y y 
+
+
+MTU setup for adapters with SRIOV_Virtual_Function from HMC:
+======================================================= 
+	If running hxecom with SRIOV VF,  VF attributes(ex : mtu, jumbo_frames, flow control)
+	must be set from HMC on corresponding PF then on VF's assigned to LPARs. 
+	To change PF settings on HMC, follow the below steps: 
+		HMC GUI -> Server -> Properties -> I/O tab -> Click on the SRIOV adapter -> SR-IOV tab
+			-> Click on desired physical port -> Advanced tab  
+
+	Please change the values in drop down box for MTU and FLow Control such that
+	corresponding PF and VF attributes are in sync. 
+
+
+INBAND execution of build_net procedure with HTX login :
+=======================================================
+	HTX setup procedure has been updated to detect existence of Single System configuration
+	on a host, if setup script detects hxecom loopback connections, then it would prompt
+	user with options to setup hxecom network inline with standard HTX procedures. 
+	This support is currently available for Linux Single system configuration. If users have
+	alrady setup network using build_net procedure as discussed above then this whole setup
+	is skipped. 
+
+	Steps to follow
+	================
+	Note: Please ensure saveprof file is not present in /tmp folder. We save previous build_net
+	configuration information in /tmp/saveprof file which is used by pingum and also to
+	reconfigure system during bootme. If this file is already present, automation will
+	assume hxecom setup is present and skip running build_net. Hence we cannot setup hxecom
+	network during "su-htx". 
+
+	1. Run htx using "su - htx".
+	2. If loopback networks are present, we display loopback network information and provide
+		with an option "htx -b".
+	3. Run "htx -b <mdt file name>" command to setup hxecom networks. Internally hxecom
+		adapter/device information is attached to the mdt file provided in the option.
+		Eg: htx -b mdt.bu 
+
+	Rest of the htx procedure remains same.
+
+Link Aggregation Enablement for Linux:
+=====================================
+
+	Link aggregation refers to various methods of combining multiple network connections in
+	parallel in order to increase throughput beyond what a single connection could sustain,
+	and to provide redundancy in case one of the links should fail. The combining or aggregating
+	together of network links in order to provide a logical link with higher throughput, or to
+	provide redundancy, is known by many names such as channel bonding, Ethernet bonding, port
+	trunking, channel teaming, NIC teaming, link aggregation, and so on. 
+
+	Build_net now allows users to configure network teamed interfaces. Diagram belows shows
+	Link aggregation connection setup for single system test. Connect interfaces back to back
+	on which you would like to setup network teaming in similar manner shown below. build_net
+	execution procedure/commands remain same.
+
+							Link             -------------	 Loopback 1
+	 ------------------- Aggregation |------| Interface 1 |-----------------
+	|Network Team port 0|------------        -------------                  |
+	 -------------------             |------| Interface 2 |--------------	|	
+											 -------------   Loopback 2  |	|
+																		 |	|
+							Link             -------------               |	|
+	 ------------------- Aggregation |------| Interface 3 |--------------	|
+	|Network Team port 1|------------        ------------                   |
+	 -------------------             |------| Interface 4 |-----------------
+											 -------------
+
+	Note: 
+
+	For RHEL:	Supported naming convention for Network Team devices is tmX,
+				where X is 1,2,3.... Make sure you name team devices as tm0,tm1,tm3.
+	For SLES/Ubuntu: Supported naming convention for Network Team devices is bondX,
+						where X is 1,2,3.... Make sure you name team devices as bond0,bond1,bond3.
+
+	Build_net debug logs
+	====================
+	Users can avail detailed build_net logs in test system under /tmp/ folder.
+	/tmp/build_net.log.<pid> file contains message/error logs which gives users 
+	more information on configuration  details and also helps in debugging.
+
+############################################# DOCUMENT ENDS ##############################################
+
+Change History : 
+================
+21st Mar 2016, Shilpa Chandrappa
+18th Jan 2016, Shilpa Chandrappa
+5th Jan 2016, Shilpa Chandrappa

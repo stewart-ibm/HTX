@@ -66,4 +66,5 @@ move_scripts:
 	${CC} ${CFLAGS} ${INCLUDES} -c $< -o $@
 
 clean:
-	${RM} -f *.o ${TARGET} ${SHIPBIN}/${TARGET}
+	${RM} -f *.o ${TARGET}
+	${RM} -f ${SHIPBIN}/hxecom ${SHIPBIN}/hxecom2 ${SHIPBIN}/auto ${SHIPBIN}/mkintfmap

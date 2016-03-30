@@ -1,7 +1,8 @@
 include ../../htx.mk
 
-TARGET= htxd htxcmdline 
-all = ${TARGET}
+.PHONY: all clean
+
+TARGET= htxcmdline htxd 
 
 LDFLAGS +=
 
@@ -36,16 +37,13 @@ htxcmdline_OBJECTS = htxcmd${OBJ_SUFF} \
 		htxcmd_socket${OBJ_SUFF}
  
 
-htxd_SRCS = $(patsubst %.o, %.c, $(htxd_OBJECTS))
-htxcmdline_SRCS = $(patsubst %.o, %.c, $(htxcmdline_OBJECTS))
-
-all= htxd htxcmdline 
-
 CFLAGS += -D__HTX_LINUX_ -D_GNU_SOURCE -DTRUE=1 -DFALSE=0
 
 LIBS += -Wl,--start-group
 LIBS += -lhtx64 -lpthread -lcfgc64
 LIBS += -Wl,--end-group 
+
+all: htxd htxcmdline 
 
 .PHONY: all clean
 
@@ -61,4 +59,5 @@ htxcmdline: ${htxcmdline_OBJECTS}
 	${CC} ${CFLAGS} ${INCLUDES} -c $< -o $@
 
 clean:
-	${RM} -f *.o ${TARGET} ${SHIPBIN}/${TARGET}
+	${RM} -f *.o ${TARGET}
+	${RM} -f ${SHIPBIN}/htxd ${SHIPBIN}/htxcmdline

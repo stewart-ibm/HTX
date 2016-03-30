@@ -1,0 +1,535 @@
+HTX Exerciser developer's manual
+--------------------------------
+1.	HTX Overview
+	
+	HTX is the system level hardware validation test suite to test the POWER
+	server hardware. It is used during various phases of system validation
+	like bringup, characterization, system integration and manufacturing.
+	The goal of HTX is to stress test the system by exercising all hardware
+	components concurrently in order to uncover any hardware/firmware/software
+	interaction problems or hardware design flaws. HTX is supported on Linux
+	operating systems running as PowerKVM guest or bare metal.
+
+	HTX test suite consists of hardware exercisers, supervisor program and
+	scripts. HTX hardware exerciser is a user level program which contains
+	the logic to test a particular device or sub system of the POWER server
+	system. HTX exercisers can be divided into two categories:
+	•	Processor exercisers
+	•	I/O exercisers 
+
+	HTX scripts:
+
+	HTX package contains various scripts, which run while logging in as user
+	‘htx’. These set of scripts look for the devices to be exercised and
+	generate an entry in MDT (machine device table) file (/usr/lpp/htx/mdt
+	dir). 
+	There are another set of scripts (from /usr/lpp/htx/runsetup dir) which
+	run just before hardware exerciser starts running. They do required setup
+	for hardware exercisers to start running like setting up parameters for
+	inter process communication. There are also scripts (from /usr/lpp/htx/
+	runcleanup dir) which run while exercisers are shutting down to do required
+	cleanup.
+	
+	HTX Supervisor:
+
+	HTX supervisor presents a text based user interface to the user for
+	controlling HTX run. HTX Supervisor forks all HTX exercisers that are found
+	in mdt file. After being created, each exerciser communicates with HTX
+	supervisor through shared memory. HTX supervisor allows user to
+	start/stop/halt exercisers. HTX supervisor also allows to view message/error
+	logs and exerciser run stats. 
+
+	HTX Message/Stats logger:
+
+	Apart from supervisor program, there is message/error log program, hxsmsg
+	and stats program, htxstats which collects data from shared memory, message
+	queues to show respective error/msg and stats files.
+	
+	Hardware Exerciser:
+
+	Each HTX exerciser is a user application that contains a test logic for a
+	given hardware device/unit or a subsystem. Typically HTX exerciser is
+	written using any combination of C/C++ or assembly code. Each hardware
+	exerciser behavior can be controlled by means of text rules file.
+	Rule file consists of one or more rules (a.k.a testcases). The HTX hardware
+	exercisers interact with the HTX supervisor using Interprocess
+	Communication mechanism (like shared memory, semaphores, message send/receive).
+	
+
+2.	Description of HTX data structure:
+
+	HTX allows to run any exerciser (test program) under HTX framework as long as
+	the program adheres to HTX interfaces. An exerciser that needs to run under
+	HTX should link the HTX library libhtx64.a and include certain HTX APIs to
+	interface with rest of HTX package. The structure htx_data defined in the
+	HTX Library defines the format of data sharing between exercisers and
+	supervisor. HTX library also defines various APIs for exerciser to interact
+	with supervisor, msg or stats program through IPC mechanism. HTX libraries
+	and headers are provided as part of HTX SDK.
+	
+	Following data structure is used by every HTX exerciser to pass information
+	to supervisor. htx_data structure is defined in hxihtx.h/hxihtx64.h. 
+	
+	struct htx_data {
+		char				sdev_id[DEV_ID_MAX_LENGTH];
+		/* Device id passed as first parameter  */
+		char				run_type[4];     /* REG, EMC, or OTH                     */
+		unsigned long long  bad_others;      /* Count of bad ioctl operations        */
+		unsigned long long  bad_reads;       /* Count of bad read operations         */
+		unsigned long long  bad_writes;      /* Count of bad write operations        */
+		unsigned long long  bytes_read;      /* Total bytes read                     */
+		unsigned long long  bytes_writ;      /* Total bytes written                  */
+		unsigned long long  good_others;     /* Count of good ioctl operations       */
+		unsigned long long  good_reads;      /* Count of good read operations        */
+		unsigned long long  good_writes;     /* Count of good write operations       */
+		unsigned long long  num_instructions;/* Number of instructions executed      */
+		int      			error_code;      /* Error Code (usually errno)           */
+		char 				loc_code[80];	 /* To store the location code           */
+		char 				serial_no[80];   /* Serial Number                        */
+		char 				part_no[80];     /* Part Number                          */
+		char 				dev_desc[80];    /* Device Description                   */
+		char 				fru_no[80];      /* FRU Number                           */
+
+		enum sev_code 		severity_code;
+						/* HTX_HE_HARD_ERROR: for non-recoverable
+						 *                    HE errors.
+						 * HTX_HE_SOFT_ERROR: for recoverable HE
+						 *                    errors.
+						 * HTX_SYS_INFO: for HTX system info.
+						 * HTX_HE_INFO: for HE info.
+                         */
+
+        char				HE_name[32];      /* Hardware Exerciser program name     */
+        char     			msg_text[MSG_TEXT_SIZE];
+                                  /* character array for messages from the
+                                   * Hardware Exerciser program.  The HE
+                                   * program should use only MAX_TEXT_MSG
+                                   * characters in its messages.
+                                   * Additional space is reserved system
+                                   * information.
+                                   */				   
+        int     			msqid;                          /* HTX message queue id.    */
+        int     			sem_id;                         /* htx semaphore id.        */
+        struct  			htxshm_hdr      *p_shm_hdr;     /* pointer to shm header.   */
+        struct  			htxshm_HE       *p_shm_HE;      /* pointer to shm HE info.  */
+        ushort  			miscompare_count;
+        ushort  			test_id;
+        int    				mem_id;
+        int 				hotplug_cpu;
+        int					hotplug_mem;
+        int					hotplug_io;
+        unsigned int 		pthread_id;
+        unsigned int 		TestCaseNo;
+        unsigned int 		allocseed;
+        unsigned int 		thirdseed;
+        unsigned int 		seedno;
+        unsigned int 		passno;
+        int      			status;
+        unsigned int 		stanza;
+        int    				rsvd3;
+        int    				rsvd4;
+        int    				rsvd5;
+};
+
+
+3. 	HTX library APIs (libhtx64.a):
+	HTX Library provides APIs for communication between an exerciser and supervisor,
+	message/error log program, stats program. Exercisers should update the result of
+	the tests in the shared memory by updating struct htx_data and by calling
+	appropriate API. 
+	Each exerciser needs to include following header files:
+	•	htxlibdef.h 
+	•	hxihtx64.h
+	•	hxiconv.h
+	•	sevcodes.h
+	hxihtx64.h: HTX Hardware Exerciser include file. This header file defines
+				data structures and keywords needed by Hardware Exerciser
+				programs when they call the hxfupdate() API in libhtx64.a.
+
+	hxiconv.h: HTX convenience definitions and declarations.
+	
+	Sevcodes.h: Header file that specifies severity_codes as defined by HTX
+				for message logging.
+	
+	htxlibdef.h: This header file contains function declarations that are
+				defined in HTX Library (libhtx64.a).
+
+	
+	HTX Library defines following APIs.
+
+	3.1		HTX Update function call – hxfupdate () 
+	-----------------------------------------------
+	Description: 
+	Hxfupdate API is used by exerciser to update/communicate with HTX supervisor.
+	Caller of this API is required to update the htx_data structure and a pointer
+	to the structure is passed to the routine. The content from this data
+	structure will be updated into the HTX shared memory upon successful execution
+	of this function and contents are reset.
+ 
+	Syntax:
+	char hxfupdate (char type, struct htx_data *arg) 
+
+	struct htx_data *arg
+	The arg parameter must point to valid htx_data structure which is set up for
+	either a physical or pseudo device.  The htx_data structure is declared in the
+	hxihtx64.h header file. The sdev_id and run_type fields must be set in the
+	htx_data structure prior to the hxfupdate START or hxfupdate PSEUDOSTART call. 
+
+	char type
+	The type parameter specifies the type of call:
+	When type = START or PSEUDOSTART the hxfupdate routine will initialize the
+	count fields in the htx_data structure, and will reset the count to zero. 
+	
+	When type = UPDATE the hxfupdate routine will add the counts from htx_data
+	to the shared memory structure, and reset all the fields in the htx_data
+	structure. 
+
+	When type = ERROR the hxfupdate routine will update the counts in shared memory
+	structure, and re–initialize all count fields in the htx_data structure.
+	It will also log the message in the HTX error log or message log (depending
+	on the severity code). 
+
+	When type = MESSAGE the hxfupdate routine simply logs the message in the HTX
+	error log or message log (depending on the severity code) without updating the
+	counts in shared memory structure and without re–initializing the count fields
+	in the htx_data structure.
+
+	When type = FINISH the hxfupdate routine will update the cycle counter.
+	The FINISH call should be made after the exerciser has completed the entire
+	rule file.
+
+	Return Value 
+		0 – Successful Completion.
+		1 – Invalid type variable (non–fatal).
+		11 – unable to get HTX message queue (fatal). 
+		12 – unable to get HTX shared memory[REMSHMKEY] (fatal). 
+		13 – unable to attach HTX shared memory[REMSHMKEY] (fatal).
+		14 – unable to get HTX shared memory[SHMKEY] (fatal). 
+		15 – unable to attach HTX shared memory[SHMKEY] (fatal).
+		16 - unable to get exerciser shared memory key from exer_info table (fatal).
+		17 – unable to get HTX shared memory[header & exers] (fatal). 
+		18 – unable to attach HTX shared memory[header & exers](fatal). 
+		19 – unable to get HTX semaphore structure (fatal). 
+		20 – Unable to find sdev_id in HTX shared memory (fatal). 
+		51 – unable to place message on HTX message queue (non–fatal).
+
+
+	Each exerciser needs to call hxfupdate at regular interval to update shared memory so that HTX supervisor does not declare exerciser hung.  
+
+	3.2 	HTX message log function call – hxfmsg() 
+	------------------------------------------------ 
+	Allows exerciser to send message to hxsmsg through IPC message queue or to
+	”stdout” or ”stderr” depending on whether the exerciser is running in supervisor
+	mode or in standalone mode. This is actually accomplished using the hxfupdate
+	ERROR function call underneath.
+
+	Syntax:
+	hxfmsg(struct htx_data *ptr, int error_code, int severity_code, char *message text)
+
+	Description:
+	*ptr must point to a valid htx_data structure for a physical or logical device. 
+	Error code will be printed in hex as part of the standard HTX message header.
+	The value used is completely upto the hardware exerciser programmer. Severity code
+	will be printed in decimal as part of the standard HTX header message. Messages with
+	severity codes greater than or equal to HTX_SYS_INFO are only written to the HTX
+	message log (/tmp/ htxmsg) and messages with severity codes less than HTX_SYS_INFO
+	are written into both message log (/tmp/htxmsg) and error log (/tmp/htxerr) when
+	running under HTX Supervisor. When running standalone messages are written to” stdout”.
+
+	If the HTX user sets halt on error for a device and the message severity code is less
+	than or equal to the ”halt_level” for that device, control will not be returned to the
+	calling program until the HTX operator re–starts the device. 
+	Default ”halt_level” is 1. (set in /usr/lpp/htx/.htx_profile file).
+
+	*message text is a pointer to the text of the message. The message can be up to 4096
+	bytes long and can contain embeded carriage returns (’0d’x). The message text will
+	be preceded by a one line header containing:  
+		sdev_id from the htx_data structure.
+		Current date and time.   
+		error_code from the htx_data structure.   
+		severity_code from the htx_data structure.   
+		HE_name from the htx_data structure. 
+
+	Return Value 
+		0 - Normal exit;
+		exit_code > 0 - Problem in hxfupdate() ERROR call.
+
+	HTX message file (/tmp/htxmsg) format:
+	eg. htx_messages  JUL 16 22:56:06 2008 err=00000000 sev=6 hxssup
+      HTX started by Operator request.
+
+	3.3	Compare two memory buffers – hxfcbuf()
+	------------------------------------------
+	Compares the read buffer with the write buffer and on mis–compares
+	saves read buffer in /tmp/ htx[sdev_id].rbuf, write buffer in
+	/tmp/htx[sdev_id].wbuf.
+
+	Syntax:
+	int hxfcbuf(struct htx_data *ps, char *wbuf, char *rbuf, size_t len, char *misc_data);
+		ps : pointer to the HE's htx_data structure
+		wbuf : pointer to the write buffer
+		rbuf : pointer to the read buffer
+		len : the length in bytes of the buffers
+		misc_data : miscompare data
+
+	Description:
+	The first operand must point to the htx_data scructure. Each byte
+	of the buffer pointed to by wbuf is compared to the the buffer pointed
+	to by rbuf. The compare stops after comparing specified no of bytes
+	(len parameter) or when there is a miscompare. 
+
+	Return code:
+		-1 : in case of a miscompare found
+		0: in case of no miscompare  
+
+
+	3.4		Fill buffer with data from HTX Pattern Library – hxfpat()
+	-----------------------------------------------------------------
+	Description:
+	This function call reads a specified pattern file and populates
+	specified data buffer with data from that pattern file. If the number
+	of characters to be copied into the buffer is greater than the size
+	of the pattern file, the pattern file data is repeated until the
+	designated numbers of characters have been copied. If the number of
+	characters to be copied into the buffer is less than the size of the
+	pattern file, the pattern file data is truncated to that size. 
+
+	Syntax 
+	int hxfpat(char *filename, char *pattern_buf, size_t num_chars)
+
+	Input Parameters:
+	pattern_id – The pattern file name from the rules file.
+	Pattern – The buffer into which the pattern files is to be copied.
+	num_chars – The number of characters to be placed in the buffer.
+
+	Return Value 
+		0 : Normal return; no errors. 
+		1 : Unable to open pattern file. 
+		2 : Unable to read pattern file.
+		3 : Error closing pattern file.
+
+	4.	Message and Error Logging in HTX
+	------------------------------------
+	All HTX exercisers are suppose to send messages to a shared message
+	queue. Depending upon their severity, hxsmsg program separates them
+	into two files, /tmp/htxerr and /tmp/htxmsg. The message handler
+	task (hxsmsg) is responsible for reading the messages and logging
+	them into their appropriate files. Please refer hxfmsg API for more
+	details on message logging.
+	Exerciser may also create exerciser specific log files in /tmp dir.
+
+	HTX Message Severity code:
+	The following are the severities of the messages that are recognized
+	by the Message handler.
+		HTX_SYS_HARD_ERROR = -10,
+		HTX_SYS_SOFT_ERROR = (HTX_SYS_HARD_ERROR + 10),
+		HTX_HE_HARD_ERROR = (HTX_SYS_SOFT_ERROR + 1),
+		HTX_HE_MISCOMPARE = (HTX_SYS_SOFT_ERROR + 2),
+		HTX_HE_SOFT_ERROR = (HTX_HE_HARD_ERROR + 3),
+		HTX_SYS_INFO = (HTX_HE_SOFT_ERROR + 2),
+		HTX_HE_INFO = (HTX_SYS_INFO + 1)
+
+	Messages above HTX_HE_SOFT_ERROR severity are placed into /tmp/htxmsg
+	file while messages of severity HTX_HE_SOFT_ERROR abd below are placed
+	into /tmp/htxerr file.
+
+	5.	Statistics Handling
+	-----------------------
+	Every HTX exerciser is suppose to update run time stats in shared
+	memory. The HTX Supervisor spawns the hxstats program that collects
+	the stats data and updates into /tmp/htxstats file. When option 6 is
+	selected on main menu, hxstats task reads the shared memory and updates
+	the statistics of all devices present in mdt in /tmp/htxstats file.
+	The following parameters of the running devices are appended in the
+	stats file. 
+
+		Cycles 
+		good_others 
+		bad_others 
+		good_reads 
+		bad_reads 
+		good_writes 
+		bad_writes 
+		bytes_read1 
+		bytes_read2 
+		bytes_writ1 
+		bytes_writ2
+		num_instructions
+		Instruction_throughput
+
+
+
+
+	6.	Overview of HTX sample exerciser program (hxesamp)
+	------------------------------------------------------
+	Description:
+	Sample HTX hardware exerciser program shows how to write a new exerciser
+	under HTX This sample exerciser shows the minimum required APIs to be
+	able to run under the HTX Supervisor. This exerciser can be invoked by
+	either the HTX supervisor or directly from the command line to bypass
+	communicating with the HTX Supervisor (e.g.run in "stand-alone" mode).
+
+	To run in "stand-alone" mode simply enter the following command:
+
+	hxesamp /dev/samp OTH 
+
+	Since argv[2] is OTH, the hxfupdate() functions calls will not try to
+	communicate with the HTX supervisor using IPC shared memory functions,
+	and any messages put out using hxfmsg() will be written to either
+	"stdout" or "stderr" rather than being sent to HTX using IPC msg send/msg
+	receive. If the message severity code is <= 4, the message will go to
+	stderr, if its >=7, log is written on stdout.This allows the exerciser
+	to be tested without interfacing with the HTX supervisor. When HTX
+	Supervisor invokes the exerciser, it supplies arg[1] /dev/samp,argv[2]
+	run_type (REG or EMC), and optionally argv[3] a file path name containing
+	input parameters.argv[1], argv[2], and argv[3] come from the htx master
+	device table (MDT). The run_type is determined from HTX main menu
+	option 3.Normally the device to be exercised is passed to the exerciser
+	in argv[1] thus allowing the same exerciser to run multiple devices,
+	however any unique string can be used. This sample exerciser uses "samp".
+
+
+	Sample Program:
+	main (int argc, char **argv)
+	{
+		int rc;                         /* generic return code                     */
+		int error_code;                 /* hxfmsg error code                       */
+		int severity_code;              /* hxfmsg msg severity code                */
+		struct sigaction sigvector;     /* structure for signal handler regn       */
+
+		/* SIGTERM signal handler function         */
+		void SIGTERM_handler(int, int, struct sigcontext *);
+
+		/*
+		 * Set up HTX HE data structure...
+		 */
+		
+		/* The following parameters are passed to the exerciser by the HTX supervisor */
+		(void) strcpy(htx.HE_name, argv[0]);
+		(void) strcpy(htx.sdev_id, argv[1]);
+		(void) strcpy(htx.run_type, argv[2]);
+		
+		/*
+		 * Make initial call to hxfupdate()...
+		 */
+		/*
+		 * The following hxfupdate()- Passed at the beginning of the exerciser,
+		 * this call initializes some of the values into the htx_data structure
+		 * passed. (for eg: loc_code, serial_no, part_no,  dev_desc, fru_no,
+		 * msgqid, semid, shared memory pointers, run_type etc ).
+		 */
+		hxfupdate(START, &htx);
+		error_code=0;
+		severity_code=7;
+		/*
+		 * Sending message to hxsmsg process. Message is either logged in /tmp/htxmsg
+		 * file or /tmp/htxerr file according to the severity code. 
+		 */       
+		hxfmsg(&htx, error_code, severity_code, "exerciser started");
+
+		
+		/*
+		 * Set SIGTERM_handler() to catch SIGTERM signal...
+		 * Since all HTX exercisers are written to loop forever when running
+		 * under the HTX Supervisor this is the normal way to terminate the
+		 * exerciser.
+		 */
+		sigemptyset(&(sigvector.sa_mask));  /* do not block signals            */
+		sigvector.sa_flags = 0;             /* do not restart sys calls        */
+		sigvector.sa_handler = (void (*)(int)) SIGTERM_handler;
+		(void) sigaction(SIGTERM, &sigvector, (struct sigaction *) NULL);
+		
+		/*
+		 * Open device to be exercised here. Perform one time setup like reading
+		 * rule file, initializing device, setting up test parameters etc.
+		 */
+		
+		/*
+		 *	Main loop to exercise device. Test logic resides here.
+		 */
+		do
+		{
+			/*
+			 * Assume 512 bytes written successfully to device. Since this is for
+			 * illustration purposes only, we will not actually perform the I/O,
+			 * and will force a good return code.
+			 */
+			
+			rc = 0;        /* force good return code */
+			if (rc == 0) {
+				htx.bytes_writ = 512;     //Updating htx_data structure by bytes read
+				htx.good_writes = 1;	   //Updating htx_data structure by good write	
+			}
+			else {
+				htx.bad_writes = 1;	/*  Updating htx_data structure by bad write  */
+				error_code = 10;
+				severity_code = 2;
+				/*
+				 * Sending message to hxsmsg.
+				 */
+				(void) hxfmsg(&htx, error_code, severity_code, "write error"); 
+			}
+			(void) hxfupdate(UPDATE, &htx);
+			/* 
+			 * Assume an error occurred reading from the device. Since this is
+			 * for illustration purposes only, we will not actually perform the
+			 * I/O, and will force a bad return code.
+			 */
+			rc = 1;
+			if (rc == 0) {
+				htx.bytes_read     = 512;        /* Updating htx_data structure by bytes read */
+				htx.good_reads     = 1;	    /* Updating htx_data structure by good read */ 
+			}
+			else {
+				htx.bad_reads      = 1;	  /* Updating htx_data structure: bad_reads */
+				error_code = 15;
+				severity_code=2;
+				/*
+				 * Send message to hxsmsg program.
+				 */
+				(void) hxfmsg(&htx, error_code, severity_code, "read error");
+			} /* endif */
+			/*
+			 * The following hxfupdate() will let the htx supervisor know the exerciser
+			 * is still running, update the htx status (htx main menu option 5), and the
+			 * htx statistics (htx main menu option 6).    
+			 */
+			(void) hxfupdate(UPDATE, &htx);
+			/*
+			 * Remainder of device exercise goes here
+			 */
+			 
+			 /*
+			  * When all the test rules from rule file are completed, invoke hxfupdate with
+			  * FINISH to indicate one pass of rule file is done.
+			  */
+			(void) hxfupdate(FINISH, &htx); /* updates HTX cycle counter */
+		} while (strcmp(htx.run_type, "REG") == 0 || strcmp(htx.run_type ,"EMC") == 0);
+
+	/*
+	 * End of main loop to exercise device. Come here only when running in
+	 * standalone mode. close device and cleanup as necessary.
+	 */
+	error_code = 0;
+	severity_code = 7;
+	hxfmsg(&htx, error_code, severity_code, "exerciser shutting down");
+	exit(0);
+	}
+	
+	7.	HTX Source tree structure
+	-----------------------------
+	A new exerciser source should be kept in ${TOPDIR}/bin/ dir by creating a subdirectory
+	with a name of exerciser. General convension for HTX exerciser name is hxeXXXXX.
+	
+	If an exerciser needs to create a library, it should reside in ${TOPDIR}/lib/.
+	
+	Common headers which may be needed by other exercisers are kept in ${TOPDIR}/inc/.
+	
+	Exerciser rule file should reside in ${TOPDIR}/rules/reg/<exerciser name>/ dir.
+	
+	Exerciser may have ${TOPDIR}/runsetup/<exerciser name>.runsetup file if it needs to run
+	some steps before starting an exerciser. Corresponding cleanup is generally done in
+	${TOPDIR}/runcleanup/<exerciser name>.runcleanupup file.
+	
+	Exerciser binary, corresponding scripts, rule files and any documentation needs to be
+	copied in ship area so that they can be part of HTX package.
