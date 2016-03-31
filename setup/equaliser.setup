@@ -123,6 +123,22 @@ if [ -f ${HTX_HOME_DIR}/eq_th_trans_mix.cfg ]
 then
     create_mdt ${HTX_HOME_DIR}/eq_th_trans_mix.cfg ${HTXMDT}mdt.eq_th_trans_mix
 fi
+
+#=============================================================================
+# Creating softlink for default.mem.eq to point to either default.mem.eq.4k or
+# default.mem.eq.64k based on the base page size supported.
+#=============================================================================
+base_pg_size=`getconf PAGESIZE`
+if [[ "$base_pg_size" == "65536" ]]
+then
+	echo "default.mem.eq points to default.mem.eq.64k"
+	ln -sf default.mem.eq.64k ${HTXREGRULES}/hxemem64/default.mem.eq
+else
+	echo "default.mem.eq points to default.mem.eq.4k"
+	ln -sf default.mem.eq.4k ${HTXREGRULES}/hxemem64/default.mem.eq
+fi
+
+
 #########################
 #Main code ends here
 #########################
