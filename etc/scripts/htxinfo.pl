@@ -20,33 +20,35 @@
 # IBM_PROLOG_END_TAG
 
 $linux_dist = "Unknown Linux distribution";
+$htx_ver = "Unknown HTX Level";
+$kern_ver = "Unknown kernel version";
 
-$kern_ver = `uname -r 2> /dev/null` or $kern_ver = "Unknown kernel version";
-
-$linux_dist = `cat /etc/*-release 2> /dev/null |head -1` or $linux_dist = "Unknown Linux distribution";
+$kern_ver = `uname -r 2> /dev/null`;
+$linux_dist = `grep ^NAME /etc/os-release | cut -f2 -d= | sed 's/\"//g'`;
+$os_ver=`grep ^VERSION_ID /etc/os-release | cut -f2 -d= | sed 's/\"//g'`;
 
 $CMVC_RELEASE = `echo \$CMVC_RELEASE`;
-if ( $CMVC_RELEASE =~ /htxcab/ || $CMVC_RELEASE =~ /htxltsbml/ || $CMVC_RELEASE =~ /htxcpbw/ ) {
-    @arr_htx_ver = `cat /usr/lpp/htx/etc/version`;
-} else {
-    @arr_htx_ver = `(rpm -qa | grep ^htx) 2> /dev/null | grep htx |cut -d- -f1,2` or $htx_ver = "Unknown HTX Level";
+if ( $CMVC_RELEASE =~ /htxltsbml/ ) {
+	@arr_htx_ver = `cat /usr/lpp/htx/etc/version`;
 }
-
+if ( $CMVC_RELEASE =~ /htxubuntu/ ) {
+        @arr_htx_ver = `dpkg-query --show "htx*"`;
+}
+else {
+	@arr_htx_ver = `(rpm -qa | grep ^htx) 2> /dev/null | grep htx |cut -d- -f1,2`;
+}
 $htx_ver=@arr_htx_ver[$#arr_htx_ver];
 
 if( $linux_dist =~ /Fedora Core release 4.9/ )                   { $linux_dist = "FC5";    }
 if( $linux_dist =~ /Fedora Core release 6/ )                     { $linux_dist = "FC6";    }
-if( $linux_dist =~ /SUSE LINUX Enterprise Server 9/ )            { $linux_dist = "SLES9";  }
-if( $linux_dist =~ /SUSE Linux Enterprise Server 10/ )           { $linux_dist = "SLES10"; }
 if( $linux_dist =~ /SUSE Linux Enterprise Server 11/ )           { $linux_dist = "SLES11"; }
-if( $linux_dist =~ /Red Hat Enterprise Linux AS release 4/ )     { $linux_dist = "RHEL4";  }
-if( $linux_dist =~ /Red Hat Enterprise Linux Server release 5/ ) { $linux_dist = "RHEL5";  }
 if( $linux_dist =~ /Red Hat Enterprise Linux Server release 6/)  { $linux_dist = "RHEL6";  }
+if( $linux_dist =~ /Red Hat Enterprise Linux Server/)		{ $linux_dist = "RHEL";  }
 
 chomp ($kern_ver);
 chomp ($htx_ver);
 chomp ($linux_dist);
+chomp ($os_ver);
 
-$out = sprintf(" %s    %s    Kernel: %s", $htx_ver, $linux_dist, $kern_ver);
-
+$out = sprintf(" HTX:%s OS:%s %s Kernel: %s", $htx_ver, $linux_dist, $os_ver, $kern_ver);
 print $out;
