@@ -1,7 +1,7 @@
 include ../../../htx.mk
 
 TARGET= \
-	sample_rule default hxecom.ug.pdf hxecom.readme
+	sample_rule default hxecom.readme
 
 .PHONY: all clean
 

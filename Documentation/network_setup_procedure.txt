@@ -1,11 +1,14 @@
 Network setup procedure for running hxecom exerciser 
 ----------------------------------------------------
-hxecom is a network subsystem test porgram (a.k.a exerciser). hxecom supports testing of
-pure ethernet, Infiniband (IB) and RDMA capable adapters. Before hxecom exerciser can
-run on network cards, certain setup is required to be done. This setup is done by
-build_net script. This document describes steps to run build_net.
+hxecom/hxedapl is a network subsystem test porgram (a.k.a exerciser). hxecom/hxedapl
+supports testing of pure ethernet, Infiniband(IB) and RDMA capable adapters (RoCE).
+hxecom tests IB adapter with help of IP over IB layer. hxedapl tests IB/RoCE adapters
+using RDMA with help of DAPL lib (Direct Access Transport Libraries).
+Before hxecom/hxedapl exerciser can run on network adapters, certain setup is
+required to be done. This setup is done by build_net script. This document describes
+steps to run build_net.
 
-hxecome can test network ports in two different network setup:
+hxecome/hxedapl can test network ports in two different network setup:
 
 *	Single system network setup
 	Network that is created by connecting network ports of a single system. One can create multiple
@@ -14,7 +17,7 @@ hxecome can test network ports in two different network setup:
 	its unique test network id.
 
 *	Multi system network setup
-	A ntwork Network that is created by connecting network ports of two different systems
+	A Network that is created by connecting network ports of two different systems
 	(VMs or machines). One can create multiple networks by connecting pair of network ports from two
 	different machines (VMs) using back to back cable or through network switch. Each connected
 	pair of network ports is called a test network (a.k.a TESTNET).
@@ -24,7 +27,7 @@ hxecome can test network ports in two different network setup:
 	considered for test. This network port/interface is called COMNET interface. COMNET is supposed
 	to be a reliable network and is extensively used for control packet exchange. Usually site 
 	network is best suited for this purpose. COMNET must be configured in case of multi system test
-	and is not needed for single system test.
+	and single system test.
 	
 	If network switch is used to form test networks, please ensure that switch is private and not
 	connected to your company's intranet.
@@ -56,9 +59,15 @@ hxecome can test network ports in two different network setup:
 	If users find any such entry in /etc/hosts where system's hostname points to hxecom TESTNET,
 	it should be removed before starting build_net script. 
   
-
-	Building Single-system Networks : 
-	---------------------------------
+	Network setup for running hxecom/hxedapl exerciser is different for single system
+	and multisystem. For single system and pure ethernet adapter, network setup can be
+	automated. However, for multi system and RDMA/IB adapters, setup needs to be done
+	manually.
+	
+	Following steps shows netowrk setup for pure ethernet adapter only.
+  
+	Building Single-system Networks (Pure Ethernet adapter (TCP)): 
+	--------------------------------------------------------------
 	Automatic setup and configuration
 	---------------------------------
 	While logging in as user htx, HTX automatically checks to see if there is an existing single
@@ -67,7 +76,7 @@ hxecome can test network ports in two different network setup:
 	htx should be run with -b command option.
 	For e.g.:
 	#htx -b <MDT file name to which network devices would be added>
-	This spep will configure all the interfaces and add network devices in MDT file supplied above.
+	This step will configure all the interfaces and add network devices in MDT file supplied above.
 
 		root@fr70p01:~# su - htx
 		[Tue Mar 29 02:52:26 CDT 2016]: 1st HTX message.
@@ -121,8 +130,7 @@ hxecome can test network ports in two different network setup:
 		Please ensure saveprof file is not present in /tmp folder. We save previous build_net
 		configuration information in /tmp/saveprof file which is used by pingum and also to
 		reconfigure system during bootme. If this file is already present, automation will
-		assume hxecom setup is present and skip running build_net. Hence we cannot setup hxecom
-		network during "su-htx".
+		assume hxecom setup is present and skip running build_net. 
 		
 	
 	Manual setup and configuration
@@ -335,8 +343,8 @@ hxecome can test network ports in two different network setup:
 		Sample run : 
 		------------
 		# pingum
-		Ping network 100.1.2.16---->OK
-		Ping network 100.1.2.218---->OK
+		Ping network 101.1.1.24---->OK
+		Ping network 101.1.2.24---->OK
 		All networks ping ok
 		Step 3 is the basis for running hxecom. Please ensure that all the networks configured in bpt file 
 		passes ping test.
@@ -460,7 +468,7 @@ hxecome can test network ports in two different network setup:
 		
 		User Note : 
 		==========
-			1. Step 1 to 3 has to be done on all systems participating in Multi System Test. 
+			1. Step 1 to 3 has to be done on all systems participating in Multi System Test. Ensure you configure Unique NETIDs to the test network pairs connected back to back.
 
 =====================================================================================================================		
 
@@ -520,10 +528,7 @@ Section below gives detailed description of parameters used in bpt file :
 	6) COMHOSTNAME
 	--------------
 		The comnet hostname will be filled in for you if you have a site ring connection already
-		configured.This is the easiest way to run build_net and hxecom. Use the site ring as comnet
-		when ever you can If you don't have a site connection you can use any of you networks in the 
-		test as a comnet. You just have to put its hostname here and set the next var use_site_ring=n 
-		and com_configured=n, then supply the compared and commask.
+		configured.This is the easiest way to run build_net and hxecom. 
 		Possible Values : Hostname of the current machine.	
 
 	7) Device line  
