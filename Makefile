@@ -16,6 +16,8 @@ TARGET= .htx_profile \
 
 default: all
 
+bin: lib
+
 ${SUBDIRS}:
 	make -C $@
 
