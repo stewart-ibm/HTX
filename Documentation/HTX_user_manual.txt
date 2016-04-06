@@ -16,7 +16,7 @@ HTX User Manual
 1.1 Obtaining and building HTX source 
 
 	HTX source can be downloaded from Github (https://github.com/open-power/HTX).
-	To build HTX source, please refer, <HTX source>/Documentation/building_htx.txt.
+	To build HTX source, please refer, <HTX source>/README.md.
 
 1.2 Setting up the System to Install HTX 
 
