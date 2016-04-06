@@ -268,13 +268,13 @@ void create_cfg_maxpwr_switch()
         }
     }
     for (j = 0, k = 0; j < fpu_inst; j++, k++) {
-        fprintf(fp, "\tN*P*C*T%d\t\tfpu\t\t\tY\t\t\t\t\[50\]\t\t\t\t\[11111111110000000000\]\t\tNA\t\tdefault.fpu.eq\n", k);
+        fprintf(fp, "\tN*P*C*T%d\t\tfpu\t\t\tY\t\t\t\t[50]\t\t\t\t[11111111110000000000]\t\tNA\t\tdefault.fpu.eq\n", k);
     }
     for (j = 0; j < cpu_inst; j++, k++) {
-        fprintf(fp, "\tN*P*C*T%d\t\tcpu\t\t\tY\t\t\t\t\[50\]\t\t\t\t\[11111111110000000000\]\t\tNA\t\tdefault.cpu.eq\n", k);
+        fprintf(fp, "\tN*P*C*T%d\t\tcpu\t\t\tY\t\t\t\t[50]\t\t\t\t[11111111110000000000]\t\tNA\t\tdefault.cpu.eq\n", k);
     }
     for (j = 0; j < mem_inst; j++, k++) {
-        fprintf(fp, "\tN*P*C*T%d\t\tmem\t\t\tY\t\t\t\t\[50\]\t\t\t\t\[11111111110000000000\]\t\tNA\t\tdefault.mem.eq\n", k);
+        fprintf(fp, "\tN*P*C*T%d\t\tmem\t\t\tY\t\t\t\t[50]\t\t\t\t[11111111110000000000]\t\tNA\t\tdefault.mem.eq\n", k);
     }
 }
 
@@ -389,13 +389,13 @@ void create_cfg_maxpwr_exp()
             num_cores = get_num_of_cores_in_chip(i, j);
             for (k = 0; k < num_cores; k++) {
                 for (l = 0, m = 0; l < fpu_inst; l++, m++) {
-                    fprintf(fp, "\tN%dP%dC%dT%d\t\tfpu\t\tY\t\t\[50\]\t\t\t\[%s\]\t\tNA\t\tdefault.fpu.eq\n", i, j, k, m, cur_pattern);
+                    fprintf(fp, "\tN%dP%dC%dT%d\t\tfpu\t\tY\t\t[50]\t\t\t[%s]\t\tNA\t\tdefault.fpu.eq\n", i, j, k, m, cur_pattern);
                 }
                 for (l = 0; l < cpu_inst; l++, m++) {
-                    fprintf(fp, "\tN%dP%dC%dT%d\t\tcpu\t\tY\t\t\[50\]\t\t\t\[%s\]\t\tNA\t\tdefault.cpu.eq\n", i, j, k, m, cur_pattern);
+                    fprintf(fp, "\tN%dP%dC%dT%d\t\tcpu\t\tY\t\t[50]\t\t\t[%s]\t\tNA\t\tdefault.cpu.eq\n", i, j, k, m, cur_pattern);
                 }
                 for (l = 0; l < mem_inst; l++, m++) {
-                    fprintf(fp, "\tN%dP%dC%dT%d\t\tmem\t\tY\t\t\[50\]\t\t\t\[%s\]\t\tNA\t\tdefault.mem.eq\n", i, j, k, m, cur_pattern);
+                    fprintf(fp, "\tN%dP%dC%dT%d\t\tmem\t\tY\t\t[50]\t\t\t[%s]\t\tNA\t\tdefault.mem.eq\n", i, j, k, m, cur_pattern);
                 }
                 allocated_cores++;
                 if (allocated_cores == cores_per_set[pattern_num]) {
@@ -805,13 +805,13 @@ void create_cfg_100_75_50_25_util()
 
     for (i = 0; i < loop_count; i++) {
         j = 4 * i;
-        fprintf (fp, "\tN*P*C*T%d\t\tmem\t\t\tY\t\t\t\t\[100\]\t\t\t\t\t\[1111\]\t\t\t\t\tNA\t\tdefault.mem.eq\n", j);
+        fprintf (fp, "\tN*P*C*T%d\t\tmem\t\t\tY\t\t\t\t[100]\t\t\t\t\t[1111]\t\t\t\t\tNA\t\tdefault.mem.eq\n", j);
         j++;
-        fprintf (fp, "\tN*P*C*T%d\t\tcpu\t\t\tY\t\t\t\t\[75\]\t\t\t\t\t\[1110\]\t\t\t\t\tNA\t\tdefault.cpu.eq\n", j);
+        fprintf (fp, "\tN*P*C*T%d\t\tcpu\t\t\tY\t\t\t\t[75]\t\t\t\t\t[1110]\t\t\t\t\tNA\t\tdefault.cpu.eq\n", j);
         j++;
-        fprintf (fp, "\tN*P*C*T%d\t\tcpu\t\t\tY\t\t\t\t\[50\]\t\t\t\t\t\[1100\]\t\t\t\t\tNA\t\tdefault.cpu.eq\n", j);
+        fprintf (fp, "\tN*P*C*T%d\t\tcpu\t\t\tY\t\t\t\t[50]\t\t\t\t\t[1100]\t\t\t\t\tNA\t\tdefault.cpu.eq\n", j);
         j++;
-        fprintf (fp, "\tN*P*C*T%d\t\tcpu\t\t\tY\t\t\t\t\[25\]\t\t\t\t\t\[1000\]\t\t\t\t\tNA\t\tdefault.cpu.eq\n", j);
+        fprintf (fp, "\tN*P*C*T%d\t\tcpu\t\t\tY\t\t\t\t[25]\t\t\t\t\t[1000]\t\t\t\t\tNA\t\tdefault.cpu.eq\n", j);
     }
 }
 
@@ -819,45 +819,45 @@ void create_cfg_cpu_mem_50()
 {
     int i;
 
-    fprintf (fp, "\tN0P0C0T0\t\tmem\t\tY\t\t\[50\]\t\t\t\[1010\]\t\t\t\t\tNA\t\tmem.eq.50\n");
-    fprintf (fp, "\tN0P0C0T1\t\tcpu\t\tY\t\t\[50\]\t\t\t\[0101\]\t\t\t\t\tNA\t\tdefault.cpu.eq\n");
+    fprintf (fp, "\tN0P0C0T0\t\tmem\t\tY\t\t[50]\t\t\t[1010]\t\t\t\t\tNA\t\tmem.eq.50\n");
+    fprintf (fp, "\tN0P0C0T1\t\tcpu\t\tY\t\t[50]\t\t\t[0101]\t\t\t\t\tNA\t\tdefault.cpu.eq\n");
     for (i = 2; i < smt_threads; i++) {
         if (i % 2 == 0) {
-            fprintf (fp, "\tN0P0C0T%d\t\tcpu\t\tY\t\t\[50\]\t\t\t\[1010\]\t\t\t\t\tNA\t\tdefault.cpu.eq\n", i);
+            fprintf (fp, "\tN0P0C0T%d\t\tcpu\t\tY\t\t[50]\t\t\t[1010]\t\t\t\t\tNA\t\tdefault.cpu.eq\n", i);
         } else {
-            fprintf (fp, "\tN0P0C0T%d\t\tcpu\t\tY\t\t\[50\]\t\t\t\[0101\]\t\t\t\t\tNA\t\tdefault.cpu.eq\n", i);
+            fprintf (fp, "\tN0P0C0T%d\t\tcpu\t\tY\t\t[50]\t\t\t[0101]\t\t\t\t\tNA\t\tdefault.cpu.eq\n", i);
         }
     }
 
     for (i = 0; i < smt_threads; i++) {
         if (i % 2 == 0) {
-            fprintf (fp, "\tN[1-n]P[1-n]C[1-n]T%d\tcpu\t\tY\t\t\[50\]\t\t\t\[1010\]\t\t\t\t\tNA\t\tdefault.cpu.eq\n", i);
+            fprintf (fp, "\tN[1-n]P[1-n]C[1-n]T%d\tcpu\t\tY\t\t[50]\t\t\t[1010]\t\t\t\t\tNA\t\tdefault.cpu.eq\n", i);
         } else {
-            fprintf (fp, "\tN[1-n]P[1-n]C[1-n]T%d\tcpu\t\tY\t\t\[50\]\t\t\t\[0101\]\t\t\t\t\tNA\t\tdefault.cpu.eq\n", i);
+            fprintf (fp, "\tN[1-n]P[1-n]C[1-n]T%d\tcpu\t\tY\t\t[50]\t\t\t[0101]\t\t\t\t\tNA\t\tdefault.cpu.eq\n", i);
         }
     }
 }
 
 void create_cfg_msrp_1p3m_28s_act_52s_idle()
 {
-    fprintf (fp, "\tN*P*C*T0\t\tpv\t\t\tY\t\t\t\t\[35\]\t\t\t\t\tUTIL_LEFT\t\t\t\t\tNA\t\trule.pv\n");
-    fprintf (fp, "\tN*P*C*T[1-3]\tddot\t\tY\t\t\t\t\[35\]\t\t\t\t\tUTIL_LEFT\t\t\t\t\tNA\t\trule.ddot_200M\n");
+    fprintf (fp, "\tN*P*C*T0\t\tpv\t\t\tY\t\t\t\t[35]\t\t\t\t\tUTIL_LEFT\t\t\t\t\tNA\t\trule.pv\n");
+    fprintf (fp, "\tN*P*C*T[1-3]\tddot\t\tY\t\t\t\t[35]\t\t\t\t\tUTIL_LEFT\t\t\t\t\tNA\t\trule.ddot_200M\n");
 }
 
 void create_cfg_p8_8fd_char()
 {
-    fprintf (fp, "\tN*P*C*T[0-3]\tfdaxpy\t\t\tY\t\t\t\t\[25\]\t\t\t\t\tUTIL_LEFT\t\t\t\t\tNA\t\trule.fdaxpy\n");
-    fprintf (fp, "\tN*P*C*T[4-7]\tfdaxpy\t\t\tY\t\t\t\t\[100\]\t\t\t\t\tUTIL_LEFT\t\t\t\t\tNA\t\trule.fdaxpy\n");
+    fprintf (fp, "\tN*P*C*T[0-3]\tfdaxpy\t\t\tY\t\t\t\t[25]\t\t\t\t\tUTIL_LEFT\t\t\t\t\tNA\t\trule.fdaxpy\n");
+    fprintf (fp, "\tN*P*C*T[4-7]\tfdaxpy\t\t\tY\t\t\t\t[100]\t\t\t\t\tUTIL_LEFT\t\t\t\t\tNA\t\trule.fdaxpy\n");
 }
 
 void create_cfg_p8_rdp_switch()
 {
-    fprintf (fp, "\tN*P*C*T[0-3]\t\trdp\t\t\tY\t\t\t\t\[50\]\t\t\t\t\tUTIL_LEFT\t\t\t\t\tNA\t\trule.rdp\n");
-    fprintf (fp, "\tN*P*C*T[4-7]\t\trdp\t\t\tY\t\t\t\t\[0\] \t\t\t\t\tUTIL_LEFT\t\t\t\t\tNA\t\trule.rdp\n");
+    fprintf (fp, "\tN*P*C*T[0-3]\t\trdp\t\t\tY\t\t\t\t[50]\t\t\t\t\tUTIL_LEFT\t\t\t\t\tNA\t\trule.rdp\n");
+    fprintf (fp, "\tN*P*C*T[4-7]\t\trdp\t\t\tY\t\t\t\t[0] \t\t\t\t\tUTIL_LEFT\t\t\t\t\tNA\t\trule.rdp\n");
 }
 
 void create_cfg_p8_swicthing_cmp()
 {
-    fprintf (fp, "\tN*P*C*T*\t\tfdaxpy\t\t\tY\t\t\t\t\[50\]\t\t\t\t\tUTIL_LEFT\t\t\t\tNA\t\trule.fdaxpy\n");
+    fprintf (fp, "\tN*P*C*T*\t\tfdaxpy\t\t\tY\t\t\t\t[50]\t\t\t\t\tUTIL_LEFT\t\t\t\tNA\t\trule.fdaxpy\n");
 }
 

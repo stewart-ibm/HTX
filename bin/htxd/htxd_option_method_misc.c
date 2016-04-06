@@ -1660,7 +1660,7 @@ int htxd_option_method_cmd(char **command_result)
 
 	htxd_instance = htxd_get_instance();
 
-	sprintf(command_string, "echo \" Error: failed to execute command \<%s\> \" >%s; sync",  htxd_instance->p_command->option_list, HTX_CMD_RESULT_FILE);
+	sprintf(command_string, "echo \" Error: failed to execute command <%s> \" >%s; sync",  htxd_instance->p_command->option_list, HTX_CMD_RESULT_FILE);
 	system(command_string);
 
 	sprintf(command_string, " (%s) > %s 2>&1 ; sync", htxd_instance->p_command->option_list, HTX_CMD_RESULT_FILE);
