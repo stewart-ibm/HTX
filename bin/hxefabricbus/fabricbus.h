@@ -128,8 +128,8 @@ typedef struct {
 } FIXED_PATTERNS;
 
 typedef struct {
-	unsigned int host_cpu;									/* Host cpu on whic below mask's are to applied */  
-	unsigned int dest_cpu; 									/* Dest cpu on whic below mask's are to applied */
+	unsigned int host_cpu;									/* Host cpu on which below mask's are to applied */  
+	unsigned int dest_cpu; 									/* Dest cpu on which below mask's are to applied */
 	unsigned long long and_mask[4];							/* user defined and mask for random_numbers generated */
 	unsigned int and_mask_len;								/* Len of and mask in terms of 8 bytes */
 	unsigned long long or_mask[4];							/* user defined or mask for random_number generated */
@@ -146,7 +146,7 @@ struct rf_stanza {
     int memory_configure ; 									/* 0 - RAD calls used 1 - user defined memory mapping */
 	int mask_configure; 									/* Allow usage of link based And, Or masks			  */
 	unsigned int threads_per_node;							/* If mem_alloc -2 then number of threads to create per node */
-	FIXED_PATTERNS fixed_pattern;							/* fixed Patterns  specified thru rules file */
+	FIXED_PATTERNS fixed_pattern;							/* fixed Patterns  specified through rules file */
     int wrc_data_pattern_iterations;         				/* Number of times each pattern should be repeated*/
     int wrc_iterations;       								/* WRC algo iterations 	*/
     int copy_iterations;      								/* Copy algo iterations */

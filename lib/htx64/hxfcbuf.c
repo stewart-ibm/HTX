@@ -304,7 +304,7 @@ int hxfsbuf(char *buf, size_t len, char *fname, struct htx_data *ps)
           		if (num_bytes != (int) len)
             		{
               			(void) sprintf(err_msg, "Error writing to %s.\nOnly %d of %d \
-				bytes successfully transfered on write() system call.",
+				bytes successfully transferred on write() system call.",
                              	fname, num_bytes, len);
 			        (void) hxfmsg(ps, exit_code, HTX_SYS_HARD_ERROR, err_msg);
             		} /* endif */

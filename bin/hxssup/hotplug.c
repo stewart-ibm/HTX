@@ -357,7 +357,7 @@ void hotplug_reconfig_restart(int sig, int code, struct sigcontext *scp)
 		}
 
 		sprintf(msg, "Started /dev/%s",p_added_shm_HE->sdev_id);
-		sprintf(msg_text, "Addition or replacement of exerciser for %s completed sucessfully.", tmp_HE_entry.sdev_id);
+		sprintf(msg_text, "Addition or replacement of exerciser for %s completed successfully.", tmp_HE_entry.sdev_id);
 		send_message(msg_text, 0, HTX_SYS_INFO, HTX_SYS_MSG);		
 
 	} while(cfg_return_code == CFG_SUCC);
@@ -575,7 +575,7 @@ void* hotplug_monitor(void)
 	        }
 			rc = update_syscfg();
 		    if(rc != 0) {
-				sprintf(debug_msg, "ERROR :update_syscfg unsuccessfull inisde hotplug with %d \n",rc);
+				sprintf(debug_msg, "ERROR :update_syscfg unsuccessful inside hotplug with %d \n",rc);
 		        send_message(debug_msg, 0, HTX_SYS_INFO, HTX_SYS_MSG);
 		    }
 

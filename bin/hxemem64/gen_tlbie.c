@@ -54,7 +54,7 @@ struct system_details {
  *
  * Description:
  *    Created for the Field feature 541203 which requires the hardware generates
- *    tlbies regularly. Only 1 shared memory region is allocated (16M intially) and so we
+ *    tlbies regularly. Only 1 shared memory region is allocated (16M initially) and so we
  *    4k  4k pages are generated and we touch each region and then detach the shared
  *    memory and repeat the process to generate more tlbies on that memory region with
  *    our exerciser process.
@@ -167,7 +167,7 @@ void gen_tlbie()
         		displaym(HTX_HE_SOFT_ERROR, DBG_MUST_PRINT,"Error in creating thread no %d, returned = %d\n",num_th,errno);
        		}	
             else {
-                displaym(HTX_HE_INFO,DBG_DEBUG_PRINT,"TLBIE : thread %d is created sucessfull\n",num_th);
+                displaym(HTX_HE_INFO,DBG_DEBUG_PRINT,"TLBIE : thread %d created successfully\n",num_th);
             }
 		}
 	}

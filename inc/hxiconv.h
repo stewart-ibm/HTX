@@ -145,7 +145,7 @@
 
 
 /*
- * various mneumonics used thoughout htx
+ * various mneumonics used throughout htx
  */
 #define  EXTRA_ENTRIES	(unsigned int) (0)  /* # of spare entries in htx shm */
 #define  PSEUDO_EXTRA_ENTRIES	(unsigned int) (100)
@@ -165,7 +165,7 @@
 #define	KEY_NEWL	'\r'
 
 /*
- * Seperate macros defined for Linux. Here, the function keys, and also the
+ * Separate macros defined for Linux. Here, the function keys, and also the
  * other attributes like the NORMAL, STANDALONE, etc are given new definitions.
  */
 

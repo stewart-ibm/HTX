@@ -180,7 +180,7 @@ int htxd_receive_bytes(int new_fd, char * receive_buffer, int receive_length)
 
 
 
-/* incomming command string receives here */
+/* incoming command string receives here */
 char * htxd_receive_command(int new_fd)  /* note: have to change for error handling */
 {
 	int result;
@@ -190,7 +190,7 @@ char * htxd_receive_command(int new_fd)  /* note: have to change for error handl
 
 
 	memset(temp_buffer, 0, sizeof(temp_buffer) );
-	/* receiving command  length from incomming commend */
+	/* receiving command  length from incoming commend */
 	result = htxd_receive_bytes(new_fd, temp_buffer, 10);
 	if(result == -1)
 	{

@@ -72,7 +72,7 @@ typedef unsigned char  BYTE;
 // this is not used in aix, the sems wait forever.......
 #define COMM_TIMEOUT	900		// set for 15 minutes. sem event wait timeout.
 #define WAIT_TIMEOUT  	0xFF00  // return value from waitevent that times out.
-#define WAIT_OBJECT_0 	0xFF01  // return value from waitevent that occured. 
+#define WAIT_OBJECT_0 	0xFF01  // return value from waitevent that occurred. 
 
 
 #define BADBOY  -1          // must be -1...
@@ -94,7 +94,7 @@ typedef struct rule_format {
 /*                               N - do not ignore modem line condition       */
 /*                               N = default for invalid or no value          */
    char         special[4];     /* Only used for forced read/writes.  Not     */
-/*                               supported with syncronization methods.       */
+/*                               supported with synchronization methods.       */
 /*                               should not be used for normal cable/wrap     */
 /*                               tests.  Possible values are permutations of  */
 /*                               "WRC".  i.e. "R", "W", "WRC", "RC"           */

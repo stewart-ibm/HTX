@@ -774,7 +774,7 @@ int corsa_cmprss_decmprss_compare(ti)
 		patt_size = stanza_ptr->pattern_size[pi];
 
         if (priv.exit_flag == 1) {
-			displaym(HTX_HE_INFO,DBG_MUST_PRINT," cmprss_decmprss_compare(%d): recieved sigterm \n",ti);
+			displaym(HTX_HE_INFO,DBG_MUST_PRINT," cmprss_decmprss_compare(%d): received sigterm \n",ti);
             break;
         }
 
@@ -1143,7 +1143,7 @@ int corsa_bypass_compare(ti)
 			addr_8,end_addr,ti,t[ti].buffer_size,i);
 
 	    if (priv.exit_flag == 1) {
-    	    displaym(HTX_HE_INFO,DBG_MUST_PRINT," corsa_bypass_compare(%d): recieved sigterm \n",ti);
+    	    displaym(HTX_HE_INFO,DBG_MUST_PRINT," corsa_bypass_compare(%d): received sigterm \n",ti);
         	break;
     	}
 
@@ -1422,7 +1422,7 @@ int corsa_compress_only(ti)
 			" t[%d].buffer_size = %u Oper=%d \n",
 			addr_8,end_addr,ti,t[ti].buffer_size,i);
  	    if (priv.exit_flag == 1) {
-    	    displaym(HTX_HE_INFO,DBG_MUST_PRINT," corsa_compress_only(%d): recieved sigterm \n",ti);
+    	    displaym(HTX_HE_INFO,DBG_MUST_PRINT," corsa_compress_only(%d): received sigterm \n",ti);
         	break;
     	}
 
@@ -1756,7 +1756,7 @@ int bind_to_proc(int bind_proc)
         displaym(HTX_HE_HARD_ERROR,DBG_MUST_PRINT,"Warning! error binding "
                  "to processor %d.", bind_proc);
     } else {
-        displaym(HTX_HE_INFO,DBG_INFO_PRINT,"Succesfully binded thread "
+        displaym(HTX_HE_INFO,DBG_INFO_PRINT,"Successfully binded thread "
                 "(tid =%d) to the logical proc %d\n", ti, bind_proc);
     }
 

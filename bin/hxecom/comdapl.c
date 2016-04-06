@@ -640,7 +640,7 @@ DAT_RETURN dapl_collect_event(DAT_EVD_HANDLE *dto_evd, DAT_EVENT *event, DAT_TIM
 }
 
 /*
- * post receive packet, dont wait for receive event, sender will wait for receive
+ * post receive packet, don't wait for receive event, sender will wait for receive
  * recive completion flag should be enabled (default)
  */
 DAT_RETURN dapl_post_rcv(struct dapl_device *dev, struct mr_attr *rcv_mr, DAT_DTO_COOKIE *cookie, int num_msg, struct htx_data * stats)
@@ -697,7 +697,7 @@ DAT_RETURN dapl_rdma_write(struct dapl_device *dev, unsigned long long buf_len, 
 		if(eeh_enabled) {
 			if( ret != DAT_SUCCESS) {
 				/* EEH Running in background, we are expected to hit failures,just
-			 	 * dont exit, lets sleep and retry 
+			 	 * don't exit, lets sleep and retry 
 			 	 */ 
 				sprintf(msg_text, "MSG_RDMA_WRITE : ret = %d, Retry #%d, owing to EEH=%d\n",ret, retries, eeh_enabled); 
 				hxfmsg(stats, 0, 7, msg_text);  
@@ -802,7 +802,7 @@ DAT_RETURN dapl_rdma_read(struct dapl_device *dev, unsigned long long buf_len, s
         if(eeh_enabled) {
             if( ret != DAT_SUCCESS) {
                 /* EEH Running in background, we are expected to hit failures,just
-                 * dont exit, lets sleep and retry
+                 * don't exit, lets sleep and retry
                  */
 				sprintf(msg_text, "MSG_RDMA_READ : ret = %d, Retry #%d, owing to EEH=%d\n",ret, retries, eeh_enabled); 
 				hxfmsg(stats, 0, 7, msg_text);  
@@ -914,7 +914,7 @@ void dapl_print_addr(struct sockaddr *sa, struct htx_data * stats)
 					((struct sockaddr_in6 *)sa)->sin6_flowinfo, ((struct sockaddr_in6 *)sa)->sin6_port);
 			break;
 		default:
-			printf("%d Local Address UNKOWN FAMILY - port %d\n", getpid(), SERVER_CONN_QUAL);
+			printf("%d Local Address UNKNOWN FAMILY - port %d\n", getpid(), SERVER_CONN_QUAL);
 	}
 }
 

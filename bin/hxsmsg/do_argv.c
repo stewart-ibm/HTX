@@ -85,7 +85,7 @@
  *      64 (0x0040) -- Bad Auto-Start flag (argv[7]) parameter.
  *     128 (0x0080) -- Bad "Heartbeat" device (argv[8]) parameter.
  *     256 (0x0100) -- Bad "Heartbeat" cycle time (argv[9]) parameter.
- *     512 (0x0200) -- Bad number of passed arguements (argc).
+ *     512 (0x0200) -- Bad number of passed arguments (argc).
  *
  *      NOTE: Each of the error codes listed above take up a single bit
  *            position.  Thus, multiple error conditions are indicated
@@ -137,10 +137,10 @@ short do_argv(char *argv[], int argc, off_t *p_err_thres, off_t *p_msg_thres,
 
  	program_name = argv[0];
 
-  /* Make sure that the expected number of arguements were passed in argv[]. */
+  /* Make sure that the expected number of arguments were passed in argv[]. */
   	if (argc != ARGC_EXPECTED)
     	{
-      		(void) fprintf(stderr, "\n%s: Unexpected number of passed arguements.",
+      		(void) fprintf(stderr, "\n%s: Unexpected number of passed arguments.",
 		     program_name);
       		exit_code |= BAD_ARGC;
     	}

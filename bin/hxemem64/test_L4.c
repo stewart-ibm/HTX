@@ -151,14 +151,14 @@ void test_L4_Rollover(void)
         masks[MCS_MASK].bm_position = 7;
         num_masks++;
         num_threads = total_cpus;
-		/* Balancing number of threads,so that threads creating per MCS will acess proper addresses*/
+		/* Balancing number of threads,so that threads creating per MCS will access proper addresses*/
 		if(num_threads % smt_details.smt_threads != 0){
 			num_threads = (num_threads - (num_threads % smt_details.smt_threads));
 		}
-		threads_per_mcs = total_cpus/num_mcs;/*number SW threads targetting a MCS in a group */
+		threads_per_mcs = total_cpus/num_mcs;/*number SW threads targeting a MCS in a group */
         /* If oper is MBA_TEST, update mask for MBA also. */
         if (strcmp (stanza_ptr->oper, "MBA") == 0 ) {
-			mba_threads = total_cpus/num_mcs;/*number of threads equally devided to target both MBAs per MCS*/
+			mba_threads = total_cpus/num_mcs;/*number of threads equally divided to target both MBAs per MCS*/
 			/* make sure number of mba threads per mcs is power of 2*/
 			masks[MBA_MASK].bit_mask_length=0;
 			while(mba_threads >= 2 ) {
@@ -194,7 +194,7 @@ void test_L4_Rollover(void)
 
 #ifndef __HTX_LINUX__
 
-	/* To get local memory for L4 test case set flag early_lru=1 to select P_FIRST_TOUCH policy(similiar to setting MEMORY_AFFINITY environment variable to MCM)*/
+	/* To get local memory for L4 test case set flag early_lru=1 to select P_FIRST_TOUCH policy(similar to setting MEMORY_AFFINITY environment variable to MCM)*/
     rc = vm_mem_policy(VM_SET_POLICY,&vm_early_lru, &vm_policies ,vm_num_policies);
     if (rc != 0){
     	displaym(HTX_HE_HARD_ERROR,DBG_MUST_PRINT,"vm_mem_policy() call failed with return value = %d\n",rc);
@@ -802,7 +802,7 @@ int get_mem_config_l4()
 	displaym(HTX_HE_INFO,DBG_DEBUG_PRINT, "mapped node num: %d\n", mapped_node_num);
 
 	/* Check if memory is available on current chip. If no available memory, give WARNING and assign default values for mem config
-	paramters and return. */
+	parameters and return. */
 	sprintf (str, "cat /sys/devices/system/node/%s/meminfo | grep MemTotal | awk '{print $4}'", mapped_node);
 	fp = popen(str, "r");
 	if (fp == NULL) {

@@ -109,7 +109,7 @@ void unblock_stats_th() {
 	rc = pthread_cond_broadcast(&start_thread_cond);
    
     rc = pthread_mutex_unlock(&create_thread_mutex);
-	/* Set this flag if all the setup was sucess and user had made request 
+	/* Set this flag if all the setup was success and user had made request 
 	 to use new HTXMP lib. 
     Let us decide whether we are using new mp library */ 
 	new_mp = 1 ;
@@ -139,11 +139,11 @@ mp_intialize(int num_resources, struct htx_data * htx_ds) {
 	global_mp_htx_ds = htx_ds ;  
 
 	if ((strcmp (htx_ds->run_type, "REG") != 0) && (strcmp (htx_ds->run_type, "EMC") != 0)) { 
-		/* I shouldnt be active in exer standalone runs */ 
+		/* I shouldn't be active in exer standalone runs */ 
 		return(0);
 	} 
 #ifdef DEBUG
-	sprintf(msg_buf, " Intialization start .. num_resources = %d, htx_ds=%llx \n",num_resources, htx_ds); 
+	sprintf(msg_buf, " Initialization start .. num_resources = %d, htx_ds=%llx \n",num_resources, htx_ds); 
 	hxfmsg(htx_ds, 0, HTX_HE_INFO, msg_buf); 
 #endif 
 
@@ -217,10 +217,10 @@ mp_intialize(int num_resources, struct htx_data * htx_ds) {
       	return(-1);  
     }
 #ifdef DEBUG
-	sprintf(msg_buf, " Intialization done .. num_resources = %d \n",num_resources); 
+	sprintf(msg_buf, " Initialization done .. num_resources = %d \n",num_resources); 
 	hxfmsg(htx_ds, 0, HTX_HE_INFO, msg_buf); 
 #endif 
-	/* mp_intialization successfull */ 
+	/* mp_intialization successful */ 
 	new_mp_intialize = 1; 
 	return(0); 
 } 
@@ -232,7 +232,7 @@ mp_intialize(int num_resources, struct htx_data * htx_ds) {
  * 
  * Function : mp_start()
  * Input : thread's local htx_data structure 
- * Output : Postive integer if successfull. 
+ * Output : Positive integer if successful. 
  *        : -1 in error.  
  *-------------------------------------------------------------------------*/ 
 
@@ -255,7 +255,7 @@ mp_start(struct htx_data * htx_ds) {
 	} 
 	th_index = ((th_index + 1 ) % num_threads ); 
 
-	/* I would assume thread hasnt intialized its thread specific htx_ds passed as an argument to this function 
+	/* I would assume thread hasn't intialized its thread specific htx_ds passed as an argument to this function 
 	   Do it as part of library. */ 
 	memset(htx_ds, 0, sizeof(struct htx_data)); 
 	memcpy(htx_ds,global_mp_htx_ds, sizeof(struct htx_data));
@@ -269,7 +269,7 @@ mp_start(struct htx_data * htx_ds) {
     htx_ds->good_reads = 0;
     htx_ds->good_writes = 0;
     htx_ds->num_instructions = 0;
-	/* Populate pthread_id appropriately, so that exer doesnt have do it */ 
+	/* Populate pthread_id appropriately, so that exer doesn't have do it */ 
 	htx_ds->pthread_id = th_index ; 
 
 #ifdef DEBUG
@@ -504,7 +504,7 @@ hxfupdate_tsafe(char type, struct htx_data * data) {
 		global_mp_htx_ds->p_shm_HE->tm_last_upd = clock;
 		*/ 
 		if ((strcmp (global_mp_htx_ds->run_type, "REG") != 0) && (strcmp (global_mp_htx_ds->run_type, "EMC") != 0) ) { 
-			/* I shouldnt be active in exer standalone runs */ 
+			/* I shouldn't be active in exer standalone runs */ 
 			return(0);
 		} 
 		/* New version for updates will take a lock per thread instead of global lock */

@@ -228,7 +228,7 @@ int	AHD_compar(struct ahd_entry *item1, struct ahd_entry *item2)
 /*                                                                           */
 /* DESCRIPTIVE NAME =  alarm signal handler                                  */
 /*                                                                           */
-/* FUNCTION =          Upon reciept of an alarm signal, this function sets   */
+/* FUNCTION =          Upon receipt of an alarm signal, this function sets   */
 /*                     the external variable alarm_sig to TRUE.              */
 /*                                                                           */
 /* INPUT =             None.                                                 */
@@ -1085,7 +1085,7 @@ short send_message(char *msg_text, int errno_val, int severity, mtyp_t msg_type)
 /*                                                                           */
 /* INPUT =             s - point to the string variable                      */
 /*                                                                           */
-/* OUTPUT =            formated message which goes to the message handler.   */
+/* OUTPUT =            formatted message which goes to the message handler.   */
 /*                                                                           */
 /* NORMAL RETURN =     pointer to returned string                            */
 /*                                                                           */

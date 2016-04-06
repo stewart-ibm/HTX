@@ -223,7 +223,7 @@ void make_entry(int time_quantum, int wof_test)
     if (wof_test == 1) {
         fprintf(fp, "wof_test = 1\n\n");
     }
-    fprintf(fp, "# In utilizationSequence,upto 10 steps are allowed.\n#\n");
+    fprintf(fp, "# In utilizationSequence,up to 10 steps are allowed.\n#\n");
     fprintf(fp, "#\tAffinity\tTest name\teq_control\tutilization_sequence\t\tutilization_pattern\t\t\tMode\t\tRule file\n");
     fprintf(fp, "#\t--------\t---------\t----------\t--------------------\t\t-------------------\t\t\t----\t\t---------\n");
 }
@@ -425,7 +425,7 @@ void create_th_switch_seq()
         smt_array[smt_array_size] = threads;
     }
 
-    /* Initally all the threads should be running.So, all having utilzation as 100% */
+    /* Initially all the threads should be running.So, all having utilzation as 100% */
     cur_no_act_threads = smt_threads;
     for (i = 0; i < smt_threads; i++) {
         strcpy(util_str[i], "[");

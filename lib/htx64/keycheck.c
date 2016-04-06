@@ -1110,7 +1110,7 @@ void EncodeKeyData(unsigned char *key_data, char *version,
 
   k = 25;
 
-  for (i = 0; i < 36 ; i += 6 ) /*upto Numr*/
+  for (i = 0; i < 36 ; i += 6 ) /*up to Numr*/
     {
 	if(Releases[i] =='^')
 		release_key[i] = '^' ;
@@ -1118,7 +1118,7 @@ void EncodeKeyData(unsigned char *key_data, char *version,
 		release_key[i] = map[53][(Releases[i] - 48)];
     }
 
-  for (i = 1; i < 36 ; i += 6 ) /*upto Numr*/
+  for (i = 1; i < 36 ; i += 6 ) /*up to Numr*/
     {
 	if(Releases[i] =='^')
 		release_key[i] = '^' ;

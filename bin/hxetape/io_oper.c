@@ -1532,7 +1532,7 @@ VBS_Write(struct htx_data *pHTX, struct ruleinfo *pRule,
   }
   if ( !VBS_seed_initialized ) {
      hxfmsg(pHTX, 0, SYSERR, "VBS write: operation called but seed not\n"
-                             "initialized in this or preceeding stanza");
+                             "initialized in this or preceding stanza");
      tape_error_code = errno;
      return(-1);
   }
@@ -1746,7 +1746,7 @@ VBS_Read(struct htx_data *pHTX, struct ruleinfo *pRule,
     /* The VBS random number seed must be initialized in this or prior stanza */
   if ( !VBS_seed_initialized ) {
      hxfmsg(pHTX, 0, SYSERR, "VBS read: operation called but seed not\n"
-                             "initialized in this or preceeding stanza");
+                             "initialized in this or preceding stanza");
      tape_error_code = errno;
      return(-1);
   }
@@ -1914,7 +1914,7 @@ VBS_Readc(struct htx_data *pHTX, struct ruleinfo *pRule,
     /* The VBS random number seed must be initialized in this or prior stanza */
   if ( !VBS_seed_initialized ) {
      hxfmsg(pHTX, 0, SYSERR, "VBS read: operation called but seed not\n"
-                             "initialized in this or preceeding stanza");
+                             "initialized in this or preceding stanza");
      tape_error_code = errno;
      return(-1);
   }
@@ -3872,7 +3872,7 @@ hidal_unload(struct htx_data *phtx_info, struct ruleinfo *prule_info,
 }
 #endif
 /**************************************************************************/
-/* Execute a system command from a psuedo command line                    */
+/* Execute a system command from a pseudo command line                    */
 /**************************************************************************/
 int
 do_cmd(struct htx_data *phtx_info, struct ruleinfo *prule_info,
@@ -4224,7 +4224,7 @@ savebuf_tofile(char *buf, size_t len, char *fname, struct htx_data *ps)
           if (num_bytes != (int) len)
             {
               (void) sprintf(err_msg, "Error writing to %s.\nOnly %d of %d \
-bytes successfully transfered on write() system call.",
+bytes successfully transferred on write() system call.",
                              fname, num_bytes, len);
               (void) hxfmsg(ps, exit_code, HTX_SYS_HARD_ERROR, err_msg);
             } /* endif */

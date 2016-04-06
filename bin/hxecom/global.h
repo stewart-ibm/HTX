@@ -235,7 +235,7 @@ struct id_t {
 };
 
 /******************************************************************************/
-/* Increment this number for release of incompatable versions.                */
+/* Increment this number for release of incompatible versions.                */
 /******************************************************************************/
 #define EXER_VERSION  3
 
@@ -546,7 +546,7 @@ struct coord_argt {
 
 struct comsem_argt {
     SOCKET    SemServSock;	/* this is file descriptor for the socket */
-	unsigned int bufseed ;  /* Intial seed passed thru rules file stanza 0 */ 
+	unsigned int bufseed ;  /* Initial seed passed through rules file stanza 0 */ 
     struct htx_data stats;
 };
 

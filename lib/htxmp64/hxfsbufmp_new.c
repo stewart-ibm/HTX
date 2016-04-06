@@ -53,7 +53,7 @@ static char sccsid[] = "@(#)75  1.2  src/htx/usr/lpp/htx/lib/htxmp64/hxfsbufmp_n
 
 
 /*---------------------------------------------------------------------
-*  We need to go thru this function with mutexes because hxfsbuf write 
+*  We need to go through this function with mutexes because hxfsbuf write 
 *  into files and we do not want two threads write into the same file. 
 *---------------------------------------------------------------------*/
 
@@ -128,7 +128,7 @@ int hxfsbuf_tefficient(char *buf, size_t len, char *fname, struct htx_data *ps)
           if (num_bytes != (int) len)
             {
               (void) sprintf(err_msg, "Error writing to %s.\nOnly %d of %d \
-bytes successfully transfered on write() system call.",
+bytes successfully transferred on write() system call.",
                              fname, num_bytes, len);
               (void) hxfmsg_tsafe(ps, exit_code, -10, err_msg);
             } /* endif */

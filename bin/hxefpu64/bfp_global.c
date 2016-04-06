@@ -614,7 +614,7 @@ void class_bfp_fpscr_gen(uint32 client_no, uint32 random_no, struct instruction_
 	op2 = (vsr2 & 0x1f) << (temp->op2_pos);
 
 	/* This is not that actual target. This is just a mask deciding with nibble to be modified */
-	/* in the FPSCR. Hence, we move this to the end so that we dont end picking same mask time */
+	/* in the FPSCR. Hence, we move this to the end so that we don't end picking same mask time */
 	/* and again for different instances of these class of instructions */
 
 	/* MOVE_VSR_TO_END(temp->tgt_dtype); Move this to the end of list */
@@ -658,7 +658,7 @@ void class_bfp_fpscr_imm_gen(uint32 client_no, uint32 random_no, struct instruct
 	vsr4 = vsrs->head[VSX]->vsr_no;
 
 	/* This is not that actual target. This is just a mask deciding with nibble to be modified */
-	/* in the FPSCR.Hence, moving this to the end so that we dont endup picking same mask time */
+	/* in the FPSCR.Hence, moving this to the end so that we don't endup picking same mask time */
 	/* and again for different instances of this class of instructions */
 
 	/* MOVE_VSR_TO_END(temp->tgt_dtype); Move this to the end of list */
@@ -894,7 +894,7 @@ void class_bfp_fpscr_bit_set_unset(uint32 client_no, uint32 random_no, struct in
 
 
 	/* This is not that actual target. This is just a mask deciding with nibble to be modified */
-	/* in the FPSCR.Hence, moving this to the end so that we dont endup picking same mask time */
+	/* in the FPSCR.Hence, moving this to the end so that we don't endup picking same mask time */
 	/* and again for different instances of this class of instructions */
 
 	/* MOVE_VSR_TO_END(temp->tgt_dtype); Move this to the end of list */

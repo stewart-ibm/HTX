@@ -91,7 +91,7 @@ pid_t hxsstress_PID = -1;  /* hxsstress "heartbeat" program PID            */
  *                   max_err_thres).  If the error log file is set to 
  *                   wrap, it does so after this file size threshold (num
  *                   of bytes) is met.
- *        argv[2] -- max message log file size threshhold (converted to long
+ *        argv[2] -- max message log file size threshold (converted to long
  *                   int max_msg_thres).  This works the same as argv[1].
  *        argv[3] -- save error log file size (converted to the long
  *                   integer max_err_save).  This specifies the size in 

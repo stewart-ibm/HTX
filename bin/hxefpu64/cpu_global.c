@@ -1865,7 +1865,7 @@ void class_cpu_fixed_logic_3_gen(uint32 client_no, uint32 random_no, struct inst
 	/* now get a source register */
     cptr->num_ins_built=num_ins_built;					/* write the data again*/
 	RA = get_random_gpr(client_no,ins->op3_dtype, 0);
-	/* get immediate data for comparision */
+	/* get immediate data for comparison */
 	Imm_data = get_random_no_32(client_no) % 65536;
 	Imm_data = Imm_data & 0x0000ffff;
 	if (ins->op1_dtype == GR ) {
@@ -2225,8 +2225,8 @@ void class_cpu_branch_1_gen(uint32 client_no, uint32 random_no, struct instructi
        switch(insttype){
 	       case 0:							/* forward branch with no link */
 		    /* 1) build branch instruction
-			*  2) Fill all the inbetween space with addi and store instructions/no op
-			*  3) But,these branch instructions should not be executed by the processor.
+			*  2) Fill all the space in between with addi and store instructions/no op
+			*  3) But, these branch instructions should not be executed by the processor.
 			*/
 				/* Build actual branch instruction */
  			   	op1 = (distance) << (ins->tgt_pos);
@@ -2269,7 +2269,7 @@ void class_cpu_branch_1_gen(uint32 client_no, uint32 random_no, struct instructi
 
 	       case 1:							/* forward branch with link */
 			/* 1) First save link register value 
-			 * 2) Build branch instruction and fill inbetween spaces
+			 * 2) Build branch instruction and fill space in between
 			 * 3) At the end,restore back link register value
 			 */
 			    /*RT = get_random_gpr(client_no,GR,1);*/		/* get a random register    */
@@ -2673,7 +2673,7 @@ void class_cpu_branch_3_gen(uint32 client_no, uint32 random_no, struct instructi
 		        cptr->instr_index[prolog_size + num_ins_built] = brlink | 0x20000000;
        			tc_memory++;
 			    num_ins_built++;
-				/* fill inbetween spaces with some branch instructions */
+				/* fill space in between with some branch instructions */
 				for(i=0;i<(distance - (2+ctr_bit));i++){
 					temp_distance = distance - i + 1;
 					mcode=BRANCH(temp_distance);
@@ -2822,7 +2822,7 @@ void class_cpu_branch_3_gen(uint32 client_no, uint32 random_no, struct instructi
 		               	cptr->instr_index[prolog_size + num_ins_built] = brlink | 0x20000000;
        			        tc_memory++;
 			        num_ins_built++;
-				/* now fill in the inbetween instructions with branch instructions */
+				/* now fill the space in between with branch instructions */
 				for(i=0;i<distance;i++){
 					temp_distance = distance-i+1+addl_inst;        	/* branch to actual instruction*/
 					mcode = BRANCH(temp_distance);			/* build branch           */
@@ -3190,7 +3190,7 @@ uint32 getdistance(uint32 client_no)
   	*/
 
 
-  	/* Let maximum distance be 20.This is needed to make sure that we dont overrun the testcase space/disturb biasing with heavy branching biasing */
+  	/* Let maximum distance be 20.This is needed to make sure that we don't overrun the testcase space/disturb biasing with heavy branching biasing */
   	/* Let minimum distance be 10.This is needed to make sure that we have space to take care of pre and post requisites esp for bcctr and bclr*/ 
   	do { 
 		distance = (get_random_no_32(client_no) % (max_distance + 1));

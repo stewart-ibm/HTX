@@ -79,7 +79,7 @@
   *
   * Notes: The Atape SIOC_PASSTHRU_COMMAND ioctl should be used instead of this
   *        ioctl if possible. Support for STIOCMD is for legacy applications or
-  *        applications that need run with other AIX tape drivers in additon to
+  *        applications that need run with other AIX tape drivers in addition to
   *        the Atape driver transparently.
   *
   *        This ioctl is supported on both SCSI adapter attached devices and
@@ -111,7 +111,7 @@
   uint   timeout_value;        /* Timeout in seconds or 0 for command default */
   uint   buffer_length;        /* Length of data buffer or 0                  */
   char   *buffer;              /* Pointer to data buffer or NULL              */
-  uint   number_bytes;         /* Number of bytes transfered to/from buffer   */
+  uint   number_bytes;         /* Number of bytes transferred to/from buffer   */
   uchar  sense_length;         /* Number of valid sense bytes                 */
   uchar  sense[MAXSENSE];      /* Sense data when sense length > 0            */
   uint   trace_length;         /* Number bytes in buffer to trace, 0 for none */
@@ -223,7 +223,7 @@
       boolean eot;              /* after early warning, before physical end of tape */
       blockid_t curpos;         /* for qry current position, for set position to go to */
       blockid_t lbot;           /* last block written to tape */
-	#define LBOT_NONE    0xFFFFFFFF /* no blocks ahve yet been written to tape */
+	#define LBOT_NONE    0xFFFFFFFF /* no blocks have yet been written to tape */
 	#define LBOT_UNKNOWN 0xFFFFFFFE /* unable to determine information*/
       uchar reserved[64];
       };

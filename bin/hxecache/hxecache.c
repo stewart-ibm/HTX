@@ -211,7 +211,7 @@ int main(int argc, char **argv) {
 
 	/* Check whether the exerciser should proceed or not */
 	if(exit_flag ) {
-		sprintf(msg,"[%d] Recieved exit_flag, exitting\n",__LINE__);
+		sprintf(msg,"[%d] Received exit_flag, exitting\n",__LINE__);
 		hxfmsg(&h_d, 0, HTX_HE_INFO, msg);
 		retcode = memory_set_cleanup();
 		if ( retcode != SUCCESS ) {
@@ -333,7 +333,7 @@ int main(int argc, char **argv) {
 
 		/* Process exit_flag to check if we need to abort */
 		if(exit_flag) {
-			sprintf(msg,"[%d] Recieved exit_flag, exitting\n",__LINE__);
+			sprintf(msg,"[%d] Received exit_flag, exitting\n",__LINE__);
 			hxfmsg(&h_d, 0, HTX_HE_INFO, msg);
 			if ( exit_flag == DR_EXIT)
 				hxfupdate(RECONFIG, &h_d);
@@ -801,7 +801,7 @@ int get_cont_phy_mem(unsigned long long size_requested) {
 
 	if ((system_information.pvr == POWER7 ) || ( (system_information.pvr == POWER7P) && (test_L2 == TRUE) )) {
 		/* If P7 or P7+ L2 test case  then contiguous memory requirements falls within 16M page boundaries. Therefore
-		 * here we dont need the entire "size" to be truly contiguous (in physical memory), only that
+		 * here we don't need the entire "size" to be truly contiguous (in physical memory), only that
 		 * it be allocated in distinct 16M pages, so that threads operating on each physical cache
 		 * instance can operate within the page boundary assigned to them.
 		 */
@@ -1053,7 +1053,7 @@ int allocate_worst_case_memory(void) {
 #else
     bindprocessor(BINDPROCESS, getpid(), PROCESSOR_CLASS_ANY);
 	
-    /* To get local memory set flag early_lru=1 to select P_FIRST_TOUCH policy(similiar to setting MEMORY_AFFINITY environment variable to MCM)*/
+    /* To get local memory set flag early_lru=1 to select P_FIRST_TOUCH policy(similar to setting MEMORY_AFFINITY environment variable to MCM)*/
     rc = vm_mem_policy(VM_SET_POLICY,&early_lru, &policies ,num_policies);
     if (rc != 0){
         sprintf(msg,"vm_mem_policy() call failed with return value = %d\n",rc);
@@ -1329,7 +1329,7 @@ void SIGUSR2_hdl(int sig, int code, struct sigcontext *scp)
 	if(tot_thread_count != 0){
     	update_sys_detail_flag = 1;
 	}
-	sprintf(msg,"[%d] %s : Recieved SIGUSR2\n",__LINE__,__FUNCTION__);
+	sprintf(msg,"[%d] %s : Received SIGUSR2\n",__LINE__,__FUNCTION__);
 	hxfmsg(&h_d, 0, HTX_HE_INFO, msg);
 }
 #endif
@@ -2012,7 +2012,7 @@ void set_defaults()
 
 	for(i = 0; i < MAX_TC; i+=3) {
 		/*
-		 * h_r being a global, everthing defaults to zero.
+		 * h_r being a global, everything defaults to zero.
 		 */
 		h_r[i].compare = 1;
 		h_r[i].bound = -1;
@@ -2810,7 +2810,7 @@ void DR_handler(int sig, int code, struct sigcontext *scp) {
 	   }
 
 	if (exit_flag != DR_EXIT) {
-  		sprintf(msg,"DR: SIGRECONFIG  signal recieved !!\n") ;
+  		sprintf(msg,"DR: SIGRECONFIG  signal received !!\n") ;
    		hxfmsg(&h_d, 0, HTX_HE_INFO, msg);
 	 
 		if (DRinfo.mem == 1 || DRinfo.ent_cap == 1 || DRinfo.hibernate == 1){
@@ -3208,7 +3208,7 @@ int setup_cache_thread_context(void) {
 }
 
 /*
- * This function setup the array of thread_context's so that thread specific infomation
+ * This function setup the array of thread_context's so that thread specific information
  * can be initialised, prior to creation of the threads themselves.
  */
 
@@ -4600,7 +4600,7 @@ void dump_rule_structure(struct ruleinfo *rule_ptr) {
 				break;
 
 			default:
-				print_log("\n[%d] Test case                              = UNKOWN",__LINE__);
+				print_log("\n[%d] Test case                              = UNKNOWN",__LINE__);
 				break;
 		}
 

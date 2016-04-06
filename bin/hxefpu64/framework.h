@@ -230,7 +230,7 @@ void dcbi(volatile unsigned int *);
 #define CLASS_DFP_CMP_TEST_INS	0x22
 #define CLASS_DFP_RMC_QUAI		0x23
 #define CLASS_DFP_RMC			0x24
-#define CLASS_DFP_SH			0x25 /* Here we pick it as normal registers but we dont meedle the linklist*/
+#define CLASS_DFP_SH			0x25 /* Here we pick it as normal registers but we don't meedle the linklist*/
 #define CLASS_DFP_LOAD_IMM		0x26
 #define CLASS_DFP_LOAD			0x27
 #define CLASS_DFP_STORE_IMM		0x28
@@ -300,7 +300,7 @@ unsigned long vsx_reg_file_mask;
 #define VECTOR_SP_HH	3	/* "SP || undefined || SP || undefined" data format */
 #define VECTOR_DP 		4	/* Vector DP data */
 #define GPR_T			5	/* 64 bit integer data */
-#define GPR32			5	/* 32 bit interger data */
+#define GPR32			5	/* 32 bit integer data */
 #define QGPR			5	/* 128 bit fixed point integer data */
 #define QGPR_HH			5	/* "SW || Undefined || SW || undefined" data format */
 #define SCALAR_HP		6	/* Half precision Scalar datatype */

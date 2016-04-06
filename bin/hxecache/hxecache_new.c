@@ -38,7 +38,7 @@ char *htxkdblevel;
 /*
  * Value of prefetch_on variable will determine if prefetch irritator will
  * run along side hxecache.
- * It takes values 0 - Dont run prefetch irritator
+ * It takes values 0 - Don't run prefetch irritator
  *                 1 - Run prefetch irritator
  * Reads the value provided in rule file.
  */
@@ -176,7 +176,7 @@ int main(int argc, char ** argv)
     sprintf(msg,"[%d] cycle no = %d\n",__LINE__,h_d.test_id);
     hxfmsg(&h_d, 0, HTX_HE_INFO, msg);
     if(exit_flag ) {
-		sprintf(msg,"[%d] Recieved exit_flag, exitting\n",__LINE__);
+		sprintf(msg,"[%d] Received exit_flag, exitting\n",__LINE__);
 		hxfmsg(&h_d, 0, HTX_HE_INFO, msg);
 		if (exit_flag == DR_EXIT)
 			hxfupdate(RECONFIG, &h_d);
@@ -292,7 +292,7 @@ int main(int argc, char ** argv)
     DEBUGON("Start CPU number               : %d \n",system_information.start_cpu_number);
     DEBUGON("End CPU number                 : %d \n",system_information.end_cpu_number);
 
-    /* Memory allocation: Parse thru the rule file parameters to find the various test cases to be executed.
+    /* Memory allocation: Parse through the rule file parameters to find the various test cases to be executed.
      * Allocate worst case memory required by the exerciser. This is one time job.
      */
     do{
@@ -534,7 +534,7 @@ int main(int argc, char ** argv)
             hxfmsg(&h_d, 0, HTX_HE_INFO, msg);
         }
         if(exit_flag) {
-			sprintf(msg,"[%d] Recieved exit_flag, exitting\n",__LINE__);
+			sprintf(msg,"[%d] Received exit_flag, exitting\n",__LINE__);
 			hxfmsg(&h_d, 0, HTX_HE_INFO, msg);
 			if (exit_flag == DR_EXIT)
 				hxfupdate(RECONFIG, &h_d);
@@ -830,7 +830,7 @@ int get_cont_phy_mem(long long size_requested)
 
     if ((system_information.pvr == 0x3F ) || ( system_information.pvr == 0x4A && test_l2 )) {
         /* If P7 or P7+ L2 test case  then contiguous memory requirements falls within 16M page boundaries. Therefore
-         * here we dont need the entire "size" to be truly contiguous (in physical memory), only that
+         * here we don't need the entire "size" to be truly contiguous (in physical memory), only that
          * it be allocated in distinct 16M pages, so that threads operating on each physical cache
          * instance can operate within the page boundary assigned to them.
          */
@@ -1424,7 +1424,7 @@ void set_defaults()
 
     for(i = 0; i < MAX_TC; i+=3) {
         /*
-         * h_r being a global, everthing defaults to zero.
+         * h_r being a global, everything defaults to zero.
          */
         h_r[i].compare = 1;
         h_r[i].bound = -1;
@@ -2010,7 +2010,7 @@ void DR_handler(int sig, int code, struct sigcontext *scp)
        }
 
 	if (exit_flag != DR_EXIT) {
-  		sprintf(msg,"DR: SIGRECONFIG  signal recieved !!\n") ;
+  		sprintf(msg,"DR: SIGRECONFIG  signal received !!\n") ;
    		hxfmsg(&h_d, 0, HTX_HE_INFO, msg);
      
     	if (DRinfo.mem == 1 || DRinfo.ent_cap == 1 || DRinfo.hibernate == 1){
@@ -2244,7 +2244,7 @@ long long find_worst_case_prefetch_memory_required() {
         worst_case_prefetch_memory_required = 0;
     }
     else if (system_information.pvr == 0x4A && cache_rollover_testcase && test_l3 == 1 ) {
-        /* If cache_rollover_testcase is set then no need to set aside seperate mem for prefetch in case of p7+ */
+        /* If cache_rollover_testcase is set then no need to set aside separate mem for prefetch in case of p7+ */
         worst_case_prefetch_memory_required = 0;
         prefetch_page_req = 0;
         sprintf(msg,"[%d] prefetch_mem reqd = %d 16M pages\n",__LINE__,prefetch_page_req);
@@ -2253,7 +2253,7 @@ long long find_worst_case_prefetch_memory_required() {
     else {
         /* If P7 /P7+, then we need to allocate exclusive memory for prefetch threads to work on */
         /* Logic behind using the Lookup-Table : Enables faster calculation of number of prefetch algos set.
-         * Prefetch configuration contains values upto/within the 4bit range.Each bit set represents
+         * Prefetch configuration contains values up to/within the 4bit range.Each bit set represents
          * a prefetch algorithm enabled from a rule stanza. The Lookup table contains the number of bits
          * set from numbers 0x0-0xF (4bit range).
          */
@@ -2303,7 +2303,7 @@ long long find_worst_case_prefetch_memory_required() {
 }
 
 /*
- * This function setup the array of thread_context's so that thread specific infomation
+ * This function setup the array of thread_context's so that thread specific information
  * can be initialised, prior to creation of the threads themselves.
  */
 

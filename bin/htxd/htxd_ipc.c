@@ -216,7 +216,7 @@ struct htxshm_hdr * htxd_init_shm(int shm_key, int number_of_device, int *shm_id
 	int shm_size;
 
 	max_added_device = htxd_get_max_add_device();
-	/* extra devices provided to accomodate any future addition, like because of DR */
+	/* extra devices provided to accommodate any future addition, like because of DR */
 	total_number_of_device = number_of_device + max_added_device + PSEUDO_EXTRA_ENTRIES;
 	shm_size = sizeof (struct htxshm_hdr) + ((total_number_of_device) * sizeof (struct htxshm_HE));
 

@@ -321,7 +321,7 @@ void	A_device(void)
 
 
 					/*
-					 * Run the command, dont care about getting output.
+					 * Run the command, don't care about getting output.
 					 */
 
 					rc = run_cmd(cmd_string, (char *) NULL, &workint, MDT_filename);
@@ -469,7 +469,7 @@ void	A_device(void)
 									}	/* if */
 							} /* if */
 
-							else {	/* dont force redefinition */
+							else {	/* don't force redefinition */
 									sprintf(msg_text, "Device %s already defined, toggle option 4 to override.", tmp_HE_entry.sdev_id);
 									p_msg = msg_text;
 									continue;
@@ -553,7 +553,7 @@ void	A_device(void)
 					}		/* endif */
 
 					/*
-					 * increment counters if device add was sucessfull
+					 * increment counters if device add was successful
 					 */
 					shm_addr.hdr_addr->num_entries++;
 					shm_addr.hdr_addr->max_entries = max_entries;
@@ -583,7 +583,7 @@ void	A_device(void)
 					 */
 					p_msg = msg;
 					sprintf(msg, "Started /dev/%s", p_added_shm_HE->sdev_id);
-					sprintf(msg_text, "Addition or replacement of exerciser for %s completed sucessfully.", tmp_HE_entry.sdev_id);
+					sprintf(msg_text, "Addition or replacement of exerciser for %s completed successfully.", tmp_HE_entry.sdev_id);
 					send_message(msg_text, 0, HTX_SYS_INFO, HTX_SYS_MSG);
 
 					/*

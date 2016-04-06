@@ -39,7 +39,7 @@
 
 
 /* When the htxerr file is referred to below and you are testing in           */
-/* standalone mode, we are refering to stderr.                                */
+/* standalone mode, we are referring to stderr.                                */
 
 /******************************************************************************/
 /* An invalid number of arguments were passed at the invocation of "hxecom".  */

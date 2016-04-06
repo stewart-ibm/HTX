@@ -55,7 +55,7 @@ main(int argc, char * argv[]) {
 	/* Allocate space for each device details structure */ 	
 	dev_d = (struct dev_details *)malloc(sizeof(struct dev_details) * num_devices); 
 	if(dev_d == (struct dev_details *)NULL) { 
-		printf("Unable to allocate space for device sturcture, errno = %d \n", errno); 
+		printf("Unable to allocate space for device structure, errno = %d \n", errno); 
 		return(-1); 
 	} 
 

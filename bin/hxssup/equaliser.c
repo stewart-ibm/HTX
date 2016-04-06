@@ -321,7 +321,7 @@ int read_config()
 					cur_config.utilization_sequence[j++] = atoi(buf);
 				}
 				if (buf != NULL && j == MAX_UTIL_SEQUENCE_LENGTH) {
-					sprintf(msg, "Only upto 10 values are valid for utlization sequence. For %s, more than 10 values are provided for it in config file.\nHence Equaliser process will exit.", cur_config.dev_name);
+					sprintf(msg, "Only up to 10 values are valid for utilization sequence. For %s, more than 10 values are provided for it in config file.\nHence Equaliser process will exit.", cur_config.dev_name);
 					send_message(msg, 0, HTX_SYS_SOFT_ERROR, HTX_SYS_MSG);
 					return(-1);
 				}

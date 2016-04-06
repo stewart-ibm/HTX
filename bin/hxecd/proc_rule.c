@@ -130,7 +130,7 @@ int *plast_lba,*pblk_size;
         for ( i = 0; i < 3; i++ )
            blkno[i] = blkno_save[i];      /* RC = always start at same blkno */
                        /******************************************************/
-                       /*- First, read the succesive data blocks into rbuf  -*/
+                       /*- First, read the successive data blocks into rbuf  -*/
                        /******************************************************/
         save_dlen = pr->dlen;
         rc_ptr = 0;                          /*- init read/compare pointer --*/
@@ -145,7 +145,7 @@ int *plast_lba,*pblk_size;
            set_blkno(blkno, pr->direction, pr->increment, 1);
            rc_ptr++;
         }
-        if( read_res == 0 ) {/* only if all reads are successfull ... */
+        if( read_res == 0 ) {/* only if all reads are successful ... */
 			pr->dlen = save_dlen;
 			cmpbuf(ps, pr, loop, blkno_save, wbuf, rbuf);
 		} else { /* read fail */

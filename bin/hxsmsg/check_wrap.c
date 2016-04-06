@@ -76,7 +76,7 @@ int system_call;
  *      l   l
  *      l   l   truncate end of log file
  *      l   l   fsync() file to disk
- *      l   l   reset file pointer to beggining of file (offset 0)  
+ *      l   l   reset file pointer to beginning of file (offset 0)  
  *      l   ---
  *      ---
  *
