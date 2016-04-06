@@ -1,4 +1,4 @@
-# Please read Documentation/building_htx.txt for info about how to build HTX.
+# Please read README.md for info about how to build HTX.
 
 #Set HTX_RLEASE to the distro you want to build for
 HTX_RELEASE="htxubuntu"
