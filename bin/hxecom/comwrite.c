@@ -57,6 +57,7 @@
 #    include <unistd.h>
 #    include <string.h>
 #    include <memory.h>
+#    include <time.h>
 #    include <sys/types.h>
 #    include <sys/socket.h>
 #    include <sys/sem.h>

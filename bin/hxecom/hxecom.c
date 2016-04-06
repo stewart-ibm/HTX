@@ -83,6 +83,7 @@
 #    include <fcntl.h>
 #    include <ctype.h>
 #    include <memory.h>
+#    include <time.h>
 #    include <sys/stat.h>
 #    include <sys/types.h>
 #    include <sys/socket.h>

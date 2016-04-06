@@ -25,6 +25,7 @@
 #define	SIGMAX	(SIGRTMAX)
 #endif
 
+#include <unistd.h>
 #include <pthread.h>
 #include "nfdef.h"
 /*

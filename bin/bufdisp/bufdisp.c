@@ -31,6 +31,8 @@
  * able to change the block size of the data. The default blocksize is 512.
  ****************************************************************************/
 #include <stdio.h>                         /* standard include declarations */
+#include <ctype.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>     
 
