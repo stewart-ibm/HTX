@@ -2123,7 +2123,7 @@ int get_rule(int * line, FILE *fp)
 		else if ((strcmp(keywd,"REMAP_P")) == 0)
 		{
 			sscanf(s,"%*s %d",&r.remap_p);
-			if (! (0 <= r.remap_p <= 100)){
+			if ((r.remap_p < 0) || (r.remap_p > 100)) {
 				displaym(HTX_HE_HARD_ERROR,DBG_MUST_PRINT,"line# %d %s = %d "
 						"(remap_p value should be in range 0-100\n",*line,\
 						keywd, r.remap_p);
