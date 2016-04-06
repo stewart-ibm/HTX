@@ -826,7 +826,7 @@ if( strcmp (InetNtoa(WriterID.sock.sin_addr, tmpaddr, stats),
                                         	/* restart process stops working??? */
                                         	sprintf(msg_text, "%s\nBroken Pipe: Restart writer/reader BrokenPipe count=%d\n", ConnectStr,shm_pHXECOM->BrokenPipes);
                                         	RWmsg(lstats, &rule[stanza], stanza, stats, HTXERROR(EX_WRITE22,save_errno), HTX_HE_INFO, msg_text);
-											thetime=time();
+											thetime=time(NULL);
 											elasped_time=thetime-shm_pHXECOM->starttime;
 											if(elasped_time > twelve_hours) {
 												shm_pHXECOM->BrokenPipes=0;
