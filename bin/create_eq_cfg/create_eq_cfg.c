@@ -62,6 +62,8 @@ void create_cfg_msrp_1p3m_28s_act_52s_idle(void);
 void create_cfg_p8_8fd_char(void);
 void create_cfg_p8_rdp_switch(void);
 void create_cfg_p8_swicthing_cmp(void);
+void create_cfg_th_trans_switch(void);
+void create_cfg_th_trans_mix(void);
 
 int main(int argc, char **argv)
 {

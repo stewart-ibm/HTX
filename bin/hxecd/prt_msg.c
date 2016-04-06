@@ -36,7 +36,7 @@
 /**************************************************************************/
 /* format information message                                             */
 /**************************************************************************/
-info_msg(ps,pr,loop,blkno,msg_text)
+void info_msg(ps,pr,loop,blkno,msg_text)
 struct htx_data *ps;
 struct ruleinfo *pr;
 int  loop;
@@ -51,7 +51,7 @@ char *msg_text;
 /**************************************************************************/
 /* send message to HTX                                                    */
 /**************************************************************************/
-prt_msg(ps,pr,loop,blkno,err,sev,text)
+void prt_msg(ps,pr,loop,blkno,err,sev,text)
 struct htx_data *ps;
 struct ruleinfo *pr;
 int  loop;
@@ -73,7 +73,7 @@ char *text;
 /****************************************************************/
 /* Send message to HTX as-is to bypass system error messages    */
 /****************************************************************/
-prt_msg_asis(phtx_info,prule_info,loop,pblk_num,err,sev,text)
+void prt_msg_asis(phtx_info,prule_info,loop,pblk_num,err,sev,text)
 struct htx_data *phtx_info;
 struct ruleinfo *prule_info;
 struct blk_num_typ *pblk_num;

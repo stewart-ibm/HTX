@@ -108,7 +108,7 @@ void gen_tlbie()
             displaym(HTX_HE_HARD_ERROR,DBG_MUST_PRINT,
                  "(malloc failed) Creation of thread data "
                  "structures failed! errno = %d(%s)\n", errno, strerror(errno));
-       return(-1) ;
+       return;
     }
 	/*printf("threads = %d\n",num_threads);*/
     STATS_VAR_INC(test_id, 1)

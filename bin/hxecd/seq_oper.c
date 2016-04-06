@@ -37,7 +37,7 @@
 /**************************************************************************/
 /* initialize block number                                                */
 /**************************************************************************/
-init_blkno(pr,blkno)
+void init_blkno(pr,blkno)
 struct ruleinfo *pr;
 int *blkno;
 {

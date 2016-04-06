@@ -314,7 +314,7 @@ set_addr(struct htx_data *ps, struct ruleinfo *pr, int loop, int *blkno)
 
 #else
 
-set_addr(struct htx_data *ps, struct ruleinfo *pr, int loop, int *blkno)
+void set_addr(struct htx_data *ps, struct ruleinfo *pr, int loop, int *blkno)
 {
   /*off_t addr, rcode, lseek();*/
   loff_t addr, rcode;

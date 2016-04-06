@@ -36,7 +36,7 @@
 /**************************************************************************/
 /* Initialize seed for random number generator (erand48)                  */
 /**************************************************************************/
-init_seed(seed)
+void init_seed(seed)
 unsigned short seed[];
 {
   long   clk, time();
@@ -78,7 +78,7 @@ unsigned short seed[];
 /**************************************************************************/
 /* sets random block number                                               */
 /**************************************************************************/
-random_blkno(blkno,dlen,bytpsec,max_blkno,seed,min_blkno)
+void random_blkno(blkno,dlen,bytpsec,max_blkno,seed,min_blkno)
 int *blkno;
 unsigned int dlen;
 short bytpsec;

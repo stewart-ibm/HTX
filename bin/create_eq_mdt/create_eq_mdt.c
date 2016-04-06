@@ -55,6 +55,9 @@ struct dev_exer_map map_array[] = {{"mem", "hxemem64", "64bit", "memory"},
 int line_num = 0, wof_test = 0;
 int create_dev_stanza (FILE *fp, char *affinity_str, char *dev_name, char *rule_file);
 
+void create_string_entry(FILE *fp, char *param_name, char *param_value, char *desc);
+void create_default_stanza(FILE *fp, char *eq_file);
+
 int main(int argc, char **argv)
 {
     int rc, i, err_no;
