@@ -33,7 +33,7 @@
 
 /* This function is called from exerciser, to tell library how many
    resources it needs */
-   int mp_intialize(int num_resources, struct htx_data * htx_ds);
+   int mp_initialize(int num_resources, struct htx_data * htx_ds);
 
 /* This function will return back a unique number on each invoke,
    preferably these numbers would be incremental. Library would use these

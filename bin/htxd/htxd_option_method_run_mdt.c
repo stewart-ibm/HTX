@@ -410,7 +410,7 @@ int htxd_option_method_run_mdt(char **result)
 		/* execute run setup script for this MDT */
 		htxd_execute_run_setup_script(command_ecg_name);
 
-		/* allocating required IPCs  and intialize the value at shared memory*/
+		/* allocating required IPCs  and initialize the value at shared memory*/
 		HTXD_TRACE(LOG_OFF, "run initializing ecg_info");
 		htxd_init_ecg_info(ecg_manager, command_ecg_name);
 	} else {
@@ -574,7 +574,7 @@ int htxd_option_method_select_mdt(char **result)
 	/* execute run setup script for this MDT */
 	htxd_execute_run_setup_script(command_ecg_name);
 
-	/* allocating required IPCs  and intialize the value at shared memory*/
+	/* allocating required IPCs  and initialize the value at shared memory*/
 	HTXD_TRACE(LOG_OFF, "run initializing ecg_info");
 	htxd_init_ecg_info(ecg_manager, command_ecg_name);
 

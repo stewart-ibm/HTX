@@ -168,7 +168,7 @@ read_hardware_config(SYS_CONF_TYP * scfg, unsigned int tot_cpus, unsigned int pv
      }
 
 #endif
-	/* Intialize the sysconf data structure */
+	/* Initialize the sysconf data structure */
 	for(node = 0; node < MAX_NODES; node++) {
 		for(chip = 0; chip < MAX_CHIPS_PER_NODE; chip ++) {
 			for(proc = 0; proc < MAX_CPUS_PER_CHIP; proc ++) {
@@ -310,7 +310,7 @@ configure_memory_allocation(SYS_CONF_TYP * scfg, unsigned int mem_alloc, unsigne
      unsigned int i, j;
      int node, cpu, pjmp, chip, cpus_mapped = 0;
 
-    /* Intialize local variables */
+    /* Initialize local variables */
     num_nodes = num_chips = 0;
     memset(scfg_node, 0, MAX_NODES * sizeof(unsigned int));
     memset(chips_per_node, 0, MAX_NODES * sizeof(unsigned int));

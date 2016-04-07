@@ -332,7 +332,7 @@ tc_worker_thread(void *t_ctx) {
 
     /***************************start helper thread****************************************/
 
-    /* Intialize helper thread attributes */
+    /* Initialize helper thread attributes */
     pthread_attr_init(&tctx->helper_attrs);
     pthread_attr_setdetachstate(&tctx->helper_attrs, PTHREAD_CREATE_JOINABLE);
     pthread_attr_setscope(&tctx->helper_attrs, PTHREAD_SCOPE_PROCESS);

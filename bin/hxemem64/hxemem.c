@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
 /* Store the pid of the process */
     priv.pid=getpid();
 
-/* Intialize mutex variables */
+/* Initialize mutex variables */
     if ( pthread_mutex_init(&mem_info.tmutex,NULL) != 0) {
          displaym(HTX_HE_SOFT_ERROR,DBG_MUST_PRINT,"pthread init error (%d): %s\n",errno,strerror(errno));
     }
@@ -498,7 +498,7 @@ int execute_stanza_case(void)
                  stanza_ptr->oper);
     }
 
-    /* Intialize all pointers to NULL so that we don't have any previous or garbage values in them
+    /* Initialize all pointers to NULL so that we don't have any previous or garbage values in them
     */
     re_initialize_global_vars();
 

@@ -117,14 +117,14 @@ void unblock_stats_th() {
 	
 
 /*---------------------------------------------------------------------
- * Intialize htxmp resoruces 
- * Function : mp_intialize
+ * Initialize htxmp resoruces 
+ * Function : mp_initialize
  * Input : num_resources 
  * Output : return code -1 in case of error 
  *---------------------------------------------------------------------*/
 
 int 
-mp_intialize(int num_resources, struct htx_data * htx_ds) { 
+mp_initialize(int num_resources, struct htx_data * htx_ds) { 
 
 	int i,rc = 0 ; 
 	char msg_buf[1024]; 
@@ -155,11 +155,11 @@ mp_intialize(int num_resources, struct htx_data * htx_ds) {
 		return(-1); 
 	}
 		 
-	/* Intialize mp_struct data structure */ 
+	/* Initialize mp_struct data structure */ 
 	for(i = 0; i < num_resources; i++) { 
 		rc = pthread_mutex_init(&global_mp_struct[i].mutex_lock, DEFAULT_ATTR_PTR); 
 		if(rc == -1) { 
-			sprintf(msg_buf, " HTXMP LIB ERROR : Failed to intialize mutex_lock variable, errno = %d \n", errno); 
+			sprintf(msg_buf, " HTXMP LIB ERROR : Failed to initialize mutex_lock variable, errno = %d \n", errno); 
 			hxfmsg(htx_ds, (-1), HTX_HE_SOFT_ERROR, msg_buf); 
 			return(rc); 
 		} 
@@ -177,7 +177,7 @@ mp_intialize(int num_resources, struct htx_data * htx_ds) {
 	} 		
 	/* mp_start subroutine is used to provide unique index to each thread created by exer
 	 * We would need a global mutex lock to keep it thread safe 
-	 * Intialize the mutex lock here
+	 * Initialize the mutex lock here
 	 */ 
 	 pthread_mutex_init(&mutex_start, DEFAULT_ATTR_PTR); 
 	 pthread_mutex_init(&create_thread_mutex, DEFAULT_ATTR_PTR);
@@ -220,8 +220,8 @@ mp_intialize(int num_resources, struct htx_data * htx_ds) {
 	sprintf(msg_buf, " Initialization done .. num_resources = %d \n",num_resources); 
 	hxfmsg(htx_ds, 0, HTX_HE_INFO, msg_buf); 
 #endif 
-	/* mp_intialization successful */ 
-	new_mp_intialize = 1; 
+	/* mp_initialize successful */ 
+	new_mp_initialize = 1; 
 	return(0); 
 } 
  
@@ -242,8 +242,8 @@ mp_start(struct htx_data * htx_ds) {
 	int rc = 0; 
 	char msg_buf[1024]; 	
 
-	if(!new_mp_intialize) { 
-		/* Either mp_intialize failed or we are running under standalone mode */ 
+	if(!new_mp_initialize) { 
+		/* Either mp_initialize failed or we are running under standalone mode */ 
 		return(0); 
 	} 
 
@@ -255,7 +255,7 @@ mp_start(struct htx_data * htx_ds) {
 	} 
 	th_index = ((th_index + 1 ) % num_threads ); 
 
-	/* I would assume thread hasn't intialized its thread specific htx_ds passed as an argument to this function 
+	/* I would assume thread hasn't initialized its thread specific htx_ds passed as an argument to this function 
 	   Do it as part of library. */ 
 	memset(htx_ds, 0, sizeof(struct htx_data)); 
 	memcpy(htx_ds,global_mp_htx_ds, sizeof(struct htx_data));
@@ -324,7 +324,7 @@ update_stats(void * arg) {
 		pthread_exit((void *)-1);
     }
 
-	/* Intialize my local mp data structure */
+	/* Initialize my local mp data structure */
 	memset(&exer_stats, 0, sizeof(struct htx_data));
 	memcpy(&exer_stats, global_mp_htx_ds, sizeof(struct htx_data));
     exer_stats.bad_others = 0;

@@ -1292,7 +1292,7 @@ int reinit_ls_base(uint32 client_no);
 #ifdef SCTU
 /*List of core names that sctu clients need to bind to*/
 int get_bind_core_and_cpus_list(void);
-void intialize_sctu_locks(void);
+void initialize_sctu_locks(void);
 int init_sctu_cpu_array(void);
 int copy_common_data(int pass, int cno);
 void dump_testcase_sctu(int client_num, int num_oper, int rc, int miscomparing_num);

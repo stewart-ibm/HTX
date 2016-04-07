@@ -125,7 +125,7 @@ comp_rim_8:
     cmpi    1,1, r3, 0x0004
     bne     cr1,comp_rim_4              # if (r3 <code> == 4 ) then do RIM operation width = 8
     ld      r6, 0(r6)                   # Load 8 byte bit pattern
-    addi    r7,r7,-8                    # Store buffer Pointer intialized
+    addi    r7,r7,-8                    # Store buffer Pointer initialized
     xor     r3,r3,r3                    # make r3 = 0 for dcbf
 rim_dword:
     addi    r7,r7,8                     # Store Buffer incremented
@@ -142,7 +142,7 @@ comp_rim_4:
     cmpi    1,1, r3, 0x0005
     bne     cr1,comp_rim_1              # if (r3 <code> == 5 ) then do RIM operation width = 4
     lwz     r6, 0(r6)                   # Load 8 byte bit pattern
-    addi    r7,r7,-4                    # Store buffer Pointer intialized
+    addi    r7,r7,-4                    # Store buffer Pointer initialized
     xor     r3,r3,r3                    # make r3 = 0 for dcbf
 rim_word:
     addi    r7,r7,4                     # Store Buffer incremented
@@ -159,7 +159,7 @@ comp_rim_1:
     cmpi    1,1, r3, 0x0006
     bne     cr1,comp_dword              # if (r3 <code> == 6 ) then do RIM operation width = 1
     lbz     r6, 0(r6)                   # Load 8 byte bit pattern
-    addi    r7,r7,-1                    # Store buffer Pointer intialized
+    addi    r7,r7,-1                    # Store buffer Pointer initialized
     xor     r3,r3,r3                    # make r3 = 0 for dcbf
 rim_byte:
     addi    r7,r7,1                     # Store Buffer incremented
@@ -176,7 +176,7 @@ comp_dword:
     cmpi    1,1, r3, 0x0007
     bne     cr1,comp_word               # if (r3 <code> == 7 ) then do Comparision for width = 8
     ld      r6, 0(r6)                   # Load 8 byte bit pattern
-    addi    r7,r7,-8                    # Store buffer Pointer intialized
+    addi    r7,r7,-8                    # Store buffer Pointer initialized
 dword_comp:
     addi    r7,r7,8                     # Store Buffer incremented
     ld      r5,0(r7)                    # Load 8 bytes from store buffer
@@ -190,7 +190,7 @@ comp_word:
     cmpi    1,1, r3, 0x0008
     bne     cr1,comp_byte               # if (r3 <code> == 8 ) then do Comparision for width = 4
     lwz     r6, 0(r6)                   # Load 8 byte bit pattern
-    addi    r7,r7,-4                    # Store buffer Pointer intialized
+    addi    r7,r7,-4                    # Store buffer Pointer initialized
 word_comp:
     addi    r7,r7,4                     # Store Buffer incremented
     lwz     r5,0(r7)                    # Load 8 bytes from store buffer
@@ -204,7 +204,7 @@ comp_byte:
     cmpi    1,1, r3, 0x0009
     bne     cr1,write_addr              # if (r3 <code> == 9 ) then do Comparision for width = 1
     lbz     r6, 0(r6)                   # Load 8 byte bit pattern
-    addi    r7,r7,-1                    # Store buffer Pointer intialized
+    addi    r7,r7,-1                    # Store buffer Pointer initialized
 byte_comp:
     addi    r7,r7,1                     # Store Buffer incremented
     lbz     r5,0(r7)                    # Load 8 bytes from store buffer

@@ -291,10 +291,10 @@ main(int argc, char *argv[]) {
         exit(1);
     }
 
-    /* Intialize the htxmp library datastructures */
-    rc = mp_intialize(tot_cpus, &htx_d);
+    /* Initialize the htxmp library datastructures */
+    rc = mp_initialize(tot_cpus, &htx_d);
     if(rc == -1) {
-       sprintf(msg_buf, "\n %s : Fabricbus failed to intialize htxmp datastructures, errno = %d \n",errno);
+       sprintf(msg_buf, "\n %s : Fabricbus failed to initialize htxmp datastructures, errno = %d \n",errno);
        hxfmsg(&htx_d, rc, HTX_HE_HARD_ERROR, msg_buf);
        exit(1);
     }
@@ -498,7 +498,7 @@ main(int argc, char *argv[]) {
 					return(-1);
                 }
             }
-			/* Intialize the mask structure */ 
+			/* Initialize the mask structure */ 
 			for(i = 0; i < num_cpus_mapped; i++) { 
 				masks[i].host_cpu = memory_mapping[i][HOST_CPU]; 
 				masks[i].dest_cpu = memory_mapping[i][DEST_CPU];

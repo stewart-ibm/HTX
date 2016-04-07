@@ -524,7 +524,7 @@ main(int argc, char *argv[])
 	/* populate cpu lists array */
 #ifdef SCTU
     /* initialize sctu mutexes and semaphores */
-    intialize_sctu_locks();
+    initialize_sctu_locks();
 	/* Get list of core and cpu numbers in gang. */
     get_bind_core_and_cpus_list();
 #else
@@ -8409,7 +8409,7 @@ int get_bind_core_and_cpus_list()
 }
 
 
-void intialize_sctu_locks( )
+void initialize_sctu_locks( )
 {
 	sem_init(&pass1_exec_sem, 0, 0);
 	sem_init(&pass2_exec_sem, 0, 0);

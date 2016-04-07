@@ -220,7 +220,7 @@ void *comwrite_rdma(void * writer_arg, int exer_idx)
 	memset(&shm_COMSEM->loop[WriterIdx], 0, sizeof(struct loop_t)); 
 	
 	/********************************************************************/
-	/* Intialize ConnectStr 											*/ 
+	/* Initialize ConnectStr 											*/ 
 	/********************************************************************/
 	SOCKET WriterTestSock; 
 
