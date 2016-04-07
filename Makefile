@@ -14,6 +14,10 @@ TARGET= .htx_profile \
 
 .PHONY: all ${SUBDIRS} deb
 
+default: all
+
+bin: lib
+
 ${SUBDIRS}:
 	make -C $@
 
