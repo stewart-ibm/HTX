@@ -1114,7 +1114,7 @@ long long new_seg_size		 = mem_info.total_mem_avail/(32 * KB);
 
 	#ifdef __HTX_LINUX__
 	fp = popen("cat /proc/sys/kernel/shmmni","r");
-	if (fp == NULL || fp == -1) {
+	if (fp == NULL) {
 		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT,
 				 "popen failed: errno(%d)\n", errno);
 		return(-1);
@@ -1128,7 +1128,7 @@ long long new_seg_size		 = mem_info.total_mem_avail/(32 * KB);
 	pclose(fp);
 
 	fp = popen("ipcs -m | grep root | wc -l", "r");
-	if (fp == NULL || fp == -1) {
+	if (fp == NULL) {
 		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT,
 						"popen failed for ipcs command: errno(%d)\n", errno);
 		return(-1);
@@ -2950,7 +2950,7 @@ int fill_mem_info_data_linux(void)
 
 	/* Set shmmax value to 256MB only if the value on current system is less than that */
 	fp = popen("cat /proc/sys/kernel/shmmax","r");
-	if (fp == NULL || fp == -1) {
+	if (fp == NULL) {
 		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT,
 				 "popen failed: errno(%d)\n", errno);
 		goto error_exit;
@@ -2975,7 +2975,7 @@ int fill_mem_info_data_linux(void)
 
 #if 0
 	fp = popen("cat /proc/sys/kernel/shmall","r");
-	if (fp == NULL || fp == -1) {
+	if (fp == NULL) {
 		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT,
 				 "popen failed: errno(%d)\n", errno);
 		goto error_exit;
@@ -3002,7 +3002,7 @@ int fill_mem_info_data_linux(void)
 	 * Determine the page size config for the system
 	 */
 	fp=popen("getconf PAGESIZE", "r");
-	if (fp == NULL || fp == -1 ) {
+	if (fp == NULL) {
 		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT,
 				 "popen failed: errno(%d)\n", errno);
 		goto error_exit;
@@ -3042,7 +3042,7 @@ int fill_mem_info_data_linux(void)
      * NOTE: All return values are in KB so we need to multiply by 1024
      */
 	fp=popen("cat /proc/meminfo | grep SwapTotal | awk '{print $2}' ","r");
-	if (fp == NULL || fp == -1 ) {
+	if (fp == NULL) {
 		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT,
 				 "popen failed: errno(%d)\n", errno);
 		goto error_exit;
@@ -3056,7 +3056,7 @@ int fill_mem_info_data_linux(void)
 	pclose(fp);
 
 	fp=popen("cat /proc/meminfo | grep SwapFree | awk '{print $2}' ","r");
-	if (fp == NULL || fp == -1 ) {
+	if (fp == NULL) {
 		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT,
 				 "popen failed: errno(%d)\n", errno);
 		goto error_exit;
@@ -3070,7 +3070,7 @@ int fill_mem_info_data_linux(void)
 	pclose(fp);
 
 	fp=popen("cat /proc/meminfo | grep MemTotal | awk '{print $2}' ","r");
-	if (fp == NULL || fp == -1 ) {
+	if (fp == NULL) {
 		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT,
 				 "popen failed: errno(%d)\n", errno);
 		goto error_exit;
@@ -3096,7 +3096,7 @@ int fill_mem_info_data_linux(void)
 	}
 
 	fp=popen("cat /proc/meminfo | grep MemFree  | awk '{print $2}' ","r");
-	if (fp == NULL || fp == -1 ) {
+	if (fp == NULL) {
 		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT,
 				 "popen failed: errno(%d)\n", errno);
 		goto error_exit;
@@ -3110,7 +3110,7 @@ int fill_mem_info_data_linux(void)
 	pclose(fp);
 
 	fp=popen("free -k | awk 'NR==2 {print $2}' ","r");
-	if (fp == NULL || fp == -1 ) {
+	if (fp == NULL) {
 		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT,
 				 "popen failed: errno(%d)\n", errno);
 		goto error_exit;
@@ -3124,7 +3124,7 @@ int fill_mem_info_data_linux(void)
 	pclose(fp);
 
 	fp=popen("free -k | awk 'NR==2 {print $4}' ","r");
-	if (fp == NULL || fp == -1 ) {
+	if (fp == NULL) {
 		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT,
 				 "popen failed: errno(%d)\n", errno);
 		goto error_exit;
@@ -3146,7 +3146,7 @@ int fill_mem_info_data_linux(void)
 	 * if cmo_enabled is seen, and is set to 1, then disable hugepges
 	 */
 	fp=popen("cat /proc/ppc64/lparcfg 2> /dev/null | grep cmo_enabled ","r");
-	if (fp == NULL || fp == -1 ) {
+	if (fp == NULL) {
 		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT,
 				 "popen failed: errno(%d)\n", errno);
 	    goto error_exit;
@@ -3165,7 +3165,7 @@ int fill_mem_info_data_linux(void)
 	display(HTX_HE_INFO,DBG_MUST_PRINT,"VRM enabled=%d\n", vrm_enabled);
 
 	fp=popen("cat /proc/meminfo | grep HugePages_Total | awk '{print $2}' ","r");
-	if (fp == NULL || fp == -1 ) {
+	if (fp == NULL) {
     	displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT,
     				 "popen failed: errno(%d)\n", errno);
     	goto error_exit;
@@ -3178,7 +3178,7 @@ int fill_mem_info_data_linux(void)
 	}
 	pclose(fp);
 	fp=popen("cat /proc/meminfo | grep Hugepagesize | awk '{print $2}' ","r");
-	if (fp == NULL || fp == -1 ) {
+	if (fp == NULL) {
 		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT,
 			"popen failed: errno(%d)\n", errno);
 		goto error_exit;
@@ -3193,7 +3193,7 @@ int fill_mem_info_data_linux(void)
 	pclose(fp);
 	if (!vrm_enabled && mem_info.pdata[PAGE_INDEX_16M].psize == (16 *MB)) {
 		fp=popen("cat /proc/meminfo | grep HugePages_Free | awk '{print $2}' ","r");
-		if (fp == NULL || fp == -1 ) {
+		if (fp == NULL) {
 			displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT,
 				"popen failed: errno(%d)\n", errno);
 			goto error_exit;
