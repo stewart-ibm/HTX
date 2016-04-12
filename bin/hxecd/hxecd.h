@@ -153,7 +153,7 @@ void do_trap_htx64(unsigned long, ...);
 #include <string.h>
 
 #define strlen(_X_)\
-        ( (size_t) ( (_X_) ? strlen(_X_) : NULL ) )
+        (  (_X_) ? strlen(_X_) : (size_t) NULL )
 
 #define strcpy(_D_,_S_)\
         ( (_D_) ? (_S_) ? strcpy(_D_,_S_) : (_D_) : NULL )
