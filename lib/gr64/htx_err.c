@@ -17,8 +17,6 @@
  */
 /* IBM_PROLOG_END_TAG */
 
-/* @(#)73	1.3  src/htx/usr/lpp/htx/lib/gr64/htx_err.c, htx_libgr, htxubuntu 6/24/04 09:24:47 */
-
 /*****************************************************************************
 
 Function(s) HTX Exerciser Error Handler
@@ -49,13 +47,12 @@ this code to ensure you follow the proper protocols.
 #endif
 #include "hxihtx.h"
 #include "htx_exer.h"
-/*#include "var.h"*/
 
 
 
 
 #ifdef LIBC_23
-void htx_err (char *fmt, ...)
+void htx_err (int num_args, ...)
 #else
 void htx_err (va_alist)
 va_dcl
@@ -75,7 +72,7 @@ va_dcl
          * Initialize argument list pointer.
          */
 #ifdef LIBC_23
-	va_start(args,fmt);
+	va_start(args, num_args);
 #else
         va_start(args);
 #endif

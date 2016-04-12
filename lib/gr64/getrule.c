@@ -17,8 +17,6 @@
  */
 /* IBM_PROLOG_END_TAG */
 
-/* @(#)72	1.4  src/htx/usr/lpp/htx/lib/gr64/getrule.c, htx_libgr, htxubuntu 7/20/07 01:13:24 */
-
 /****************************************************************************
 
 Function(s) Parse/Extract HTX Rule File
@@ -148,7 +146,7 @@ va_dcl
 	if (fmtstring != NULL)
 		vsprintf(buf+strlen(buf),fmtstring,args);
 
-	htx_err("%p%d%d%p",htx_sp, NO_ERRNO, SYSERR, buf);
+	htx_err(5, "%p%d%d%p",htx_sp, NO_ERRNO, SYSERR, buf);
 	va_end(args);
    }
 /*****************************************************************************

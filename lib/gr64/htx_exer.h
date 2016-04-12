@@ -34,5 +34,10 @@ Monterey Token Ring Adapter.
 #define HTX_SDEV_LEN   14	/* strlen of sdev_id in struct htx_data  */
 #define HTX_RUN_LEN     3	/* strlen of run_type in struct htx_data */
 #define HTX_MSG_LEN   219	/* strlen of msg_text in struct htx_data */
+#ifdef LIBC_23
+	extern void htx_err (int, ...);
+#else
+	extern void htx_err (va_alist);
+#endif
 
 extern void strlencpy(char *,char *,int);

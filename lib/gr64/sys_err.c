@@ -17,8 +17,6 @@
  */
 /* IBM_PROLOG_END_TAG */
 
-/* @(#)78	1.3  src/htx/usr/lpp/htx/lib/gr64/sys_err.c, htx_libgr, htxubuntu 6/24/04 09:30:21 */
-
 /*****************************************************************************
 
 Function(s) System Error Message
@@ -48,5 +46,5 @@ void sys_err (struct htx_data *htx_sp)
 	else
 		cp = "Undefined errno.";
 
-	htx_err(htx_sp, errno, SYSERR, cp);
+	htx_err(4, htx_sp, errno, SYSERR, cp);
    }

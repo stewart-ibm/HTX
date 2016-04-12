@@ -17,8 +17,6 @@
  */
 /* IBM_PROLOG_END_TAG */
 
-/* @(#)75	1.3  src/htx/usr/lpp/htx/lib/gr64/pro_rdt.c, htx_libgr, htxubuntu 6/24/04 09:26:46 */
-
 /*****************************************************************************
 
 Function(s) for Processing Rule Definition Table
@@ -135,7 +133,7 @@ int chk_a_value (struct htx_data *htx_sp,struct rule_def_struct *rdt_sp,char *va
 				 */
 				 if (*value == RANGE_DELIM)
 				    {
-			htx_err(htx_sp, NO_ERRNO, SOFTERR,
+			htx_err(7, htx_sp, NO_ERRNO, SOFTERR,
 "Illegal string <%s> in rule_def_table\nfor keyword %s.  Hyphen not allowed.",
 	value, rdt_sp->keyword, rdt_sp->len);
 					return(1);
@@ -145,7 +143,7 @@ int chk_a_value (struct htx_data *htx_sp,struct rule_def_struct *rdt_sp,char *va
 				 */
 				if (strlen(value) > rdt_sp->len)
 				   {
-			htx_err(htx_sp, NO_ERRNO, SOFTERR,
+			htx_err(7, htx_sp, NO_ERRNO, SOFTERR,
 "Value string <%s> too long in rule_def_table\nfor keyword %s (max = %d).",
 	value, rdt_sp->keyword, rdt_sp->len);
 					return(1);
@@ -155,7 +153,7 @@ int chk_a_value (struct htx_data *htx_sp,struct rule_def_struct *rdt_sp,char *va
 		case RLONG_TYPE:
 				if (check_long(value, &long_value))
 				   {
-			htx_err(htx_sp, NO_ERRNO, SOFTERR,
+			htx_err(6, htx_sp, NO_ERRNO, SOFTERR,
 	"Illegal long <%s> in rule_def_table for keyword %s.",
 	value,rdt_sp->keyword);
 					return(1);
@@ -181,7 +179,7 @@ int chk_a_value (struct htx_data *htx_sp,struct rule_def_struct *rdt_sp,char *va
 #endif
 
 		default:
-			htx_err(htx_sp, NO_ERRNO, SOFTERR,
+			htx_err(6, htx_sp, NO_ERRNO, SOFTERR,
 	"Illegal data_type %d in chk_a_value for keyword %s.",
 	rdt_sp->data_type, rdt_sp->keyword);
 			return(-1);
@@ -300,7 +298,7 @@ int chk_arg (struct htx_data *htx_sp,struct rule_def_struct *rdt_sp,char *arg,ch
 	 */
 	if (*cp != RANGE_DELIM)
 	   {
-		htx_err(htx_sp, NO_ERRNO, SOFTERR,
+		htx_err(6, htx_sp, NO_ERRNO, SOFTERR,
 	"Syntax error in rule_def_table after value <%s>\nfor keyword %s.",
 			value1, rdt_sp->keyword);
 		return(1);
@@ -321,7 +319,7 @@ int chk_arg (struct htx_data *htx_sp,struct rule_def_struct *rdt_sp,char *arg,ch
 	 */
 	if (*cp == '\0')
 	   {
-		htx_err(htx_sp, NO_ERRNO, SOFTERR,
+		htx_err(6, htx_sp, NO_ERRNO, SOFTERR,
 "Syntax error in rule_def_table after value <%s>\nfor keyword %s.\n%s",
 			value1, rdt_sp->keyword,
 "Missing range end value.");
@@ -348,7 +346,7 @@ int chk_arg (struct htx_data *htx_sp,struct rule_def_struct *rdt_sp,char *arg,ch
 			if (hit_non_delim)
 			   {
 				*cp2 = '\0';
-		htx_err(htx_sp, NO_ERRNO, SOFTERR,
+		htx_err(7, htx_sp, NO_ERRNO, SOFTERR,
 "Syntax error in rule_def_table after value <%s>\nfor keyword %s.\n%s",
 			value2, rdt_sp->keyword,
 "Encountered range delimiter after second value.");
@@ -372,7 +370,7 @@ int chk_arg (struct htx_data *htx_sp,struct rule_def_struct *rdt_sp,char *arg,ch
 	
 	if ((*cp != ',') && (*cp != '\0'))
 	   {
-		htx_err(htx_sp, NO_ERRNO, SOFTERR,
+		htx_err(6, htx_sp, NO_ERRNO, SOFTERR,
 "Syntax error in rule_def_table after value <%s>\nfor keyword %s.",
 			value2, rdt_sp->keyword);
 		return(1);
@@ -419,7 +417,7 @@ int chk_arg (struct htx_data *htx_sp,struct rule_def_struct *rdt_sp,char *arg,ch
 	   {
 		if (strcmp(value1, value2) > 0)
 		   {
-			htx_err(htx_sp, NO_ERRNO, SOFTERR,
+			htx_err(7, htx_sp, NO_ERRNO, SOFTERR,
 	"Illegal range in rule_def_table for keyword %s.\n%s > %s.",
 	rdt_sp->keyword, value1, value2);
 			return(1);
@@ -429,7 +427,7 @@ int chk_arg (struct htx_data *htx_sp,struct rule_def_struct *rdt_sp,char *arg,ch
 	   {
 		if (num_val1 > num_val2)
 		   {
-			htx_err(htx_sp, NO_ERRNO, SOFTERR,
+			htx_err(10, htx_sp, NO_ERRNO, SOFTERR,
 	"Illegal range in rule_def_table for keyword %s.\n"
         "%d (string: %s) > %d (string: %s).",
 	rdt_sp->keyword, num_val1, value1, num_val2, value2);
@@ -601,7 +599,7 @@ int validate_value (struct htx_data *htx_sp,struct rule_def_struct *master_ptr,c
 #endif
 
 			default:
-				htx_err(htx_sp, NO_ERRNO, SOFTERR,
+				htx_err(6, htx_sp, NO_ERRNO, SOFTERR,
 	"Illegal data_type %d in validate_value for keyword %s.",
 	master_ptr->data_type, master_ptr->keyword);
 				return(-1);
