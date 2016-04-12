@@ -625,7 +625,7 @@ int  main(int argc, char *argv[])
 					NetToHostId_t(&CMsg.ID.server);
 					if(CMsg.ID.server.ExerVersion != (u_short)EXER_VERSION) {
 						shm_pHXECOM->SigTermFlag = 1;
-						sprintf(msg_text, "%s: Received request from incompatable version of HXECOM.\nShutting down.\n", argv[0]);
+						sprintf(msg_text, "%s: Received request from incompatible version of HXECOM.\nShutting down.\n", argv[0]);
 						hxfmsg(stats, HTXERROR(HEINFO8,0), HTX_HE_HARD_ERROR, msg_text);
 						break;
 					}
@@ -641,7 +641,7 @@ int  main(int argc, char *argv[])
 					NetToHostId_t(&CMsg.ID.server);
 					if(CMsg.ID.server.ExerVersion != (u_short)EXER_VERSION) {
 						shm_pHXECOM->SigTermFlag = 1;
-						sprintf(msg_text, "%s: Received request from incompatable version of HXECOM.\nShutting down.\n", argv[0]);
+						sprintf(msg_text, "%s: Received request from incompatible version of HXECOM.\nShutting down.\n", argv[0]);
 						hxfmsg(stats, HTXERROR(HEINFO8,0), HTX_HE_HARD_ERROR, msg_text);
 						break;	
 					}
@@ -786,7 +786,7 @@ static void ReqRdrId(struct htx_data * Stats, struct id_t * SemServerID, char * 
 	printf("%s:%d Writer Test Sock = %s \n", __FUNCTION__, __LINE__, inet_ntoa(WriterTestID.sock.sin_addr)); 
     FixSockAddr(&WriterTestID.sock);
 
-/* NOTE: you don't need to check for cant connect here.. the send message
+/* NOTE: you don't need to check for can't connect here.. the send message
 	     from the other side will never be sent as long as the other side
 		 has the new code on it that matches this code... */
 

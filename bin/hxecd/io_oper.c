@@ -75,7 +75,7 @@ int play_audio_msf(struct htx_data *ps, struct ruleinfo *pr, int loop, int *blkn
 /* close_reopen - close device and reopen in the passed mode.            */
 /* The value passed will typically be either SC_DIAGNOSTIC mode or       */
 /* SC_SINGLE.                                                            */
-/* returns: 0 = succesful close/reopen.                                  */
+/* returns: 0 = successful close/reopen.                                  */
 /*         -1 = close failed.                                            */
 /*         -2 = open failed.                                             */
 /*         -3 = currently selected mode set failure.                     */
@@ -795,7 +795,7 @@ audio_mm(struct htx_data *ps, struct ruleinfo *pr, int loop, int *blkno)
 		 switch(rc) {
 			 case 0x13: {
 				 pr->op_in_progress = 0; /* set no audio op in progress */
-				 break;	 				/* play audio successfull, return sucess */
+				 break;	 				/* play audio successful, return success */
 			 }
 
 			 case 0x14: {					/* play audio stopped due to error */
@@ -1699,7 +1699,7 @@ const char toc_dvd_03K998x[50] = "0012010100140100000000000014AA00003FA0E0";
                            hxfmsg(ps, 0, INFO, msg_str);
 			   sprintf(msg_str, "rbuf[0] = %d, rbuf[1] = %d, rbuf[2] = %d, rbuf[3] = %d\n",rbuf[0], rbuf[1], rbuf[2], rbuf[3]);
 			   hxfmsg(ps, 0, INFO, msg_str);
-			   /* Inspite of setting the buffsize to 220, if we get the toc_length as 0, we return with -1 */
+			   /* In spite of setting the buffsize to 220, if we get the toc_length as 0, we return with -1 */
 
 			   if(toc_length == 0) {
 				strcpy(msg_str, "toc_length = 0 even after setting the buffsize to 220. Unable to dertemine the drive type..exiting\n");
@@ -2077,7 +2077,7 @@ void halt_audio_cdrom(int fildes)
 }
 
 /**************************************************************************/
-/* Execute a system command from a psuedo command line                    */
+/* Execute a system command from a pseudo command line                    */
 /**************************************************************************/
 do_cmd(struct htx_data *ps, struct ruleinfo *pr)
 {

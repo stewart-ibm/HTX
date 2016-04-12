@@ -228,12 +228,12 @@ int open_lun(struct htx_data *htx_ds, const char * device, struct thread_context
                     return(-1);
                 }
                 if(size <=  chunk_size) {
-                    sprintf(msg, "Cannot allocated requested size= %#llx, depricating to %#llx \n", chunk_size, size);
+                    sprintf(msg, "Cannot allocate requested size= %#llx, reducing to %#llx \n", chunk_size, size);
                     user_msg(htx_ds, 0, INFO, msg);
                     chunk_size = size;
                     return(0);
                 } else {
-                    sprintf(msg, "Failed to allocated request size for VLUN, cblk_set_size failed wtih ENOMEM, device = %s \n", capi_device );
+                    sprintf(msg, "Failed to allocate request size for VLUN, cblk_set_size failed with ENOMEM, device = %s \n", capi_device );
                     user_msg(htx_ds, ENOMEM, IO_HARD, msg);
                     return(-1);
                 }
@@ -636,7 +636,7 @@ retry :
             /* Expected if this IO is not yet complete */
             continue;
         } else {
-            /* Operation successfull, Check status of IO issued and reduce num_outstandings */
+            /* Operation successful, Check status of IO issued and reduce num_outstandings */
             if(tctx->aio_req_queue[i].trf_len != rc) {
                 sprintf(msg, "cblk_aresult: Attempted bytes read %lld (0x%llx) not equal to actual bytes\n" "read %lld (0x%llx).  Rule_id: %s, max_blkno: %#llx\n"
                     "first_block: %#llx, tot_blks: %#llx, current blk: %#llx", tctx->dlen, tctx->dlen, rc, rc, tctx->id, tctx->max_blkno,
@@ -893,7 +893,7 @@ int do_compare (struct htx_data *htx_ds, struct thread_context *tctx, char *wbuf
                 }
             }
         }
-        /* To prevent failure reporting at the begining of next block */
+        /* To prevent failure reporting at the beginning of next block */
         /* set offset to time stamp  */
         if (error_found) {
             sprintf(msg, "The buffer time stamp  (0x%x) is earlier than\n" "the control time stamp (0x%x).  Possible stale data"
@@ -2205,7 +2205,7 @@ int sync_cache(struct htx_data *htx_ds, struct thread_context *tctx, int loop)
 #endif
 
 /*******************************************************************/
-/****   Execute a system command from a psuedo command line     ****/
+/****   Execute a system command from a pseudo command line     ****/
 /*******************************************************************/
 int run_cmd(struct htx_data *htx_ds, char *cmd_line)
 {

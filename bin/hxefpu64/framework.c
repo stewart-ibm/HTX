@@ -33,7 +33,7 @@ extern int get_cpu_version(void);
 extern int htx_bind_thread(int, int);
 #else
 /* AIX */
-/* kernel extention: etc/kernext/hxesct2/sctKernExt.c */
+/* kernel extension: etc/kernext/hxesct2/sctKernExt.c */
 extern unsigned long getTruePvr(void);
 /* VM policy to allocate memory local to core */
 #include <sys/rset.h>
@@ -257,7 +257,7 @@ main(int argc, char *argv[])
 #endif
 
 	/* Below signal set i.e myset will be used after hxfupdate(START) */
-	/* so that failures can be reported using hxfmsg as it cant be called before hxfupdate(START) */
+	/* so that failures can be reported using hxfmsg as it can't be called before hxfupdate(START) */
 	sigemptyset(&myset);
 	sigaddset(&myset, SIGALRM);
 	sigaddset(&myset, SIGTERM);
@@ -524,7 +524,7 @@ main(int argc, char *argv[])
 	/* populate cpu lists array */
 #ifdef SCTU
     /* initialize sctu mutexes and semaphores */
-    intialize_sctu_locks();
+    initialize_sctu_locks();
 	/* Get list of core and cpu numbers in gang. */
     get_bind_core_and_cpus_list();
 #else
@@ -551,7 +551,7 @@ main(int argc, char *argv[])
     };
 
     /* To get local memory set flag early_lru = 1 to select P_FIRST_TOUCH policy
-	 * (similiar to setting MEMORY_AFFINITY environment variable to MCM)
+	 * (similar to setting MEMORY_AFFINITY environment variable to MCM)
 	 */
     rc = vm_mem_policy(VM_SET_POLICY, &early_lru, policies, num_policies);
     if (rc != 0){
@@ -1245,7 +1245,7 @@ void SIGHW_handler(int sig, siginfo_t *si, void *ucontext)
 	}
 
 #ifdef AWAN
-	/* signal didnt come from tc , capture first non tc signal info */
+	/* signal didn't come from tc , capture first non tc signal info */
 	if( (client_num == -1) && !nontcsig ) {
 		nontcsig = 1;
 		nontcsigdata.iar = iar;
@@ -3356,7 +3356,7 @@ void dump_testcase_p6(int cno, int num_oper, int type, int num)
 				fprintf(dump, " %d",tmp_vsrs_list->vsr_no);
 			}
 		}
-		/* Handling VMX separately because in P6 VRs register file doesnt
+		/* Handling VMX separately because in P6 VRs register file doesn't
 		 * map to VSRs (32-63) registers. So, we need to subtract 32 from
 		 * each register entry.
 		 */
@@ -3668,7 +3668,7 @@ adjust_fpscr(int cno, uint64 old_fpscr, uint64 fpscr_mask)
 
 	/* fpscr_mask = 0xffffffff for those instruction which can directly modify FPSCR bits.
 	 * instructions like mtfsf, mtfsfi, mtfsb0, mtfsb1.
-	 * In that case we dont need to do anything here. Simply return.
+	 * In that case we don't need to do anything here. Simply return.
 	 */
 	if(fpscr_mask == 0xffffffff) {
 		return;
@@ -4495,7 +4495,7 @@ initialize_vsrs(int client_no)
 	}
 
 	/*
-	 * i runs upto VSR_OP_TYPES because for type CR_T, these two variables are
+	 * i runs up to VSR_OP_TYPES because for type CR_T, these two variables are
 	 * initialized in initialize_gprs_n_sprs functions.
 	 */
 	for(i = 0; i < (VSR_OP_TYPES); i++) {
@@ -5478,7 +5478,7 @@ get_random_no_64(int cno)
  * is also used by some instructions like dcbt and dcbtst which holds the address.This address
  * should not be compared since the LSB's are inconsistent across passes.Hence GPR10 is not
  * compared.GPR11 to GPR31 is used for source and target.
- * Everytime a register is picked, move the pointer.This is necessary because cpu instructions need more than one
+ * Every time a register is picked, move the pointer.This is necessary because cpu instructions need more than one
  * register for most instructions.The CPU build routines assume that consecutive two calls to this routine
  * will return two different GPRs
  * Arguments: cno <- client number, type <- GR or GRU, tgt <- is GPR a target or source.? 
@@ -6434,7 +6434,7 @@ void generate_and_set_initial_seeds(int32 parent_seed)
 	set_seed(0, original_seed);
 	init_random_no_generator(0);
 
-	/* generate intial seed for each thread from original_seed */
+	/* generate initial seed for each thread from original_seed */
 	for(threads = 0; threads < MAX_NUM_CPUS; threads++) {
 		initial_seeds[threads] = get_random_no_32(0);
 	}
@@ -6608,7 +6608,7 @@ copy_prolog_p6(int cno)
 		offset += 16;
 	}
 #if 0
-	/* Not required becuase from C function (execute_testcase) args are passed appropriately */
+	/* Not required because from C function (execute_testcase) args are passed appropriately */
 	offset = 0x420;
     for(i = 4; i < 8; i++) {
 		*ptr = LD(i, TC_BASE, offset); ptr++;
@@ -7620,7 +7620,7 @@ get_PVR()
 /*
  * Walk through vsx_instructions_array, apply category mask and filter out the masked instruction
  * categories. Save the instructions in vsx_enabled_instructions_array.
- * Look at biasing category and create seperate array for each category.
+ * Look at biasing category and create separate array for each category.
  * Create a biased category index list per client.
  */
 void
@@ -8409,7 +8409,7 @@ int get_bind_core_and_cpus_list()
 }
 
 
-void intialize_sctu_locks( )
+void initialize_sctu_locks( )
 {
 	sem_init(&pass1_exec_sem, 0, 0);
 	sem_init(&pass2_exec_sem, 0, 0);
@@ -8689,7 +8689,7 @@ int copy_common_data(int pass, int cno)
 #ifdef SCTU
 /* last sctu client should dump testcase for all clients */
 /* this is done to avoid adding extra synchronization for all threads to be stopped/synced */
-/* so that some clients dont move to next num oper when others are dumping their testcase */
+/* so that some clients don't move to next num oper when others are dumping their testcase */
 /* causing improper dump as clients reset their num_instructions etc */
 void dump_testcase_sctu(int client_num, int num_oper, int rc, int miscomparing_num)
 {

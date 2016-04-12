@@ -1112,7 +1112,7 @@ void Encoder(unsigned long long *Source, unsigned long long *Target, int cno, un
 
 /**********************************************************************
       Now write the three digits into the undecoded double word. Must be
-      carefull since the three digits may span over more than one double
+      careful since the three digits may span over more than one double
       word.
 **********************************************************************/
 		nBits = 0;

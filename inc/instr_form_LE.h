@@ -55,7 +55,7 @@ typedef struct
 	uint32 eop:10;
 	uint32 rb:5;
 	uint32 ra:5;
-	uint32 dc:2; /*dont care*/
+	uint32 dc:2; /*don't care*/
 	uint32 bf:3;
 	uint32 opcode:6;
 }x_form_bf_ra_rb_eop_rc;

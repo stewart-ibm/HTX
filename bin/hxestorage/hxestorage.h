@@ -359,7 +359,7 @@ struct thread_context {
     char first_blk_var[FIRST_BLK_VAR_LEN];
     unsigned long long first_blk;                       /* first block set based on starting block */
     char cur_blkno_var[CUR_BLKNO_VAR_LEN];
-    unsigned long long blkno[3];                        /* Explained at the begining of this file */
+    unsigned long long blkno[3];                        /* Explained at the beginning of this file */
     char align_var[ALIGN_VAR_LEN];
     int align;                                          /* Alignment for IO buffers requested */
     char lba_align_var[LBA_ALIGN_VAR_LEN];
@@ -421,7 +421,7 @@ struct thread_context {
     char rand_index_var[RAND_INDEX_VAR_LEN];
     unsigned long long rand_index;                      /* random index into rand_buf */
     char begin_dword_var[BEGIN_DWORD_VAR_LEN];
-    unsigned int begin_dword;                           /* begining dword */
+    unsigned int begin_dword;                           /* beginning dword */
     char trailing_dword_var[TRAILING_DWORD_VAR_LEN];
     signed long long trailing_dword;                    /* Trailing dword where to write pattern  */
 	char aio_req_queue_var[AIO_REQ_QUEUE_VAR_LEN];

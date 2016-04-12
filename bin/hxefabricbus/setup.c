@@ -88,7 +88,7 @@ read_hardware_config(SYS_CONF_TYP * scfg, unsigned int tot_cpus, unsigned int pv
     sprintf(command,"/usr/lpp/htx/etc/scripts/get_node_details.sh "
             "> %s\n",fname);
     if ( (rc = system(command)) == -1 ) {
-            sprintf(msg, "sytem command to get_node_details failed with %d",rc);
+            sprintf(msg, "system command to get_node_details failed with %d",rc);
             hxfmsg(&htx_d, rc, HTX_HE_HARD_ERROR, msg);
         	return(-1);
     }
@@ -168,7 +168,7 @@ read_hardware_config(SYS_CONF_TYP * scfg, unsigned int tot_cpus, unsigned int pv
      }
 
 #endif
-	/* Intialize the sysconf data structure */
+	/* Initialize the sysconf data structure */
 	for(node = 0; node < MAX_NODES; node++) {
 		for(chip = 0; chip < MAX_CHIPS_PER_NODE; chip ++) {
 			for(proc = 0; proc < MAX_CPUS_PER_CHIP; proc ++) {
@@ -310,7 +310,7 @@ configure_memory_allocation(SYS_CONF_TYP * scfg, unsigned int mem_alloc, unsigne
      unsigned int i, j;
      int node, cpu, pjmp, chip, cpus_mapped = 0;
 
-    /* Intialize local variables */
+    /* Initialize local variables */
     num_nodes = num_chips = 0;
     memset(scfg_node, 0, MAX_NODES * sizeof(unsigned int));
     memset(chips_per_node, 0, MAX_NODES * sizeof(unsigned int));
@@ -411,7 +411,7 @@ configure_memory_allocation(SYS_CONF_TYP * scfg, unsigned int mem_alloc, unsigne
         	}
         }
         break;
-        case 2 : { /* Remote Spreaded */
+        case 2 : { /* Remote Spread */
             for(node = 0; node < num_nodes; node++) {
                 int x, y = 0, exhausted = -1;
                 int cnt_thrds = 0 ;
@@ -442,7 +442,7 @@ configure_memory_allocation(SYS_CONF_TYP * scfg, unsigned int mem_alloc, unsigne
             }
         }
         break;
-        case 3: { /* Remote Spreaded  - all */
+        case 3: { /* Remote Spread  - all */
            for(node = 0; node < num_nodes; node++) {
                 int remote_node, remote_cpu = 0;
                 remote_node = node;

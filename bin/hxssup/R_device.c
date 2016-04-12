@@ -201,7 +201,7 @@ int run_cmd(char *cmd_string, char *cmd_output, int *ct_output,
 /*                                                                           */
 /* DESCRIPTIVE NAME =  alarm signal handler for script time out              */
 /*                                                                           */
-/* FUNCTION =          Upon reciept of an alarm signal, kills the script     */
+/* FUNCTION =          Upon receipt of an alarm signal, kills the script     */
 /*                     that is name in script_name.                          */
 /*                                                                           */
 /* INPUT =             script_name - global pointer to script path name      */
@@ -538,7 +538,7 @@ int load_exerciser(struct htxshm_HE *p_HE, struct sigaction *sigvec)
 
 	switch (frkpid) {
 	case 0:		/* child process                 */
-		/* do not close std fds since the closing causes fd polution for exerciser std fds operations */
+		/* do not close std fds since the closing causes fd pollution for exerciser std fds operations */
 		fcntl(fileno(stdin), F_SETFD, 0);
 		fcntl(fileno(stdout), F_SETFD, 0);
 		fcntl(fileno(stderr), F_SETFD, 0);

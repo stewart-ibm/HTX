@@ -229,7 +229,7 @@ main(int argc, char *argv[])
 
                 /*
                  * We are looking for the miscompares in the header
-                 * seperately in the following piece of code. So,
+                 * separately in the following piece of code. So,
                  * compare only the data portion after the header
                  * in the while loop below.
                  */
@@ -843,7 +843,7 @@ void help(int block, int format_o, int diff_range)
   for ( i = 1; i <= 12; i++ )
      printf("\n");    
   printf("NOTE:  The symbol > indicates a line that contains the start\n");
-  printf("       of a new block. The symbol _ preceeds the byte where\n");
+  printf("       of a new block. The symbol _ precedes the byte where\n");
   printf("       the new block begins.\n\n");   
   printf("0     : Jump to first page\n");
   printf("$     : Jump to last page\n");

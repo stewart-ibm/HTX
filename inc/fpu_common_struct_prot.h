@@ -1739,7 +1739,7 @@ enum DFP_OperandConstants {
     CoefDPDgroups64 =   5,
     CoefDPDgroups128 =  11,
 
-    /* Packed format is layed out as: */
+    /* Packed format is laid out as: */
     /* Sign | Combination | Exponent Continuation | Coefficient Continuation */
     SignBits =          1,
 

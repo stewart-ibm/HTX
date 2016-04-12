@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
 /* Store the pid of the process */
     priv.pid=getpid();
 
-/* Intialize mutex variables */
+/* Initialize mutex variables */
     if ( pthread_mutex_init(&mem_info.tmutex,NULL) != 0) {
          displaym(HTX_HE_SOFT_ERROR,DBG_MUST_PRINT,"pthread init error (%d): %s\n",errno,strerror(errno));
     }
@@ -277,7 +277,7 @@ int main(int argc, char *argv[])
 		displaym(HTX_HE_SOFT_ERROR,DBG_MUST_PRINT,"pthread init error for g_thread_count_lock (%d): %s\n",errno,strerror(errno));
 	}
 
-/* set htx_data flag to make supervisor aware that we want to recieve SIGUSR2 in case of hotplug add/remove */
+/* set htx_data flag to make supervisor aware that we want to receive SIGUSR2 in case of hotplug add/remove */
 
 /* Notify Supervisor of exerciser start */
     if (priv.standalone != 1) {
@@ -498,7 +498,7 @@ int execute_stanza_case(void)
                  stanza_ptr->oper);
     }
 
-    /* Intialize all pointers to NULL so that we don't have any previous or garbage values in them
+    /* Initialize all pointers to NULL so that we don't have any previous or garbage values in them
     */
     re_initialize_global_vars();
 
@@ -791,7 +791,7 @@ long long new_seg_size		 = mem_info.total_mem_avail/(32 * KB);
 	    }
 	    displaym(HTX_HE_INFO,DBG_IMP_PRINT,"vmo -o enhanced_affinity_vmpool_limit=-1 rc1 = %d,errno =%d\n",rc1,errno);
 
-		/* To get local memory set flag early_lru=1 to select P_FIRST_TOUCH policy(similiar to setting MEMORY_AFFINITY environment variable to MCM)*/
+		/* To get local memory set flag early_lru=1 to select P_FIRST_TOUCH policy(similar to setting MEMORY_AFFINITY environment variable to MCM)*/
 		rc1 = vm_mem_policy(VM_SET_POLICY,&early_lru, &policies ,num_policies);
 		if (rc1 != 0){
 			displaym(HTX_HE_HARD_ERROR,DBG_MUST_PRINT,"vm_mem_policy() call failed with return value = %d\n",rc1);
@@ -2456,7 +2456,7 @@ int get_rule(int * line, FILE *fp)
         memcpy(stanza_ptr,&r,sizeof(r));
 
         display(HTX_HE_INFO,DBG_INFO_PRINT,"+All the keywords are read "
-                "sucessfully\n");
+                "successfully\n");
     }
 
     return(rc);
@@ -2610,7 +2610,7 @@ int fill_mem_info_data() {
 
 /*****************************************************************************
 * This function is used to get the type of processor running and AIX release
-* As AIX release ealier to 51D have some page types. In short rel > 51D and
+* As AIX release earlier to 51D have some page types. In short rel > 51D and
 * proc type is POWER4 it is GP type or else it type NONE. This function
 * returns the large page type.
 *****************************************************************************/
@@ -3410,7 +3410,7 @@ int displaym(int sev,int  debug, const char *format,...) {
     * If debug level is 0 (MUST PRINT) we sud always print.
     * If debug level is > 0  and level of this print is less or equal to
     * priv.debug (cmd line global debug level variable) then display this message else
-    * dont display this message. And zero can't be greater than any other debug level
+    * don't display this message. And zero can't be greater than any other debug level
     * so it always prints below.*/
     if( debug > priv.debug ) {
             return(0);
@@ -3442,7 +3442,7 @@ int displaym(int sev,int  debug, const char *format,...) {
 
 void SIGTERM_hdl (int sig, int code, struct sigcontext *scp)
 {
-    /* Dont use display function inside signal handler.
+    /* Don't use display function inside signal handler.
      * the mutex lock call will never return and process
      * will be stuck in the display function */
     hxfmsg(&stats,0,HTX_HE_INFO,"hxemem64: Sigterm Received!\n");
@@ -3457,7 +3457,7 @@ void SIGUSR2_hdl(int sig, int code, struct sigcontext *scp)
 {
 	int i, rc = 0;
 
-	hxfmsg(&stats,0,HTX_HE_INFO,"Recieved SIGUSR2 signal\n");
+	hxfmsg(&stats,0,HTX_HE_INFO,"Received SIGUSR2 signal\n");
 
 	if (priv.affinity_flag == 1 ) {
 		/*for (i=0; i < mem_info.num_of_threads; i++) {
@@ -3584,7 +3584,7 @@ int do_the_bind_proc(int id,int bind_proc, int pcpu)
         displaym(HTX_HE_HARD_ERROR,DBG_MUST_PRINT,"Warning! error binding "
                  "to processor %d.", bind_proc);
     } else {
-        display(HTX_HE_INFO,DBG_INFO_PRINT,"Succesfully binded process "
+        display(HTX_HE_INFO,DBG_INFO_PRINT,"Successfully binded process "
                 "(pid =%d) to the logical proc %d\n", pid, bind_proc);
     }
 
@@ -5335,7 +5335,7 @@ int n_stride(int ti)
   *            seg_num (present segment number whose buffers we need to compare)
   *                  ps (page size index)
   *                  pass count
-  *    Retuns: 0 on success
+  *    Returns: 0 on success
   *            1 on error
   *            If miscompare give a HARD error and creates some files in temp.
   *   See the code for more .
@@ -6062,11 +6062,11 @@ int check_ame_enabled()
 
 /*********SRAD functions ******/
 /*The function convert_64k converts the input size of bytes into 64k pages
- * INPUT : size of bytes to be coverted in 64k PAGES
- *OUTPUT: It will covert 4k pages to 64k pages
+ * INPUT : size of bytes to be converted in 64k PAGES
+ *OUTPUT: It will convert 4k pages to 64k pages
  *RETURN VALUE: on success returns 0
- * on error contion returns -1
- *NOTE:This function can be neglected once AIX haldles 64k page coversion efficiently.
+ * on error condition returns -1
+ *NOTE:This function can be neglected once AIX handles 64k page conversion efficiently.
  */
 int  convert_64k(void *tnum)
 {
@@ -6129,7 +6129,7 @@ int  convert_64k(void *tnum)
 
 /*The function fill_srad_data Fills the all SRAD data to the structure srad_info
  * RETURN VALUE:
- * return 0 on successfull
+ * return 0 on successful
  * return -l on error condition
  */
 int fill_srad_data()
@@ -6175,7 +6175,7 @@ int fill_srad_data()
         srad_info_array[sradidx].total_srad_mem_avail = srad_info.vmsrad_total;
         srad_info_array[sradidx].total_srad_mem_free  = srad_info.vmsrad_free;
 
-        /* if srad_info.vmsrad_total or srad_info.vmsrad_free is 0 then dont store those processors skip to next srad */
+        /* if srad_info.vmsrad_total or srad_info.vmsrad_free is 0 then don't store those processors skip to next srad */
        /* if(srad_info.vmsrad_total == 0 || srad_info.vmsrad_free == 0){
 		    continue;
 		}*/
@@ -6202,7 +6202,7 @@ int fill_srad_data()
 	sprintf(fname,"/tmp/mem_node_details");
 	sprintf(command,"/usr/lpp/htx/etc/scripts/get_mem_node_details.sh > %s",fname);
 	if ( (rc = system(command)) == -1 ) {
-		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT, "sytem command to get_node_details failed with %d", rc);
+		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT, "system command to get_node_details failed with %d", rc);
 		return(-1);
 	}
 
@@ -6284,7 +6284,7 @@ void SIGCPUFAIL_handler(int sig, int code, struct sigcontext *scp)
 	char hndlmsg[512];
 	int no_of_proc;
 
-	hxfmsg(&stats,0,HTX_HE_INFO,"SIGCPUFAIL signal recieved.\n");
+	hxfmsg(&stats,0,HTX_HE_INFO,"SIGCPUFAIL signal received.\n");
 
 	priv.sigvector.sa_handler = (void (*)(int))SIG_IGN;
 	(void) sigaction(SIGCPUFAIL, &priv.sigvector, (struct sigaction *) NULL);

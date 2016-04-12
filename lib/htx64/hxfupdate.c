@@ -207,7 +207,7 @@ if (numbytes < 8) {
 /*                                                                          */
 /* DESCRIPTIVE NAME =  Updates HE information in the HTX system.            */
 /*                                                                          */
-/* FUNCTION =          Recieve data via the htx_data structure, format that */
+/* FUNCTION =          Receive data via the htx_data structure, format that */
 /*                     data, and save it in the appropriate HTX system area.*/
 /*                                                                          */
 /* INPUT =             call - the type of update call:                      */

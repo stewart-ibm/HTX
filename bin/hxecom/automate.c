@@ -55,7 +55,7 @@ main(int argc, char * argv[]) {
 	/* Allocate space for each device details structure */ 	
 	dev_d = (struct dev_details *)malloc(sizeof(struct dev_details) * num_devices); 
 	if(dev_d == (struct dev_details *)NULL) { 
-		printf("Unable to allocate space for device sturcture, errno = %d \n", errno); 
+		printf("Unable to allocate space for device structure, errno = %d \n", errno); 
 		return(-1); 
 	} 
 
@@ -332,7 +332,7 @@ tc_worker_thread(void *t_ctx) {
 
     /***************************start helper thread****************************************/
 
-    /* Intialize helper thread attributes */
+    /* Initialize helper thread attributes */
     pthread_attr_init(&tctx->helper_attrs);
     pthread_attr_setdetachstate(&tctx->helper_attrs, PTHREAD_CREATE_JOINABLE);
     pthread_attr_setscope(&tctx->helper_attrs, PTHREAD_SCOPE_PROCESS);

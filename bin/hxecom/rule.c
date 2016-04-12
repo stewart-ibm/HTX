@@ -65,7 +65,7 @@ extern   struct htx_data htx_ds;
 /*                     r_ptr - pointer to rules data structure.             */
 /*                     pattern_nm - string array for name of pattern file.  */
 /*                                                                          */
-/* OUTPUT =            Integer pointed to by line arguement is updated to   */
+/* OUTPUT =            Integer pointed to by line argument is updated to   */
 /*                            value of line number at the end of the        */
 /*                            current rule.                                 */
 /*                     Updated rules data structure.                        */

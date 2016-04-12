@@ -346,7 +346,7 @@ struct instruction_masks vmx_p8_instructions_array[] = {
 
 struct instruction_masks vmx_p8_dd2_instructions_array[] = {
 /* For All instructions supported in P8 DD2 and above */
-/* RFC02247.r3 - VMX Vector Integer Add, Vector Integer Substract and Vector Bit Permute instructions */
+/* RFC02247.r3 - VMX Vector Integer Add, Vector Integer Subtract and Vector Bit Permute instructions */
 /* vadduqm  */  {0x10000100, 0, QGPR, 16, QGPR, 11, DUMMY, DUMMY, QGPR, 21, 0x32, "vadduqm",  (sim_fptr)&simulate_vadduqm,  VMX_INT_ARITHMETIC_UNSIGNED_ONLY, FORM_VT_VA_VB},
 /* vaddeuqm */  {0x1000003C, 0, QGPR, 16, QGPR, 11, QGPR,      6, QGPR, 21, 0x32, "vaddeuqm", (sim_fptr)&simulate_vaddeuqm, VMX_INT_ARITHMETIC_UNSIGNED_ONLY, FORM_VT_VA_VB_VC},
 /* vaddcuq  */  {0x10000140, 0, QGPR, 16, QGPR, 11, DUMMY, DUMMY, QGPR, 21, 0x32, "vaddcuq",  (sim_fptr)&simulate_vaddcuq,  VMX_INT_ARITHMETIC_UNSIGNED_ONLY, FORM_VT_VA_VB},

@@ -343,11 +343,11 @@ void* htxd_hotplug_monitor(void* vptr)
 
             rc = update_syscfg();
             if(rc != 0) {
-                sprintf(hotplug_msg, "ERROR :update_syscfg unsuccessfull inisde hotplug with %d \n",rc);
+                sprintf(hotplug_msg, "ERROR :update_syscfg unsuccessful inside hotplug with %d \n",rc);
                 htxd_send_message(hotplug_msg, 0, HTX_SYS_INFO, HTX_SYS_MSG);
             }
             else{
-                sprintf(hotplug_msg, "update_syscfg successfull inside hotplug with %d \n",rc);
+                sprintf(hotplug_msg, "update_syscfg successful inside hotplug with %d \n",rc);
                 htxd_send_message(hotplug_msg, 0, HTX_SYS_INFO, HTX_SYS_MSG);
             }
             hotplug_semctl_arg.val = 0;

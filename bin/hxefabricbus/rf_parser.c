@@ -589,7 +589,7 @@ rf_read_rules(const char rf_name[], struct rf_stanza rf_info[], unsigned int * n
 			sscanf(line, "%*s %d", &current_ruleptr->randbuf_size); 
 			DEBUGON("\n Random Buffer Size - %d \n", current_ruleptr->randbuf_size); 
 			if(current_ruleptr->randbuf_size < 0) { 
-				sprintf(msg, "\n Random Buffer Size must be greater thn 0, %d \n", current_ruleptr->randbuf_size);
+				sprintf(msg, "\n Random Buffer Size must be greater than 0, %d \n", current_ruleptr->randbuf_size);
 				hxfmsg(&htx_d, 0, HTX_HE_HARD_ERROR, msg);
 				return(-1);
 			}

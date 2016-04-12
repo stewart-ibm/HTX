@@ -1362,7 +1362,7 @@ void htxd_bootme_error_string(int error_code, char ** result_string)
 		sprintf(*result_string, "bootme status : off");
 		break;
 	case 42:
-		sprintf(*result_string, "bootme status : inconsistant state, bootme cron entry is present, bootme flag file </usr/lpp/htx/.htxd_autostart> was missing");
+		sprintf(*result_string, "bootme status : inconsistent state, bootme cron entry is present, bootme flag file </usr/lpp/htx/.htxd_autostart> was missing");
 		break;
 	case 0:
 		break;
@@ -1840,7 +1840,7 @@ int htxd_getecgsum_all_device(htxd_ecg_info * p_ecg_info_to_getecgsum, char *com
 		" Running            = %d\n"
 		" Suspended          = %d\n"
 		" Error              = %d\n"
-		" Partialy Running   = %d\n"
+		" Partially Running   = %d\n"
 		" Terminated         = %d\n"
 		" Died               = %d\n"
 		" Hung               = %d\n"

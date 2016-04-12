@@ -147,7 +147,7 @@ mem_byte:
 comp_rim_8:
     cmpi    1,1, r3, 0x0004
     bne     cr1,comp_rim_4              # if (r3 <code> == 4 ) then do RIM operation width = 8
-    addi    r7,r7,-8                    # Store buffer Pointer intialized
+    addi    r7,r7,-8                    # Store buffer Pointer initialized
 rim_dword_0:
     addi    r3,0,-8
 rim_dword_t:
@@ -169,7 +169,7 @@ rim_dword:
 comp_rim_4:
     cmpi    1,1, r3, 0x0005
     bne     cr1,comp_rim_1              # if (r3 <code> == 5 ) then do RIM operation width = 4
-    addi    r7,r7,-4                    # Store buffer Pointer intialized
+    addi    r7,r7,-4                    # Store buffer Pointer initialized
 rim_word_0:
     addi    r3,0,-4
 rim_word_t:
@@ -191,7 +191,7 @@ rim_word:
 comp_rim_1:
     cmpi    1,1, r3, 0x0006
     bne     cr1,comp_dword              # if (r3 <code> == 6 ) then do RIM operation width = 1
-    addi    r7,r7,-1                    # Store buffer Pointer intialized
+    addi    r7,r7,-1                    # Store buffer Pointer initialized
 rim_byte_0:
     addi    r3,0,-1
 rim_byte_t:
@@ -213,7 +213,7 @@ rim_byte:
 comp_dword:
     cmpi    1,1, r3, 0x0007
     bne     cr1,comp_word               # if (r3 <code> == 7 ) then do Comparision for width = 8
-    addi    r7,r7,-8                    # Store buffer Pointer intialized
+    addi    r7,r7,-8                    # Store buffer Pointer initialized
 dword_comp_0:
     addi    r3,0,-8
 dword_comp_t:
@@ -233,7 +233,7 @@ dword_comp:
 comp_word:
     cmpi    1,1, r3, 0x0008
     bne     cr1,comp_byte               # if (r3 <code> == 8 ) then do Comparision for width = 4
-    addi    r7,r7,-4                    # Store buffer Pointer intialized
+    addi    r7,r7,-4                    # Store buffer Pointer initialized
 word_comp_0:
     addi    r3,0,-4
 word_comp_t:
@@ -253,7 +253,7 @@ word_comp:
 comp_byte:
     cmpi    1,1, r3, 0x0009
     bne     cr1,write_addr              # if (r3 <code> == 9 ) then do Comparision for width = 1
-    addi    r7,r7,-1                    # Store buffer Pointer intialized
+    addi    r7,r7,-1                    # Store buffer Pointer initialized
 byte_comp_0:
     addi    r3,0,-1
 byte_comp_t:

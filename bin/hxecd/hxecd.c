@@ -266,7 +266,7 @@ main (argc, argv)                    /* Begin MAIN line code                */
         CDROM and DVDROM part nos. have changed in recent times, altho' in the code we still use
         the same old part nos, still while we error out we need to print the correct part nos, so
         that the tester can get the part without problems. Altho' we use different part nos in the
-        code it doesnt matter, since technically the data ( content ) in the disk hasnt changed, so
+        code it doesn't matter, since technically the data ( content ) in the disk hasn't changed, so
         we can still continue to use the same old part nos. in the code, especially in the get_disc_pn
         code, but while printing the P/N we need to print the new P/Ns also.
 

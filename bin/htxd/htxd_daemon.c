@@ -90,7 +90,7 @@ int htxd_start_daemon(htxd *htxd_instance)
 	HTXD_TRACE(LOG_ON, "starting daemon main loop");
 	do  /* this loop make the daemon live */
 	{
-		do  /* this loop listens for incomming messages */
+		do  /* this loop listens for incoming messages */
 		{
 			HTXD_TRACE(LOG_OFF, "daemon wating for command");
 			result = htxd_select(socket_fd);
@@ -121,7 +121,7 @@ int htxd_start_daemon(htxd *htxd_instance)
 			register_signal_handlers();	
 		}
 
-		/* receive the incomming command */
+		/* receive the incoming command */
 		HTXD_TRACE(LOG_OFF, "daemon receiving command");
 		command_buffer = htxd_receive_command(new_fd);
 		if(command_buffer == NULL)

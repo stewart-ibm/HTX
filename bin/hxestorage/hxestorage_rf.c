@@ -417,7 +417,7 @@ int read_rf(struct htx_data *htx_ds, char *rf_name, unsigned long long maxblk, u
             user_msg(htx_ds, errno, SOFT, msg);
             return -1;
         }
-        if (rc == -2) { /* Recieved end of file */
+        if (rc == -2) { /* Received end of file */
             eof = 'Y';
             fclose(fp);
         }
@@ -427,7 +427,7 @@ int read_rf(struct htx_data *htx_ds, char *rf_name, unsigned long long maxblk, u
         }
         str_len = rc;
         line = line + 1;
-        if (str_len > 1) { /* Recieved some good data*/
+        if (str_len > 1) { /* Received some good data*/
             sscanf(str, "%s", keywd);
             if (keywd_count == 0 ) {
                 if (strcasecmp(keywd, "RULE_ID") == 0) {

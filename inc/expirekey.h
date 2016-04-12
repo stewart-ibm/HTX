@@ -30,7 +30,7 @@
 /* The following map array must be filled in with 41 lines of alpha-      */
 /* numerics (upper and lower case alphabetics) Each line should contain   */
 /* no repeats within the line, and each line should be unique. The length */
-/* of each line is descibed in the associated comments.                   */
+/* of each line is described in the associated comments.                   */
 /*------------------------------------------------------------------------*/
 char * map[56] =
 {

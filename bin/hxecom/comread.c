@@ -615,14 +615,14 @@ void * comread(void * Targ)
                             	}
                         	}
 						}
-						/* If runnning with NO_COMPARE = 1 or with UDP packets, 
+						/* If running with NO_COMPARE = 1 or with UDP packets, 
 						   Header checking, pkt rcvd out of order checks not required */ 
 						if(rule[stanza].no_compare ==1 || rule[stanza].layer == UDP_LAYER) 
 							continue; 
                         ConsecErrCnt = 0;
 						/* if there is a bad header and no miscompare */
 						/* then report the bad header, but if theres a */
-						/* misc let it fall thru to be handled as misc */
+						/* misc let it fall through to be handled as misc */
                         if(headerCkFail(rbuf, stats->msg_text) && index < 0) {
 							if(not_running_bootme()) {
 								if(ShutdownMask & SH_ATTN_MISCOMPARE) {
@@ -1520,7 +1520,7 @@ static int do_compare(char *rbuf_ptr,char *pattern_ptr,int pak_size,struct rule_
 
 	if(memcmp(rbuf_ptr, pattern_ptr, pak_size) != 0) {  
 		/* If there is a miscompare I have to return the index into the */
-            /* buffer on a char boundry to find that index now */
+            /* buffer on a char boundary to find that index now */
             for(a=0;a<pak_size;a++) {
                 if(rbuf_ptr[a] != pattern_ptr[a]) {
                     return (a);

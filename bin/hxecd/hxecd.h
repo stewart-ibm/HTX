@@ -139,10 +139,10 @@ void do_trap_htx64(unsigned long, ...);
 #endif
 
 
-/* Linux compatiblity layer for AIX-HTX function calls */
+/* Linux compatibility layer for AIX-HTX function calls */
 #ifdef __HTX_LINUX__
 
-/* Crash-on-miss should call xmon thru miscex */
+/* Crash-on-miss should call xmon through miscex */
 
 #define trap(_P1_, _P2_, _P3_, _P4_, _P5_, _P6_) do_trap_htx64(_P2_, _P3_, _P4_, _P5_, _P6_)
 

@@ -63,7 +63,7 @@ public:
 	// constructor and destructor. NOTE: passing ptr to function. 
 	// LPDWORD is defined in windef.h its ulong *  32 bits.
 	CcreateEvent(   int ManReset,   // TRUE if manual, FALSE auto reset
-					int Signaled,   // TRUE for inital signaled.
+					int Signaled,   // TRUE for initial signaled.
 									 // signaled means the wait is
 					 				 // satisfied.
 					char *name,

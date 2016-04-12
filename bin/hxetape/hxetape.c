@@ -566,7 +566,7 @@ start_msg(struct htx_data *phtx_info, struct ruleinfo *prule_info,
   else if ( strcmp(prule_info->oper, "RS") == 0 )
       strcpy(cmd_function, "Request Sense Data");
   else if ( strcmp(prule_info->oper, "IE") == 0 )
-      strcpy(cmd_function, "Adante Initilize Element");
+      strcpy(cmd_function, "Adante Initialize Element");
   else if ( strcmp(prule_info->oper, "RES") == 0 )
       strcpy(cmd_function, "Adante Read Element Status");
   else if ( strcmp(prule_info->oper, "ML") == 0 )
@@ -1039,7 +1039,7 @@ void set_tape_config( int fildes, struct htx_data *pHTX )
      hxfmsg(pHTX, errno, HARD, sWork);
      tape_error_code = errno;
   } else {
-     sprintf(sWork, "set_tape_config: NO BLKLIMS set succesfully\n");
+     sprintf(sWork, "set_tape_config: NO BLKLIMS set successfully\n");
      hxfmsg(pHTX, errno, INFO, sWork);
   }
 }

@@ -116,7 +116,7 @@ hotness = 500
 num_mallocs = 6
 
 *******************************************************************************
-* Reintialize disk to #007 using same seeds as the previous 2 stanzas
+* Reinitialize disk to #007 using same seeds as the previous 2 stanzas
 *******************************************************************************
 rule_id = rule_7
 pattern_id = #007

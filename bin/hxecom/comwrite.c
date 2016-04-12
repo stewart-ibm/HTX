@@ -924,7 +924,7 @@ if( strcmp (InetNtoa(WriterID.sock.sin_addr, tmpaddr, stats),
                 /********************************************************/
                 hxfupdate(UPDATE, stats);
 				
-            }  /* end of loop thru bsize. */
+            }  /* end of loop through bsize. */
         }
 		/* This shld be done from reader, not by both */ 
         /* hxfupdate(FINISH, stats); */
@@ -1014,7 +1014,7 @@ static void Req_StopReader(struct sockaddr_in RemServerSock, struct id_t SemServ
 	/*********************************************************************/
 	/*This code will send CM_STOP_READER to the remote reader, that will*/
 	/*Cause the reader to stop and then this routine calls SetUpwriter  */
-	/*To kick off another writer which will reqest another reader        */
+	/*To kick off another writer which will request another reader        */
 	/*********************************************************************/
     int rc;
     SOCKET ToServerSock;

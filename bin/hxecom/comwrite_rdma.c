@@ -220,7 +220,7 @@ void *comwrite_rdma(void * writer_arg, int exer_idx)
 	memset(&shm_COMSEM->loop[WriterIdx], 0, sizeof(struct loop_t)); 
 	
 	/********************************************************************/
-	/* Intialize ConnectStr 											*/ 
+	/* Initialize ConnectStr 											*/ 
 	/********************************************************************/
 	SOCKET WriterTestSock; 
 
@@ -474,7 +474,7 @@ void *comwrite_rdma(void * writer_arg, int exer_idx)
 	shm_COMSEM->loop[WriterIdx].halt = 1;
 	GateSem(SemID, WriterIdx, stats);
 	/* Second check to verify that we are good to use remote_iov from shm_COMSEM 
-	 * halt = 1, once comsem completes the address exchange succesfully  */ 
+	 * halt = 1, once comsem completes the address exchange successfully  */ 
 	while(shm_COMSEM->loop[WriterIdx].halt != 0) { 
 		sleep(1);
 	} 	
@@ -831,7 +831,7 @@ static void Req_StopReader(struct sockaddr_in RemServerSock, struct id_t SemServ
     /*********************************************************************/
     /*This code will send CM_STOP_READER to the remote reader, that will*/
     /*Cause the reader to stop and then this routine calls SetUpwriter  */
-    /*To kick off another writer which will reqest another reader        */
+    /*To kick off another writer which will request another reader        */
     /*********************************************************************/
     int rc;
     SOCKET ToServerSock;

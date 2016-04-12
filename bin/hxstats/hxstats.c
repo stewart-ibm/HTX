@@ -90,7 +90,7 @@ int             savemask;
  *
  *
  * operation: --------- get HTX IPC message queue check program (argv)
- * arguements open the stat file get HTX IPC shared memory attach shared
+ * arguments open the stat file get HTX IPC shared memory attach shared
  * memory set SIGUSR1 and SIGTERM signal handlers
  *
  * do set file pointer to zero generate stat entry for current HE

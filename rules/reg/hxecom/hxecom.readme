@@ -337,7 +337,7 @@ the rbuf and wbuf files to htxent* in "/tmp/" directory.
 12. Sample Rule Stanza with Explanation : 
 ---------------------------------------
 Hxecom rules file are located in directory : /usr/lpp/htx/rules/reg/hxecom/ on test 
-machines. Rules file is created as part of intial setup done using build_net script. 
+machines. Rules file is created as part of initial setup done using build_net script. 
 Most of the rules file parameters are automatically filled up depending upon user 
 specified test-case details. All rules file tweaks should be done after setting up the 
 test networks. Any changes done to existing rules file will take effect in next HTX run.

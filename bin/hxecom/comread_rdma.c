@@ -483,7 +483,7 @@ static int do_compare(char *rbuf_ptr,char *pattern_ptr,int pak_size,struct rule_
 	printf("Comapring rbuf = 0x%x, wbuf=0x%xi, pak_size = %d \n", rbuf_ptr , pattern_ptr, pak_size); 
 	if(memcmp(rbuf_ptr, pattern_ptr, pak_size) != 0) {  
 		/* If there is a miscompare I have to return the index into the */
-            /* buffer on a char boundry to find that index now */
+            /* buffer on a char boundary to find that index now */
             for(a=0;a<pak_size;a++) {
                 if(rbuf_ptr[a] != pattern_ptr[a]) {
                     return (a);

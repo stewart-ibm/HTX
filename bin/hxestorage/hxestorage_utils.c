@@ -877,7 +877,7 @@ void generate_pattern5 (unsigned short *buf, int bufsize)
 void generate_pattern7 (char *buf, int bufsize, unsigned int line_length)
 {
 	/*********************************************************
-	 * algorithm 7 choosen. This algorithm will generate the buffer depending
+	 * algorithm 7 chosen. This algorithm will generate the buffer depending
 	 * on the width of the scsi bus. Say the width is 16 bits so the data
 	 * transfer should be ffff 0000 ffff 0000 ... This will generate the
  	 * highest electrical stress on the scsi bus.

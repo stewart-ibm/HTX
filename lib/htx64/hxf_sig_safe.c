@@ -60,12 +60,12 @@ htx_malloc(size_t size) {
 	int ret = 0, skip_reset = 0, old_errno; 
 
 	/**************************************************************************
-     * Intialize the oldmask to exclude all of the defined signals. 
+     * Initialize the oldmask to exclude all of the defined signals. 
 	 *************************************************************************/
 	sigemptyset(&oldMask); 
 
 	/*************************************************************************
-	 * Intialize the newmask to include all of the defined signals. 
+	 * Initialize the newmask to include all of the defined signals. 
 	 *************************************************************************/
 	sigfillset(&newMask); 
 
@@ -130,12 +130,12 @@ htx_free(void * ptr) {
     int ret = 0, skip_reset = 0, old_errno;
 
     /**************************************************************************
-     * Intialize the oldmask to exclude all of the defined signals.
+     * Initialize the oldmask to exclude all of the defined signals.
      *************************************************************************/
     sigemptyset(&oldMask);
 
     /*************************************************************************
-     * Intialize the newmask to include all of the defined signals.
+     * Initialize the newmask to include all of the defined signals.
      *************************************************************************/
     sigfillset(&newMask);
 
@@ -203,12 +203,12 @@ htx_localtime(const time_t *p_time) {
 	int ret = 0, skip_reset = 0, old_errno; 
 
 	/**************************************************************************
-     * Intialize the oldmask to exclude all of the defined signals. 
+     * Initialize the oldmask to exclude all of the defined signals. 
 	 *************************************************************************/
 	sigemptyset(&oldMask); 
 
 	/*************************************************************************
-	 * Intialize the newmask to include all of the defined signals. 
+	 * Initialize the newmask to include all of the defined signals. 
 	 *************************************************************************/
 	sigfillset(&newMask); 
 
@@ -275,12 +275,12 @@ htx_ctime(const time_t *p_time) {
 	int ret = 0, skip_reset = 0, old_errno; 
 
 	/**************************************************************************
-     * Intialize the oldmask to exclude all of the defined signals. 
+     * Initialize the oldmask to exclude all of the defined signals. 
 	 *************************************************************************/
 	sigemptyset(&oldMask); 
 
 	/*************************************************************************
-	 * Intialize the newmask to include all of the defined signals. 
+	 * Initialize the newmask to include all of the defined signals. 
 	 *************************************************************************/
 	sigfillset(&newMask); 
 

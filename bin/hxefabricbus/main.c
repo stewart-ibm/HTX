@@ -39,7 +39,7 @@ int crash_on_misc_global, errno;
 char * htxkdblevel;
 
 /*
- * For P8 we dont need 16M pages, as prefetching is now done on EA. 
+ * For P8 we don't need 16M pages, as prefetching is now done on EA. 
  * For older Power releases, keep it enabled. 
  * 0 - disabled, use base page size.  
  * 1 - Enabled - Use large pages.   
@@ -174,7 +174,7 @@ main(int argc, char *argv[]) {
     }
 	/* Configure which page size we are going to use */ 
 	if(pvr == PVR_POWER8_MURANO || pvr == PVR_POWER8_VENICE || pvr == PVR_POWERP8P_GARRISION) { /* Use 4 K */  
-		SET_PAGESIZE= 0;	 /* We dont need to configure 16M pages, as its default */  
+		SET_PAGESIZE= 0;	 /* We don't need to configure 16M pages, as its default */  
 	} else { /* Use 16M pages */ 
 		SET_PAGESIZE = 1; 
 	}
@@ -291,10 +291,10 @@ main(int argc, char *argv[]) {
         exit(1);
     }
 
-    /* Intialize the htxmp library datastructures */
-    rc = mp_intialize(tot_cpus, &htx_d);
+    /* Initialize the htxmp library datastructures */
+    rc = mp_initialize(tot_cpus, &htx_d);
     if(rc == -1) {
-       sprintf(msg_buf, "\n %s : Fabricbus failed to intialize htxmp datastructures, errno = %d \n",errno);
+       sprintf(msg_buf, "\n %s : Fabricbus failed to initialize htxmp datastructures, errno = %d \n",errno);
        hxfmsg(&htx_d, rc, HTX_HE_HARD_ERROR, msg_buf);
        exit(1);
     }
@@ -326,7 +326,7 @@ main(int argc, char *argv[]) {
                  * override the previously detected system configuration.
                  */
                  int j, k = 0, procs = 0;
-                 /* Systems usually dont have symetric distribution. So in these cases use these rules parm to
+                 /* Systems usually don't have symmetric distribution. So in these cases use these rules parm to
                   * depict nearest possible system configuration.
                   */
                  if((current_stanza->cec_nodes * current_stanza->chips_per_node * current_stanza->cores_per_chip * smt_threads) > tot_cpus) {
@@ -367,10 +367,10 @@ main(int argc, char *argv[]) {
    		 	printf( "****************************************************************************************\n");
 
 			if(query_sysconf)
-				continue;  /* If user specify diff sys configuration thru multiple stanzas in rule, then display sys config for each of them */
+				continue;  /* If user specify diff sys configuration through multiple stanzas in rule, then display sys config for each of them */
 
             /* If rules file parm memory_configure = 0 then use predefined algos to decide memory mapping,
-             * else use had specified memory mapping thru file read from there
+             * else use had specified memory mapping through file read from there
              */
             num_cpus_mapped = 0;
             for(i = 0; i < MAX_CPUS; i++) {
@@ -498,7 +498,7 @@ main(int argc, char *argv[]) {
 					return(-1);
                 }
             }
-			/* Intialize the mask structure */ 
+			/* Initialize the mask structure */ 
 			for(i = 0; i < num_cpus_mapped; i++) { 
 				masks[i].host_cpu = memory_mapping[i][HOST_CPU]; 
 				masks[i].dest_cpu = memory_mapping[i][DEST_CPU];
@@ -812,8 +812,8 @@ main(int argc, char *argv[]) {
 
         } /* Off num_stanza loop */
       	if(query_pages || query_sysconf) {
-			/* We are here, we have scanned thru all stanzas and calculated memory_allocation
-			 * for eahc memory_allocation defined in rules file
+			/* We are here, we have scanned through all stanzas and calculated memory_allocation
+			 * for each memory_allocation defined in rules file
 			 */
 			exit(0);
 		}

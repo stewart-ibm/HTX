@@ -55,7 +55,7 @@ struct htx_data * global_mp_htx_ds ;
    int new_mp = 0; 
 /* This flag tells whether mp_instialization was 
 	successful or not */ 
-	int new_mp_intialize = 0;
+	int new_mp_initialize = 0;
 /* This thread will make stats update thread wait,
    until exer had made first call to hxfupdate. 
 */ 
