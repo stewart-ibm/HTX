@@ -1,6 +1,6 @@
 include ../../../htx.mk
 
-TARGET= default
+TARGET= default default.capi
 
 .PHONY: all clean
 

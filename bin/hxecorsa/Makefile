@@ -2,7 +2,7 @@ include ../../htx.mk
 
 TARGET=hxecorsa
 
-LDFLAGS +=
+LDFLAGS += -L/usr/lib64/genwqe/ -Xlinker -rpath=/usr/lib64/genwqe/
 
 OBJ_SUFF=.o
 
@@ -17,14 +17,13 @@ OBJECTS = \
 	gen_tlbie${OBJ_SUFF} \
 	corsa${OBJ_SUFF}
 
-CFLAGS += -DCORSA_ENABLE -D__64_LINUX__ -D_GNU_SOURCE -DKERNEL_2_6 -D_REENTRANT -g -D__HTX_LINUX__ -D__USE_GNU -I./../hxemem64
+SRCS = $(patsubst %.o, %.c, $(OBJECTS))
+
+CFLAGS += -DCORSA_ENABLE -D__64_LINUX__ -D_GNU_SOURCE -DKERNEL_2_6 -D_REENTRANT -g -D__HTX_LINUX__ -D__USE_GNU -I./../hxemem64 -I./../../inc
  
-LIBS += -lpthread -lhtx64 -lzEDC
+LIBS += -lpthread -lhtx64 -lz
 
 .PHONY: all clean
-
-corsa.o: corsa.c
-	${CC} ${CFLAGS} ${INCLUDES} -c $< -o $@
 
 %.o: ../hxemem64/%.c
 	${CC} ${CFLAGS} ${INCLUDES} -c $< -o $@
@@ -34,7 +33,7 @@ corsa.o: corsa.c
 
 all: ${OBJECTS}
 	${CC} ${LDFLAGS} ${LIBPATH} ${OBJECTS} ${LIBS} -o ${TARGET}
-	${CP} ${TARGET} ${SHIPBIN}/${TARGET} 
+	${CP} ${TARGET} ${SHIPBIN}
 
 
 #%.o: %.s
