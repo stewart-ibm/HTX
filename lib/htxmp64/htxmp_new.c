@@ -37,6 +37,7 @@ static char sccsid[] = "@(#)70  1.2  src/htx/usr/lpp/htx/lib/htxmp64/htxmp_new.c
 
 #ifdef HTXTHREADED
 
+#include <unistd.h>
 #include <stdio.h>
 #include <pthread.h>
 

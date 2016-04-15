@@ -20,6 +20,7 @@
 /* @(#)89	1.3  src/htx/usr/lpp/htx/lib/htx64/hxfpat.c, htx_libhtx, htxubuntu 5/24/04 18:10:38 */
 
 #include "htx_local.h"
+#include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <memory.h>

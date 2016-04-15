@@ -43,6 +43,8 @@ extern int crash_on_mis;
 /**************************************************************************/
 #include <time.h>
 #include <string.h>
+#include <stdio.h>
+
 bldbuf(unsigned short *wbuf, unsigned int dlen, int buf_size,
        char *pattern_id, int *blkno)
 {

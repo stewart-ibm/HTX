@@ -83,6 +83,7 @@
 #    include <fcntl.h>
 #    include <ctype.h>
 #    include <memory.h>
+#    include <time.h>
 #    include <sys/stat.h>
 #    include <sys/types.h>
 #    include <sys/socket.h>
@@ -309,7 +310,7 @@ int  main(int argc, char *argv[])
     }
     shm_pHXECOM->mID = mpID;
     shm_pHXECOM->BrokenPipes = 0;
-    shm_pHXECOM->starttime = time();
+    shm_pHXECOM->starttime = time(NULL);
 	/* see if we are running bootme and set flag. */
 	sprintf(msg_text,"/usr/lpp/htx/etc/scripts/pscheck bootme");
     shm_pHXECOM->bootme = system(msg_text);

@@ -38,6 +38,7 @@ static char sccsid[] = "@(#)74	1.1  src/htx/usr/lpp/htx/lib/htxmp64/hxfpatmp_new
 #include <pthread.h>
 
 #include "htx_local.h"
+#include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <memory.h>

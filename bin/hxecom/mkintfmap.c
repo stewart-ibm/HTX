@@ -18,13 +18,14 @@
 /* IBM_PROLOG_END_TAG */
 /* @(#)17	1.2  src/htx/usr/lpp/htx/bin/hxecom/mkintfmap.c, exer_com, htxubuntu 1/6/09 06:50:27 */
 
+#include <unistd.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
 #include <linux/version.h>
-#include <asm/ioctl.h>
+#include <sys/ioctl.h>
 
 #define _DEBUG_MKMAP_ 0
 

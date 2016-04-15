@@ -31,6 +31,8 @@
  * able to change the block size of the data. The default blocksize is 512.
  ****************************************************************************/
 #include <stdio.h>                         /* standard include declarations */
+#include <ctype.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>     
 
@@ -78,7 +80,7 @@ main(int argc, char *argv[])
 
     long   file1_size, file2_size;
     FILE   *f1_ptr, *f2_ptr;
-    char   *data1, *data2, *malloc(), *message1;
+    char   *data1, *data2, *message1;
     char   ascii[17], command[20];
 
     char   *offset_format_d = "%.8d";
