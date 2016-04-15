@@ -658,7 +658,7 @@ Unable to access HTX message queue.\nerrno = %d",
          data->error_code = errno;
          data->severity_code = HTX_SYS_HARD_ERROR;
          (void) sprintf(data->msg_text,
-                     "%s for %s: Error in hxfupdate function.\n\ Unable to get HTX shared memory for rem_shm_id.\nerrno = %d\n",
+                     "%s for %s: Error in hxfupdate function.\nUnable to get HTX shared memory for rem_shm_id.\nerrno = %d\n",
                      data->HE_name,
                      data->sdev_id,
                      data->error_code);
@@ -676,7 +676,7 @@ Unable to access HTX message queue.\nerrno = %d",
          data->error_code = errno;
          data->severity_code = HTX_SYS_HARD_ERROR;
          (void) sprintf(data->msg_text,
-                     "%s for %s: Error in hxfupdate function.\n\ Unable to attach to HTX shared memory for rem_shm_addr.\nerrno = %d\n",
+                     "%s for %s: Error in hxfupdate function.\nUnable to attach to HTX shared memory for rem_shm_addr.\nerrno = %d\n",
                      data->HE_name,
                      data->sdev_id,
                      data->error_code);
@@ -699,7 +699,7 @@ Unable to access HTX message queue.\nerrno = %d",
          data->error_code = errno;
          data->severity_code = HTX_SYS_HARD_ERROR;
          (void) sprintf(data->msg_text,
-                     "%s for %s: Error in hxfupdate function.\n\ Unable to get HTX shared memory for exer_info .\nerrno = %d\n",
+                     "%s for %s: Error in hxfupdate function.\nUnable to get HTX shared memory for exer_info .\nerrno = %d\n",
                      data->HE_name,
                      data->sdev_id,
                      data->error_code);
@@ -716,7 +716,7 @@ Unable to access HTX message queue.\nerrno = %d",
            data->error_code = errno;
          data->severity_code = HTX_SYS_HARD_ERROR;
          (void) sprintf(data->msg_text,
-                     "%s for %s: Error in hxfupdate function.\n Unable to attach to shared memory.\nerrno = %d\n",
+                     "%s for %s: Error in hxfupdate function.\nUnable to attach to shared memory.\nerrno = %d\n",
                      data->HE_name,
                      data->sdev_id,
                      data->error_code);
@@ -747,7 +747,7 @@ Unable to access HTX message queue.\nerrno = %d",
          data->error_code = errno;
          data->severity_code = HTX_SYS_HARD_ERROR;
          (void) sprintf(data->msg_text,
-                     "%s for %s: Error in hxfupdate function.\n\ smkey for exerciser is -1.\n",
+                     "%s for %s: Error in hxfupdate function.\nsmkey for exerciser is -1.\n",
                      data->HE_name,
                      data->sdev_id);
 
