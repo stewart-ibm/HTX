@@ -16,6 +16,8 @@ TARGET= .htx_profile \
 
 default: all
 
+lib: inc
+
 bin: lib
 
 ${SUBDIRS}:
