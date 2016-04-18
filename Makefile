@@ -21,7 +21,7 @@ lib: inc
 bin: lib
 
 ${SUBDIRS}:
-	make -C $@
+	$(MAKE) -C $@
 
 all: ${SUBDIRS}
 	@echo "making dir - "${SHIPTOPDIR}
@@ -37,10 +37,10 @@ clean: ${SUBDIRS_CLEAN} clean_local
 	${RM} -rf ${EXPORT}
 
 ${SUBDIRS_CLEAN}:
-	@make -C $(@:.clean=) clean
+	@$(MAKE) -C $(@:.clean=) clean
 
 %.clean: %
-	@make -C $< clean
+	@$(MAKE) -C $< clean
 
 deb:
 	@echo "Making HTX Debian package..."

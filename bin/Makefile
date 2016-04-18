@@ -18,12 +18,12 @@ all: ${SUBDIRS}
 ${SUBDIRS}:
 	@echo "making dir - "${SHIPBIN}
 	${MKDIR} ${SHIPBIN}
-	make -C $@
+	$(MAKE) -C $@
 
 clean: ${SUBDIRS_CLEAN}
 
 ${SUBDIRS_CLEAN}:
-	@make -C $(@:.clean=) clean
+	@$(MAKE) -C $(@:.clean=) clean
 
 %.clean: %
-	@make -C $< clean
+	@$(MAKE) -C $< clean

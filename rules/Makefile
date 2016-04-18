@@ -10,12 +10,12 @@ all: ${SUBDIRS}
 	${MKDIR} ${REGRULES} 
 
 ${SUBDIRS}:
-	make -C $@
+	$(MAKE) -C $@
 
 clean: ${SUBDIRS_CLEAN}
 
 ${SUBDIRS_CLEAN}:
-	@make -C $(@:.clean=) clean
+	@$(MAKE) -C $(@:.clean=) clean
 
 %.clean: %
-	@make -C $< clean
+	@$(MAKE) -C $< clean

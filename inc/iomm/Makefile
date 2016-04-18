@@ -11,7 +11,7 @@ all: ${SUBDIRS}
 	${CP} ${TARGET} ${EXPINC}/iomm/
 
 ${SUBDIRS}:
-	make -C $@
+	$(MAKE) -C $@
 
 clean:
 	${RM} -rf ${EXPINC}/iomm/*.h
