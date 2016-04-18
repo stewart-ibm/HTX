@@ -7873,7 +7873,7 @@ int distribute_vsrs_based_on_ins_bias(int cno)
 	/* Running only a single for loop for all categories as its just initializing to 0.
 	 * Performance wise better than having multiple loops one for each category with specific limits
 	 */
-	for(j = DUMMY ; j <= VSR_OP_TYPES; j++) {
+	for(j = DUMMY ; j < VSR_OP_TYPES; j++) {
 		vsr_wt_array[j] = bfp_wt_array[j] = vmx_wt_array[j] = dfp_wt_array[j] = total_wt_array[j] = 0;
 	}
 
