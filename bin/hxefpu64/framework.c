@@ -246,14 +246,14 @@ main(int argc, char *argv[])
 
 #ifdef __HTX_LINUX__
 	/* Register common signal handler for hardware generated signals */
-    sigvector.sa_flags = SA_SIGINFO | SA_RESETHAND;
+	sigvector.sa_flags = SA_SIGINFO | SA_RESETHAND;
 #ifdef AWAN
-    sigvector.sa_flags = SA_SIGINFO;
+	sigvector.sa_flags = SA_SIGINFO;
 #endif
-    sigvector.sa_sigaction = SIGHW_handler;
-    sigaction(SIGSEGV, &sigvector, (struct sigaction *) NULL);
-    sigaction(SIGILL, &sigvector, (struct sigaction *) NULL);
-    sigaction(SIGBUS, &sigvector, (struct sigaction *) NULL);
+	sigvector.sa_sigaction = SIGHW_handler;
+	sigaction(SIGSEGV, &sigvector, (struct sigaction *) NULL);
+	sigaction(SIGILL, &sigvector, (struct sigaction *) NULL);
+	sigaction(SIGBUS, &sigvector, (struct sigaction *) NULL);
 #endif
 
 	/* Below signal set i.e myset will be used after hxfupdate(START) */
@@ -277,9 +277,9 @@ main(int argc, char *argv[])
 	if(argv[3]) strcpy(dinfo.rule_file_name, argv[3]);
 
 	/* Set htx_data structure parameters */
-    if(argv[0]) strcpy(hd.HE_name, argv[0]);
-    if(argv[1]) strcpy(hd.sdev_id, argv[1]);
-    if(argv[2]) strcpy(hd.run_type, argv[2]);
+	if(argv[0]) strcpy(hd.HE_name, argv[0]);
+	if(argv[1]) strcpy(hd.sdev_id, argv[1]);
+	if(argv[2]) strcpy(hd.run_type, argv[2]);
 	atexit(cleanup_mem_atexit);
 #ifdef SCTU
 	if (strcasecmp(dinfo.device_name, "SCTU_DEV") == 0) {
@@ -376,29 +376,29 @@ main(int argc, char *argv[])
 	#define NX_CRYPTO_SCOM_BIT          0x0000000100000000ULL /* NX Crypto Enabled */
 	#define VMX_CRYPTO_SCOM_BIT         0x0000000200000000ULL /* VMX Crypto Disabled */
 
-	uint64_t scom_val = 0, scom_addr = SCOM_REG_ADDR;
-    uint32_t chip_id = 0xffffffff;
+	uint64 scom_val = 0, scom_addr = SCOM_REG_ADDR;
+	uint32 chip_id = 0xffffffff;
 
-    chip_id = xscom_init();
-    if (chip_id == 0xffffffff) {
-        fprintf(stderr, "No valid XSCOM chip found\n");
+	chip_id = xscom_init();
+	if (chip_id == 0xffffffff) {
+		fprintf(stderr, "No valid XSCOM chip found\n");
 		sprintf(msg, "xscom_init failed, No valid XSCOM chip found\n");
 		hxfmsg(&hd, 0, HTX_HE_INFO, msg);
-    }
+	}
 	else {
-    	rc = xscom_read(chip_id, scom_addr, &scom_val);
-    	if (rc) {
+		rc = xscom_read(chip_id, scom_addr, &scom_val);
+		if (rc) {
 			sprintf(msg, "xscom_read failed, Error reading XSCOM, RC: %d\n", rc);
 			hxfmsg(&hd, 0, HTX_HE_INFO, msg);
-    	}
+		}
 		if (!(scom_val & VMX_CRYPTO_SCOM_BIT)) {
 			exclude_cat_mask = 0;
-			sprintf(msg, "Crypto enabled: chip id: %X, SCOM Addr: 0x%016llX, Value: %llX\n", chip_id, scom_addr, scom_val);
+			sprintf(msg, "Crypto enabled: chip id: %X, SCOM Addr: 0x%016llx, Value: %llx\n", chip_id, scom_addr, scom_val);
 		}
 		else {
-		/* exclude nstruction category for crypto */
-		exclude_cat_mask = VMX_MISC_ONLY;
-		sprintf(msg, "Crypto disabled: chip id: %X, SCOM Addr: 0x%016llX, Value: %llX, exclude category: 0x%016llX\n", chip_id, scom_addr, scom_val, exclude_cat_mask);
+			/* exclude nstruction category for crypto */
+			exclude_cat_mask = VMX_MISC_ONLY;
+			sprintf(msg, "Crypto disabled: chip id: %X, SCOM Addr: 0x%016llx, Value: %llx, exclude category: 0x%016llX\n", chip_id, scom_addr, scom_val, exclude_cat_mask);
 		}
 		hxfmsg(&hd, 0, HTX_HE_INFO, msg);
 	}
@@ -1050,7 +1050,7 @@ main(int argc, char *argv[])
 		sprintf(instr_fname, "/tmp/%s_instr_stats", (char *)(dinfo.device_name+5));
 		FILE * fptr = fopen((const char *)instr_fname,"w");
 		if (fptr != NULL) {
-			fprintf(fptr, "Cycle # %d\n", cycle_count);
+			fprintf(fptr, "Cycle # %lld\n", cycle_count);
 			for (i = 0; i < num_active_rules; i++) {
 				sprintf(msg, "Test id: %d ", stanza_stats[i].test_id);
 				for (j = 0; j < rule.num_threads; j++) {
@@ -4886,9 +4886,9 @@ create_context(int client_no)
 	 }
 	 return(0);
 }
-int cleanup_mem_atexit(){
+
+void cleanup_mem_atexit(){
     cleanup_mem(0);
-    return(0);
 }
 
 int

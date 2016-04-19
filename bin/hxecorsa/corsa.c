@@ -1,4 +1,21 @@
-static char sccsid[] = "@(#)63	1.11  src/htx/usr/lpp/htx/bin/hxecorsa/corsa.c, exer_corsa, htxubuntu 4/1/16 06:32:12";
+/* IBM_PROLOG_BEGIN_TAG */
+/* 
+ * Copyright 2003,2016 IBM International Business Machines Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/* IBM_PROLOG_END_TAG */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -726,7 +743,7 @@ int corsa_cmprss_decmprss_compare(int ti)
 		patt_size = stanza_ptr->pattern_size[pi];
 
 		if (priv.exit_flag == 1) {
-			displaym(HTX_HE_INFO,DBG_MUST_PRINT," cmprss_decmprss_compare(%d): recieved sigterm \n",ti);
+			displaym(HTX_HE_INFO,DBG_MUST_PRINT," cmprss_decmprss_compare(%d): received sigterm \n",ti);
 			pthread_exit(0);
 		}
 
@@ -863,7 +880,7 @@ int corsa_bypass_compare(ti)
 		patt_size = stanza_ptr->pattern_size[pi];
 
 		if (priv.exit_flag == 1) {
-			displaym(HTX_HE_INFO,DBG_MUST_PRINT," corsa_bypass_compare(%d): recieved sigterm \n",ti);
+			displaym(HTX_HE_INFO,DBG_MUST_PRINT," corsa_bypass_compare(%d): received sigterm \n",ti);
 			pthread_exit(0);
 		}
 
@@ -993,7 +1010,7 @@ int corsa_compress_only(ti)
 		patt_size = stanza_ptr->pattern_size[pi];
 
 		if (priv.exit_flag == 1) {
-			displaym(HTX_HE_INFO,DBG_MUST_PRINT," corsa_compress_only(%d): recieved sigterm \n",ti);
+			displaym(HTX_HE_INFO,DBG_MUST_PRINT," corsa_compress_only(%d): received sigterm \n",ti);
 			pthread_exit(0);
 		}
 
@@ -1192,7 +1209,7 @@ int bind_to_proc(int bind_proc)
 		displaym(HTX_HE_HARD_ERROR,DBG_MUST_PRINT,"Warning! error binding "
 				 "to processor %d.", bind_proc);
 	} else {
-		displaym(HTX_HE_INFO,DBG_INFO_PRINT,"Succesfully binded thread "
+		displaym(HTX_HE_INFO,DBG_INFO_PRINT,"Successfully binded thread "
 				"(tid =%d) to the logical proc %d\n", ti, bind_proc);
 	}
 
