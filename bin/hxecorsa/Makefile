@@ -19,7 +19,7 @@ OBJECTS = \
 
 SRCS = $(patsubst %.o, %.c, $(OBJECTS))
 
-CFLAGS += -DCORSA_ENABLE -D__64_LINUX__ -D_GNU_SOURCE -DKERNEL_2_6 -D_REENTRANT -g -D__HTX_LINUX__ -D__USE_GNU -I./../hxemem64 -I./../../inc
+CFLAGS += -DCORSA_ENABLE -D__64_LINUX__ -D_GNU_SOURCE -DKERNEL_2_6 -D_REENTRANT -g -D__HTX_LINUX__ -I./../hxemem64 -I./../../inc
  
 LIBS += -lpthread -lhtx64 -lz
 
@@ -31,9 +31,11 @@ LIBS += -lpthread -lhtx64 -lz
 %.o: ../hxemem64/%.s
 	${AS} -c $< -o $@
 
-all: ${OBJECTS}
-	${CC} ${LDFLAGS} ${LIBPATH} ${OBJECTS} ${LIBS} -o ${TARGET}
-	${CP} ${TARGET} ${SHIPBIN}
+all:
+
+#all: ${OBJECTS}
+	#${CC} ${LDFLAGS} ${LIBPATH} ${OBJECTS} ${LIBS} -o ${TARGET}
+	#${CP} ${TARGET} ${SHIPBIN}
 
 
 #%.o: %.s
