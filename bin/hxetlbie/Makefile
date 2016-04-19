@@ -16,7 +16,7 @@ OBJECTS = \
 	test_L4${OBJ_SUFF} \
 	gen_tlbie${OBJ_SUFF} \
 
-CFLAGS += -D__64_LINUX__ -D_GNU_SOURCE -DKERNEL_2_6 -D_REENTRANT -g -D__HTX_LINUX__ -D__USE_GNU -I./../hxemem64
+CFLAGS += -D__64_LINUX__ -D_GNU_SOURCE -DKERNEL_2_6 -D_REENTRANT -g -D__HTX_LINUX__ -I./../hxemem64
  
 LIBS += -lpthread -lhtx64
 
