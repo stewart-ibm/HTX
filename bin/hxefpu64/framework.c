@@ -281,15 +281,6 @@ main(int argc, char *argv[])
 		rc = chip_testcase();
 		rc1 = node_testcase();
 		shm_flag_for_malloc = 0;
-		/* Code below is to resolve atexit() error seen for IPC_RMID in this mode *
-		 * allocate_mem() initializes shm id to -1 which is not called in this case.
-		 * due to that, cleanup is failing since it sees some garbage and not -1.
-		 * Initializing it here would solve that problem.
-		 */
-
-		for ( i = 0; i < 3; i++ ) {
-			vsx_mem[i].id = -1;
-		}
 
 		return(rc | rc1);
 	}
@@ -8757,13 +8748,13 @@ int chip_testcase(void)
 	}
 
 	if(shm_flag_for_malloc == 0){
-    rc = repopulate_syscfg(&hd);
-    if ( rc ) {
-        sprintf(msg,"repopulate_syscfg failed with error code= %d \n",rc);
-        hxfmsg(&hd, -1, HTX_HE_SOFT_ERROR, msg);
-        exit_flag = 1;
-        return -1;
-    }
+		rc = repopulate_syscfg(&hd);
+		if ( rc ) {
+			sprintf(msg,"repopulate_syscfg failed with error code= %d \n",rc);
+			hxfmsg(&hd, -1, HTX_HE_SOFT_ERROR, msg);
+			exit_flag = 1;
+			return -1;
+		}
 	}
 
 
@@ -8950,13 +8941,13 @@ int node_testcase(void)
 		}
 	}
 	if(shm_flag_for_malloc == 0){
-    rc = repopulate_syscfg(&hd);
-    if ( rc ) {
-        sprintf(msg,"repopulate_syscfg failed with error code= %d \n",rc);
-        hxfmsg(&hd, -1, HTX_HE_SOFT_ERROR, msg);
-        exit_flag = 1;
-        return -1;
-    }
+		rc = repopulate_syscfg(&hd);
+		if ( rc ) {
+			sprintf(msg,"repopulate_syscfg failed with error code= %d \n",rc);
+			hxfmsg(&hd, -1, HTX_HE_SOFT_ERROR, msg);
+			exit_flag = 1;
+			return -1;
+		}
 	}
 
 
@@ -8990,11 +8981,11 @@ int node_testcase(void)
 		}
 	} 
 #endif
-    rc1 = pthread_rwlock_rdlock(&(global_ptr->syscfg.rw));
-    if (rc1 !=0  ) {
-        sprintf(msg,"lock inside framework.c failed with errno=%d,in function: %s at line :[%d]\n",rc1, __FUNCTION__, __LINE__);
-        hxfmsg(&hd, 0, HTX_HE_INFO, msg);
-    }
+	rc1 = pthread_rwlock_rdlock(&(global_ptr->syscfg.rw));
+	if (rc1 !=0  ) {
+		sprintf(msg,"lock inside framework.c failed with errno=%d,in function: %s at line :[%d]\n",rc1, __FUNCTION__, __LINE__);
+		hxfmsg(&hd, 0, HTX_HE_INFO, msg);
+	}
 
 
 	for ( node = 0; node < MAX_NODES && node < Sys_stat.nodes && stop_cond == 0; node++ ) {
@@ -9020,11 +9011,11 @@ int node_testcase(void)
 			}
 		}
 	}
-    rc2 = pthread_rwlock_unlock(&(global_ptr->syscfg.rw));
-    if (rc2 !=0  ) {
-        sprintf(msg,"unlock inside framework.c failed with errno=%d,in function: %s at line :[%d]\n",rc2, __FUNCTION__, __LINE__);
-        hxfmsg(&hd, 0, HTX_HE_INFO, msg);
-    }
+	rc2 = pthread_rwlock_unlock(&(global_ptr->syscfg.rw));
+	if (rc2 !=0  ) {
+		sprintf(msg,"unlock inside framework.c failed with errno=%d,in function: %s at line :[%d]\n",rc2, __FUNCTION__, __LINE__);
+		hxfmsg(&hd, 0, HTX_HE_INFO, msg);
+	}
 
 
 	if ( strcasecmp(dinfo.device_name, "SCTU_DEV") == 0 ) {
