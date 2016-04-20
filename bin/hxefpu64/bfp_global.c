@@ -934,7 +934,7 @@ void class_bfp_qp_round_gen(uint32 client_no, uint32 random_no, struct instructi
 	 * that it becomes valid.
 	 */
 
-	rmode = random_no && 0x7;	/* Get last 3 bits */
+	rmode = random_no & 0x7;	/* Get last 3 bits */
 	if ( rmode == 0x1 || rmode == 0x2 ) {
 		/* Handling reserved case */
 		rmode |= 0x4; /* Set R=1 to make it valid */
