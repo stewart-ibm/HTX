@@ -14,10 +14,10 @@ all: ${SUBDIRS}
 clean: ${SUBDIRS_CLEAN}
 
 ${SUBDIRS}:
-	make -C $@
+	$(MAKE) -C $@
 
 ${SUBDIRS_CLEAN}:
-	@make -C $(@:.clean=) clean
+	@$(MAKE) -C $(@:.clean=) clean
 
 %.clean: %
-	@make -C $< clean
+	@$(MAKE) -C $< clean

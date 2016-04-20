@@ -11,7 +11,7 @@ all: ${SUBDIRS}
 	${CP} ${TARGET} ${EXPINC}/sys/
 
 ${SUBDIRS}:
-	make -C $@
+	$(MAKE) -C $@
 
 clean:
 	${RM} -rf ${EXPINC}/sys/*.h 

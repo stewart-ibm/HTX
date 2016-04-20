@@ -33,13 +33,13 @@ ${TARGET}: ${OBJECTS}
 	${CC} ${CFLAGS} ${INCLUDES} -c $< -o $@
 
 ${SUBDIRS}:
-	make -C $@
+	$(MAKE) -C $@
 
 clean: ${SUBDIRS_CLEAN}
 	${RM} -f *.o ${TARGET} ${SHIPBIN}/${TARGET}
 
 ${SUBDIRS_CLEAN}:
-	@make -C $(@:.clean=) clean
+	@$(MAKE) -C $(@:.clean=) clean
 
 %.clean: %
-	@make -C $< clean
+	@$(MAKE) -C $< clean

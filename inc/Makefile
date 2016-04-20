@@ -39,7 +39,7 @@ all: ${SUBDIRS}
 
 ${SUBDIRS}:
 	${MKDIR} ${EXPINC}
-	make -C $@
+	$(MAKE) -C $@
 
 .PHONY: ${SUBDIRS_CLEAN} clean_local
 
@@ -49,7 +49,7 @@ clean_local:
 	${RM} -rf ${EXPINC}/${TARGET} 
 
 ${SUBDIRS_CLEAN}:
-	@make -C $(@:.clean=) clean
+	@$(MAKE) -C $(@:.clean=) clean
 
 %.clean: %
-	@make -C $< clean
+	@$(MAKE) -C $< clean
