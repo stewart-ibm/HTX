@@ -377,7 +377,7 @@ uint32 vsr_reg_wt[VSR_OP_TYPES] = {0, 11, 11, 11, 10, 10, 0};
 extern store_macro_fptr st_fptrs[VSR_OP_TYPES];
 sim_fptr st_sim_fptrs[VSR_OP_TYPES] = {NULL, (sim_fptr)&simulate_stxsdx, (sim_fptr)&simulate_stxsdx,
 					 (sim_fptr)&simulate_stxvd2x ,(sim_fptr) &simulate_stxvd2x, (sim_fptr)&simulate_stxvd2x, NULL};
-int sim_fptrs_index[VSR_OP_TYPES]= {NULL, stxsdx, stxsdx, stxvd2x, stxvd2x, stxvd2x, stxvd2x, stxvd2x, NULL};
+int sim_fptrs_index[VSR_OP_TYPES]= {0, stxsdx, stxsdx, stxvd2x, stxvd2x, stxvd2x, stxvd2x, stxvd2x, 0};
 
 void class_vsx_mul_add_sub_gen(uint32 client_no, uint32 random_no, struct instruction_masks *temp, int index)
 {

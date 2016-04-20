@@ -500,7 +500,8 @@ BEGIN {
     }
 
     corsa_capi_present = snarf("ls /dev/cxl/afu0.0s 2> /dev/null | wc -l");
-    if (corsa_capi_present) {
+    corsa_dev_type = snarf("cat /sys/class/cxl/afu0.0s/device/cr0/device");
+    if ( corsa_capi_present == "1" && corsa_dev_type == "0x0602" ) {
                 if((CMVC_RELEASE == "htxrhel72le") || (CMVC_RELEASE == "htxrhel7") || (CMVC_RELEASE == "htxubuntu")) {
                         mkstanza("hxecorsa", "chip", "Misc", "afu0.0s", "hxecorsa", "default.capi", "" );
                 }
