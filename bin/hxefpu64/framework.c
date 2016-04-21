@@ -386,7 +386,7 @@ main(int argc, char *argv[])
 		hxfmsg(&hd, 0, HTX_HE_INFO, msg);
 	}
 	else {
-		rc = xscom_read(chip_id, scom_addr, &scom_val);
+		rc = xscom_read(chip_id, scom_addr, (uint64_t *)&scom_val);
 		if (rc) {
 			sprintf(msg, "xscom_read failed, Error reading XSCOM, RC: %d\n", rc);
 			hxfmsg(&hd, 0, HTX_HE_INFO, msg);
@@ -2615,13 +2615,14 @@ void dump_testcase_p7(int cno, int num_oper, int type, int num)
 
 		for(i = 0; i < NUM_VSRS; i++) {
 			if((*ptr1 != *ptr2) || (*(ptr1+1)) != (*(ptr2+1))) {
-				fprintf(dump, "[%02d]:  0x%016llx%016llx 0x%016llx%016llx 0x%016llx%016llx <<\n", i, *(ptri++), *(ptri++),
-					*(ptr1++), *(ptr1++), *(ptr2++), *(ptr2++));
+				fprintf(dump, "[%02d]:  0x%016llx%016llx 0x%016llx%016llx 0x%016llx%016llx <<\n", i, *ptri, *(ptri+1),
+					*ptr1, *(ptr1+1), *ptr2, *(ptr2+1));
 			}
 			else {
-				fprintf(dump, "[%02d]:  0x%016llx%016llx 0x%016llx%016llx 0x%016llx%016llx\n", i, *(ptri++), *(ptri++),
-					*(ptr1++), *(ptr1++), *(ptr2++), *(ptr2++));
+				fprintf(dump, "[%02d]:  0x%016llx%016llx 0x%016llx%016llx 0x%016llx%016llx\n", i, *ptri, *(ptri+1),
+					*ptr1, *(ptr1+1), *ptr2, *(ptr2+1));
 			}
+			ptri++; ptr1++; ptr2++;
 		}
 
 		ptri = (uint64 *)&tci->tcc.gprs;
@@ -7107,12 +7108,7 @@ get_rule(int *line, FILE *fp, struct ruleinfo *r)
 		}
         else if ((HSTRCMP(keywd,"NUM_OPER")) == 0) {
 			sscanf(s,"%*s %d", &r->num_oper);
-			if (r->num_oper < 0) {
-				sprintf(msg, "line# %d %s = %d must be positive integer or 0", *line, keywd, r->num_oper);
-				hxfmsg(&hd, -1, HTX_HE_HARD_ERROR, msg);
-				return(-1);
-			}
-			else if(r->num_oper == 0) {
+			if (r->num_oper == 0) {
 				sprintf(msg, "Warning ! num_oper = 0. stanza will run forever.");
 				hxfmsg(&hd, 0, HTX_HE_INFO, msg);
 			}
@@ -7138,7 +7134,7 @@ get_rule(int *line, FILE *fp, struct ruleinfo *r)
 		}
 		else if ((HSTRCMP(keywd,"NUM_THREADS")) == 0) {
 			sscanf(s,"%*s %d", &r->num_threads);
-			if (r->num_threads < 0 || r->num_threads > MAX_NUM_CPUS) {
+			if (r->num_threads > MAX_NUM_CPUS) {
 				sprintf(msg, "line# %d %s = %d must be positive integer(<= smt) or 0",*line, keywd, r->num_threads);
 				hxfmsg(&hd, -1, HTX_HE_HARD_ERROR, msg);
 				return(-1);
@@ -7237,8 +7233,8 @@ get_rule(int *line, FILE *fp, struct ruleinfo *r)
 		}
 		else if ((HSTRCMP(keywd,"STREAM_DEPTH")) == 0) {
 			sscanf(s,"%*s %d", &r->stream_depth);
-			if (r->stream_depth < 0 || r->stream_depth > MAX_INS_STREAM_DEPTH) {
-				sprintf(msg, "line# %d %s = %d must be between 0 and %d",*line, keywd, r->stream_depth, (MAX_INS_STREAM_DEPTH - 1024));
+			if ((r->stream_depth == 0) || (r->stream_depth >= (MAX_INS_STREAM_DEPTH - 1024))) {
+				sprintf(msg, "line# %d %s = %d must be between 0 and %d", *line, keywd, r->stream_depth, (MAX_INS_STREAM_DEPTH - 1024));
 				hxfmsg(&hd, -1, HTX_HE_HARD_ERROR, msg);
 				return(-1);
 			}
@@ -7267,11 +7263,6 @@ get_rule(int *line, FILE *fp, struct ruleinfo *r)
 					}
 					else {
 						mprintf("\n Param Name: %s Val: %llx", keywd, r->fpscr[index]);
-						if (r->fpscr[index] < 0) {
-							sprintf(msg, "line# %d %s = 0x%llx must be 64 bit hex value",*line, keywd, r->fpscr[index]);
-							hxfmsg(&hd, -1, HTX_HE_HARD_ERROR, msg);
-							return(-1);
-						}
 					}
 					index++;
 				}
@@ -7297,17 +7288,10 @@ get_rule(int *line, FILE *fp, struct ruleinfo *r)
 					}
 					else {
 						mprintf("\n Param Name: %s Val: %llx", keywd, tmp);
-						if (tmp < 0) {
-							sprintf(msg, "line# %d %s = 0x%llx must be 64 bit hex value",*line, keywd, tmp);
-							hxfmsg(&hd, -1, HTX_HE_HARD_ERROR, msg);
-							return(-1);
-						}
-						else {
-							int i;
-							for(i = 0; i < BFP_DATA_BIAS_TYPES; i++) {
-								r->db[index][i] = (tmp >> (i*4)) & (uint64)0xf;
-								mprintf("\n Param Name: %s data type: %d Val: %d", keywd, i, r->db[index][i]);
-							}
+						int i;
+						for(i = 0; i < BFP_DATA_BIAS_TYPES; i++) {
+							r->db[index][i] = (tmp >> (i*4)) & (uint64)0xf;
+							mprintf("\n Param Name: %s data type: %d Val: %d", keywd, i, r->db[index][i]);
 						}
 					}
 					index++;

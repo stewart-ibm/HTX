@@ -1483,10 +1483,10 @@ void class_cpu_fixed_store_2_gen(uint32 client_no, uint32 random_no, struct inst
 			if(opcode_val == 3){					/* stmd and lmd*/
 				offset = ((MAX_REG - RT + 1) * 8);
 			}
-			else if ((ins->op_eop_mask == 0XE8000002)) {		/* lwa */
+			else if (ins->op_eop_mask == 0XE8000002) {		/* lwa */
 				offset = ALIGN_W;
 			} 
-			else if ((ins->op_eop_mask == 0XF8000002)) {		/* stq */
+			else if (ins->op_eop_mask == 0XF8000002) {		/* stq */
 				cptr->bdy_req = 16;
 				offset = ALIGN_QW;
 			}

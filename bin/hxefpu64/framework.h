@@ -32,6 +32,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <fcntl.h>
+
 #ifndef __HTX_LINUX__
 	#include <sys/vminfo.h>
 	#include <libperfstat.h>
@@ -39,14 +40,15 @@
 #endif
 
 #ifdef __HTX_LINUX__
-#include <sched.h>
-#include <sys/prctl.h>
-#include <sys/resource.h>
+	#include <sched.h>
+	#include <sys/prctl.h>
+	#include <sys/resource.h>
+	#include <xscom.h>
 #else
-#include <sys/dr.h>
+	#include <sys/dr.h>
 #endif
-#include <sys/stat.h>
 
+#include <sys/stat.h>
 #include <hxihtx64.h>
 #include <htxsyscfg64.h>
 #include "fpu_common_struct_prot.h"
@@ -65,6 +67,7 @@
 #endif
 
 #define HSTRCMP strcasecmp
+#define PROC_DD2   0x0200
 
 typedef enum
 {
@@ -77,7 +80,6 @@ typedef enum
 	stfd,
 	stxsdx,
 	stxvd2x,
-	/*stxswx,*/
 	mffs,
 	vmx_stvx,
 	stswi,
@@ -109,13 +111,13 @@ typedef enum
 }dep_instr_list;
 
 
-#define PROC_DD2   0x0200
 
 struct enabled_instruction {
 	uint32 instr_index;
 	uint8 run_flag;
 	instruction_masks instr_table;
 };
+
 #define MAX_SRC_OPRS	(3)
 struct decoded_instruction {
 	int instr_type;					/* Load, store or other instruction type					*/
@@ -128,10 +130,11 @@ struct decoded_instruction {
     uint16 op_val[MAX_SRC_OPRS];	/* source operand value 									*/
 };
 typedef struct decoded_instructions dc_instr_t;
+
 struct reguse{
-	uint16 dc_index;		/* instruction index in the decoded instruction table where the register is used as target */
-	int tgt_reg;			/* register number for this node 								*/
-	struct reguse *src[MAX_SRC_OPRS]; 	/* operand register pointer who modify this register node 		*/
+	uint16 dc_index;					/* instruction index in the decoded instruction table where the register is used as target 	*/
+	int tgt_reg;						/* register number for this node 															*/
+	struct reguse *src[MAX_SRC_OPRS]; 	/* operand register pointer who modify this register node 									*/
 };
 
 struct reguse_list {
@@ -581,11 +584,10 @@ struct client_data {
 	int				phy_bcpu;	/* Used for Hot Plug support on Linux. */
 #endif
 	pthread_t			tid;
-	pthread_attr_t			attr;
-
-	struct vsr_list			vsrs[VSR_OP_TYPES + 5];
+	pthread_attr_t		attr;
+	struct vsr_list		vsrs[VSR_OP_TYPES + 5];
 	db_fptr				value_gen[VSR_OP_TYPES][BFP_DATA_BIAS_TYPES];
-	struct drand48_data		rand_buf;
+	struct drand48_data	rand_buf;
 	int32				original_seed;
 	uint32				prolog_size;
 	uint32				epilog_size;
@@ -721,25 +723,27 @@ extern struct server_data global_sdata[];
 #define LXVD2X(xt, ra, rb)				(31U << 26 | (xt & 0x1f) << 21 | ra << 16 | rb << 11 | 844U << 1 | (xt & 0x20) >> 5)
 #define STXVD2X(xs, ra, rb) 			(31U << 26 | (xs & 0x1f) << 21 | ra << 16 | rb << 11 | 972U << 1 | (xs & 0x20) >> 5)
 #define STXSDX(xs, ra, rb)				(31U << 26 | (xs & 0x1f) << 21 | ra << 16 | rb << 11 | 716U << 1 | (xs & 0x20) >> 5)
-#define GET_REGISTER_VALUE(MSB, LSB)   	(( MSB<<5 )| LSB)
-#define	FC_ADDI	     	0x1
-#define FC_STORE	0x2
-#define	FC_ADDI_IMM    	0x3
-#define FC_INST_LOAD    0x4
-#define FC_INST_STORE   0x5
-#define FC_INST_LOAD_EH    0x6
-#define STSWI(nb,ra,rt)               			(31U << 26 | rt << 21 | ra << 16 | nb << 11 | 725U << 1)
+#define STSWI(nb,ra,rt)               	(31U << 26 | rt << 21 | ra << 16 | nb << 11 | 725U << 1)
 #define ORIS(ra,rs,ui)					(25U << 26 | rs << 21 | ra << 16 | ui)
 #define DCBT(th,ra,rb)   				(31U << 26 | th << 21 | ra << 16 | rb << 11 | 278U << 1)
-#define CREQV(crd,cra,crb)   				(19U << 26 | crd << 21 | cra << 16 | crb << 11 | 289U << 1)
-#define CRXOR(crd,cra,crb)   				(19U << 26 | crd << 21 | cra << 16 | crb << 11 | 193U << 1)
-#define CRXOR(crd,cra,crb)   				(19U << 26 | crd << 21 | cra << 16 | crb << 11 | 193U << 1)
-#define BRANCH(distance)   			        ((18U << 26) | ((distance) << 2))
-#define BRLINK(distance)   			        (18U << 26 | distance << 2 | 0x00000001)
-#define STDCX(RT,RA,RB)    			        (31U << 26 | RT << 21 | RA << 16 | RB << 11 | 429)
-#define STQCX(RT,RA,RB)    			        (31U << 26 | RT << 21 | RA << 16 | RB << 11 | 365)
-#define STSWX(op1,op2,tgt)               		(31U << 26 | tgt << 21 | op2 << 16 | op1 << 11 | 661U << 1)
-#define STMW(op1,op2,tgt)               		(47U << 26 | tgt | op1 << 21 | op2 << 16 )
+#define CREQV(crd,cra,crb)   			(19U << 26 | crd << 21 | cra << 16 | crb << 11 | 289U << 1)
+#define CRXOR(crd,cra,crb)   			(19U << 26 | crd << 21 | cra << 16 | crb << 11 | 193U << 1)
+#define CRXOR(crd,cra,crb)   			(19U << 26 | crd << 21 | cra << 16 | crb << 11 | 193U << 1)
+#define BRANCH(distance)   			    ((18U << 26) | ((distance) << 2))
+#define BRLINK(distance)   			    (18U << 26 | distance << 2 | 0x00000001)
+#define STDCX(RT,RA,RB)    			    (31U << 26 | RT << 21 | RA << 16 | RB << 11 | 429)
+#define STQCX(RT,RA,RB)    			    (31U << 26 | RT << 21 | RA << 16 | RB << 11 | 365)
+#define STSWX(op1,op2,tgt)              (31U << 26 | tgt << 21 | op2 << 16 | op1 << 11 | 661U << 1)
+#define STMW(op1,op2,tgt)               (47U << 26 | tgt | op1 << 21 | op2 << 16 )
+
+#define GET_REGISTER_VALUE(MSB, LSB)   	(( MSB<<5 )| LSB)
+
+#define	FC_ADDI	     		0x1
+#define FC_STORE			0x2
+#define	FC_ADDI_IMM    		0x3
+#define FC_INST_LOAD    	0x4
+#define FC_INST_STORE   	0x5
+#define FC_INST_LOAD_EH    	0x6
 
 /*
  * Following are categories for Instructions masking
@@ -866,7 +870,7 @@ extern struct server_data global_sdata[];
 #define			BFP_SP_ALL				BFP_LOAD_STORE_SP_ONLY  |BFP_ARITH_SP_ALL |BFP_ROUND_2_SP|BFP_CONV_2_INT|BFP_CONV_FROM_INT
 #define			BFP_DP_ALL				BFP_LOAD_STORE_DP_ONLY  |BFP_ARITH_DP_ALL |0x7fc24
 #define			BFP_QP_ALL				P9_BFP_MOVE_ONLY|P9_BFP_COMPARE_ONLY|P9_BFP_CONV_ONLY|P9_BFP_ELEM_ARITH_QP|P9_BFP_ADD_MUL_QP|P9_BFP_ROUND_2_INT|P9_BFP_TEST_ONLY
-#define			BFP_ALL					0x3fffff					|BFP_ONLY
+#define			BFP_ALL					0x3fffff				|BFP_ONLY
 #define			CPU_ALL					(0x3fff					|CPU_ONLY)
 
 #define	DFP_ONLY				0x0300000000000000ULL
@@ -877,72 +881,72 @@ extern struct server_data global_sdata[];
 #define	DFP_CMP_QUAD				0x4				|DFP_ONLY
 #define	DFP_CMP_LONG				0x8				|DFP_ONLY
 
-#define	DFP_TEST_QUAD				0x10				|DFP_ONLY
-#define	DFP_TEST_LONG				0x20				|DFP_ONLY
+#define	DFP_TEST_QUAD				0x10			|DFP_ONLY
+#define	DFP_TEST_LONG				0x20			|DFP_ONLY
 
-#define	DFP_QUAN_QUAD				0x40				|DFP_ONLY
-#define	DFP_QUAN_LONG				0x80				|DFP_ONLY
+#define	DFP_QUAN_QUAD				0x40			|DFP_ONLY
+#define	DFP_QUAN_LONG				0x80			|DFP_ONLY
 
-#define	DFP_RERND_QUAD				0x100				|DFP_ONLY
-#define	DFP_RERND_LONG				0x200 				|DFP_ONLY
+#define	DFP_RERND_QUAD				0x100			|DFP_ONLY
+#define	DFP_RERND_LONG				0x200 			|DFP_ONLY
 
-#define	DFP_RND_QUAD_2FP			0x400				|DFP_ONLY
-#define	DFP_RND_LONG_2FP			0x800				|DFP_ONLY
+#define	DFP_RND_QUAD_2FP			0x400			|DFP_ONLY
+#define	DFP_RND_LONG_2FP			0x800			|DFP_ONLY
 
-#define	DFP_CONV_S2LONG				0x1000				|DFP_ONLY
-#define	DFP_CONV_L2QUAD				0x2000				|DFP_ONLY
-#define	DFP_CONV_L2SRT				0x4000				|DFP_ONLY
-#define	DFP_CONV_Q2LNG				0x8000				|DFP_ONLY
+#define	DFP_CONV_S2LONG				0x1000			|DFP_ONLY
+#define	DFP_CONV_L2QUAD				0x2000			|DFP_ONLY
+#define	DFP_CONV_L2SRT				0x4000			|DFP_ONLY
+#define	DFP_CONV_Q2LNG				0x8000			|DFP_ONLY
 
-#define	DFP_CONV_FIXED_FROM_QUAD		0x10000				|DFP_ONLY
-#define	DFP_CONV_2FIXED_LONG			0x20000				|DFP_ONLY
-#define	DFP_CONV_2FIXED_QUAD			0x40000				|DFP_ONLY
+#define	DFP_CONV_FIXED_FROM_QUAD	0x10000			|DFP_ONLY
+#define	DFP_CONV_2FIXED_LONG		0x20000			|DFP_ONLY
+#define	DFP_CONV_2FIXED_QUAD		0x40000			|DFP_ONLY
 
-#define	DFP_DPD_2BCD_QUAD			0x80000				|DFP_ONLY
-#define	DFP_DPD_2BCD_LONG			0x100000			|DFP_ONLY
+#define	DFP_DPD_2BCD_QUAD			0x80000			|DFP_ONLY
+#define	DFP_DPD_2BCD_LONG			0x100000		|DFP_ONLY
 
-#define	DFP_BCD_2DPD_QUAD			0x200000			|DFP_ONLY
-#define	DFP_BCD_2DPD_LONG			0x400000			|DFP_ONLY
+#define	DFP_BCD_2DPD_QUAD			0x200000		|DFP_ONLY
+#define	DFP_BCD_2DPD_LONG			0x400000		|DFP_ONLY
 
-#define	DFP_INRT_EXRT_BIAS_LONG			0x800000			|DFP_ONLY
-#define	DFP_INRT_EXRT_BIAS_QUAD			0x1000000			|DFP_ONLY
+#define	DFP_INRT_EXRT_BIAS_LONG		0x800000		|DFP_ONLY
+#define	DFP_INRT_EXRT_BIAS_QUAD		0x1000000		|DFP_ONLY
 
-#define	DFP_SHIFT_LONG 				0x2000000			|DFP_ONLY
-#define	DFP_SHIFT_QUAD				0x4000000			|DFP_ONLY
+#define	DFP_SHIFT_LONG 				0x2000000		|DFP_ONLY
+#define	DFP_SHIFT_QUAD				0x4000000		|DFP_ONLY
 
-#define DFP_LOAD_LONG				0x8000000			|DFP_ONLY
-#define DFP_STORE_LONG				0x10000000			|DFP_ONLY
+#define DFP_LOAD_LONG				0x8000000		|DFP_ONLY
+#define DFP_STORE_LONG				0x10000000		|DFP_ONLY
 
 #define	DFP_AIRTH_ALL				0x3				|DFP_ONLY
-#define	DFP_CMP_ALL				0xC				|DFP_ONLY
-#define	DFP_TEST_ALL				0x30				|DFP_ONLY
-#define	DFP_QUAN_ALL				0xC0				|DFP_ONLY
+#define	DFP_CMP_ALL					0xC				|DFP_ONLY
+#define	DFP_TEST_ALL				0x30			|DFP_ONLY
+#define	DFP_QUAN_ALL				0xC0			|DFP_ONLY
 
-#define	DFP_RERND_ALL				0x300				|DFP_ONLY
-#define	DFP_RND_2FP_ALL 			0xC00				|DFP_ONLY
-#define	DFP_CONV_SLQ				0xf000				|DFP_ONLY
-#define	DFP_CONV_FIXED				0x70000				|DFP_ONLY
-#define	DFP_CONV_ALL				0x7f000				|DFP_ONLY
-#define	DFP_RND_CONV_ALL			0x7ff00				|DFP_ONLY
+#define	DFP_RERND_ALL				0x300			|DFP_ONLY
+#define	DFP_RND_2FP_ALL 			0xC00			|DFP_ONLY
+#define	DFP_CONV_SLQ				0xf000			|DFP_ONLY
+#define	DFP_CONV_FIXED				0x70000			|DFP_ONLY
+#define	DFP_CONV_ALL				0x7f000			|DFP_ONLY
+#define	DFP_RND_CONV_ALL			0x7ff00			|DFP_ONLY
 
-#define	DFP_DPD_2BCD_ALL			0x180000			|DFP_ONLY
-#define	DFP_BCD_2DPD_ALL			0x600000			|DFP_ONLY
-#define	DFP_BCD_DPD_CONV			0x780000			|DFP_ONLY
-#define	DFP_INRT_EXRT_BIAS_ALL		0x1800000			|DFP_ONLY
-#define	DFP_SHIFT_ALL				0x6000000			|DFP_ONLY
-#define DFP_MISC                                0x7F80000                       |DFP_ONLY
+#define	DFP_DPD_2BCD_ALL			0x180000		|DFP_ONLY
+#define	DFP_BCD_2DPD_ALL			0x600000		|DFP_ONLY
+#define	DFP_BCD_DPD_CONV			0x780000		|DFP_ONLY
+#define	DFP_INRT_EXRT_BIAS_ALL		0x1800000		|DFP_ONLY
+#define	DFP_SHIFT_ALL				0x6000000		|DFP_ONLY
+#define DFP_MISC                    0x7F80000       |DFP_ONLY
 
-#define DFP_LOAD_STORE_ALL			0x18000000			|DFP_ONLY
-#define	DFP_QUAD_ONLY				0x52DA555			|DFP_ONLY
-#define	DFP_LONG_ONLY				0x1BD2FAAA			|DFP_ONLY
-#define DFP_SHORT_ONLY				0x8005000			|DFP_ONLY
+#define DFP_LOAD_STORE_ALL			0x18000000		|DFP_ONLY
+#define	DFP_QUAD_ONLY				0x52DA555		|DFP_ONLY
+#define	DFP_LONG_ONLY				0x1BD2FAAA		|DFP_ONLY
+#define DFP_SHORT_ONLY				0x8005000		|DFP_ONLY
 
-#define	P9_DFP_TEST_QUAD			(DFP_TEST_QUAD				|P9_ONLY)
-#define	P9_DFP_TEST_LONG			(DFP_TEST_LONG				|P9_ONLY)
+#define	P9_DFP_TEST_QUAD			(DFP_TEST_QUAD	|P9_ONLY)
+#define	P9_DFP_TEST_LONG			(DFP_TEST_LONG	|P9_ONLY)
 
-#define	DFP_ALL					0x1FFFFFFF			|DFP_ONLY
+#define	DFP_ALL						0x1FFFFFFF		|DFP_ONLY
 
-#define         VMX_ONLY                0x0400000000000000ULL
+#define         VMX_ONLY            0x0400000000000000ULL
 
 #define         VMX_LOAD_ONLY                           0x1             | VMX_ONLY
 #define         VMX_STORE_ONLY                          0x2             | VMX_ONLY
