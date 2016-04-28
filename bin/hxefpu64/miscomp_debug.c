@@ -1383,7 +1383,7 @@ void decode_tc_instructions(int cno)
 			}
 
 			default:
-					DPRINT(hlog, "Regular Instr, Offset: 0x%x, Machine code: 0x%x, does not match to any form type!!!\n", cptr->instr_index[i], *instr);
+					DPRINT(hlog, "Case default: Offset: 0x%x, Machine code: 0x%x, does not match to any form type!!!\n", cptr->instr_index[i], *instr);
 					instr++;
 		}
 

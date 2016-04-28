@@ -560,7 +560,6 @@ void class_vmx_store_gen(uint32 client_no, uint32 random_no, struct instruction_
         tgt = (vmx_vsr4 & 0x1f) << (temp->tgt_pos);
 
         mcode = (temp->op_eop_mask | op1 | op2 | tgt);
-		printf("mcode: 0x%x, op1: %d, op2: %d, tgt: %d, eop_mask: 0x%x\n", mcode, op1 >> temp->op1_pos, op2 >> temp->op2_pos, tgt >> temp->tgt_pos, temp->op_eop_mask);
         /* save offset */
         *tc_memory = mcode;
         cptr->tc_ptr[INITIAL_BUF]->ea_off[prolog_size + num_ins_built] = store_off;

@@ -271,34 +271,16 @@ main(int argc, char *argv[])
 
 	strcpy(dinfo.run_type, "OTH");
 
-	/*  Parse command line arguments */
-	if(argv[1]) strcpy(dinfo.device_name, argv[1]);
-	if(argv[2]) strcpy(dinfo.run_type, argv[2]);
-	if(argv[3]) strcpy(dinfo.rule_file_name, argv[3]);
-
-	/* Set htx_data structure parameters */
-	if(argv[0]) strcpy(hd.HE_name, argv[0]);
-	if(argv[1]) strcpy(hd.sdev_id, argv[1]);
-	if(argv[2]) strcpy(hd.run_type, argv[2]);
-	atexit(cleanup_mem_atexit);
 #ifdef SCTU
-	if (strcasecmp(dinfo.device_name, "SCTU_DEV") == 0) {
+	if ((argc == 2) && (strcasecmp(argv[1], "SCTU_DEV") == 0)) {
 		int i;
 
+		strcpy(dinfo.device_name, argv[1]);
 		init_syscfg_with_malloc();
 		shm_flag_for_malloc = 1;
 		rc = chip_testcase();
 		rc1 = node_testcase();
 		shm_flag_for_malloc = 0;
-		/* Code below is to resolve atexit() error seen for IPC_RMID in this mode *
-		 * allocate_mem() initializes shm id to -1 which is not called in this case.
-		 * due to that, cleanup is failing since it sees some garbage and not -1.
-		 * Initializing it here would solve that problem.
-		 */
-
-		for ( i = 0; i < 3; i++ ) {
-			vsx_mem[i].id = -1;
-		}
 
 		return(rc | rc1);
 	}
@@ -320,6 +302,16 @@ main(int argc, char *argv[])
 
 		return(-1);
 	}
+	/*  Parse command line arguments */
+	strcpy(dinfo.device_name, argv[1]);
+	strcpy(dinfo.run_type, argv[2]);
+	strcpy(dinfo.rule_file_name, argv[3]);
+
+	/* Set htx_data structure parameters */
+	strcpy(hd.HE_name, argv[0]);
+	strcpy(hd.sdev_id, argv[1]);
+	strcpy(hd.run_type, argv[2]);
+	atexit(cleanup_mem_atexit);
 
 #ifdef __HTX_LINUX__
 	hd.hotplug_cpu = 1; 	/* Register with htx supervisor for hot plug event intimation. */
@@ -8747,14 +8739,14 @@ int chip_testcase(void)
 		}
 	}
 
-	if(shm_flag_for_malloc == 0){
-    rc = repopulate_syscfg(&hd);
-    if ( rc ) {
-        sprintf(msg,"repopulate_syscfg failed with error code= %d \n",rc);
-        hxfmsg(&hd, -1, HTX_HE_SOFT_ERROR, msg);
-        exit_flag = 1;
-        return -1;
-    }
+	if (shm_flag_for_malloc == 0) {
+		rc = repopulate_syscfg(&hd);
+		if ( rc ) {
+			sprintf(msg,"repopulate_syscfg failed with error code= %d \n",rc);
+			hxfmsg(&hd, -1, HTX_HE_SOFT_ERROR, msg);
+			exit_flag = 1;
+			return -1;
+		}
 	}
 
 
@@ -8940,14 +8932,14 @@ int node_testcase(void)
 			return(errno);
 		}
 	}
-	if(shm_flag_for_malloc == 0){
-    rc = repopulate_syscfg(&hd);
-    if ( rc ) {
-        sprintf(msg,"repopulate_syscfg failed with error code= %d \n",rc);
-        hxfmsg(&hd, -1, HTX_HE_SOFT_ERROR, msg);
-        exit_flag = 1;
-        return -1;
-    }
+	if (shm_flag_for_malloc == 0) {
+		rc = repopulate_syscfg(&hd);
+		if ( rc ) {
+			sprintf(msg,"repopulate_syscfg failed with error code= %d \n",rc);
+			hxfmsg(&hd, -1, HTX_HE_SOFT_ERROR, msg);
+			exit_flag = 1;
+			return -1;
+		}
 	}
 
 
@@ -8981,11 +8973,11 @@ int node_testcase(void)
 		}
 	} 
 #endif
-    rc1 = pthread_rwlock_rdlock(&(global_ptr->syscfg.rw));
-    if (rc1 !=0  ) {
-        sprintf(msg,"lock inside framework.c failed with errno=%d,in function: %s at line :[%d]\n",rc1, __FUNCTION__, __LINE__);
-        hxfmsg(&hd, 0, HTX_HE_INFO, msg);
-    }
+	rc1 = pthread_rwlock_rdlock(&(global_ptr->syscfg.rw));
+	if (rc1 != 0) {
+		sprintf(msg,"lock inside framework.c failed with errno=%d,in function: %s at line :[%d]\n",rc1, __FUNCTION__, __LINE__);
+		hxfmsg(&hd, 0, HTX_HE_INFO, msg);
+	}
 
 
 	for ( node = 0; node < MAX_NODES && node < Sys_stat.nodes && stop_cond == 0; node++ ) {
@@ -9011,11 +9003,11 @@ int node_testcase(void)
 			}
 		}
 	}
-    rc2 = pthread_rwlock_unlock(&(global_ptr->syscfg.rw));
-    if (rc2 !=0  ) {
-        sprintf(msg,"unlock inside framework.c failed with errno=%d,in function: %s at line :[%d]\n",rc2, __FUNCTION__, __LINE__);
-        hxfmsg(&hd, 0, HTX_HE_INFO, msg);
-    }
+	rc2 = pthread_rwlock_unlock(&(global_ptr->syscfg.rw));
+	if (rc2 != 0) {
+		sprintf(msg,"unlock inside framework.c failed with errno=%d,in function: %s at line :[%d]\n",rc2, __FUNCTION__, __LINE__);
+		hxfmsg(&hd, 0, HTX_HE_INFO, msg);
+	}
 
 
 	if ( strcasecmp(dinfo.device_name, "SCTU_DEV") == 0 ) {

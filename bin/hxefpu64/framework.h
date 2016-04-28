@@ -675,7 +675,7 @@ extern struct server_data global_sdata[];
 /*
  * client_data is created for each client that runs the test on specific cpu.
  */
-#define GEN_ADDI_MCODE(rt, ra, offset)	((14U << 26)| (rt << 21) | (ra << 16) | ((short)offset))
+#define GEN_ADDI_MCODE(rt, ra, offset)	((14U << 26)| (rt << 21) | (ra << 16) | (offset))
 #define ADDIS(rt,ra,si)					(15U << 26 | rt << 21 | ra << 16 | si)
 #define MFCR(rt)   					 	(31<<26 | rt << 21 | 19<<1)
 #define MTCRF(FXM,rs)					(31U << 26 | rs << 21 | FXM << 12 | 144U << 1)
