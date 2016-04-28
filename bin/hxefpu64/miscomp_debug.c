@@ -17,10 +17,9 @@
  */
 /* IBM_PROLOG_END_TAG */
 
+/*static char sccsid[] = "%Z%%M%    %I%  %W% %G% %U%";*/
+
 #include "miscomp_debug.h"
-
-static char sccsid[] = "@(#)94	1.1  src/htx/usr/lpp/htx/bin/hxefpu64/miscomp_debug.c, exer_fpu, htxubuntu 3/4/16 00:59:54";
-
 
 extern uint32 shifted_pvr_os;
 extern struct server_data global_sdata[3];
@@ -30,25 +29,24 @@ extern struct htx_data hd;
 static struct instruction_masks dep_instructions_array[] = {
 /* addi    */ {0x38000000, 0, IMM_DATA, 0 , GR, 16, DUMMY, DUMMY , GR , 21 , 0x57, "addi",  DUMMY, CPU_FIXED_ARTH, D_FORM_RT_RA_SI},
 /* addis   */ {0x3C000000, 0, IMM_DATA, 0 , GR, 16, DUMMY, DUMMY , GR , 21 , 0x57, "addis",  DUMMY, CPU_FIXED_ARTH, D_FORM_RT_RA_SI},
-/* mfcr    */ {0x7C000026, 0, DUMMY, 0, DUMMY, 0, DUMMY, 0, GR, 21, 0, "mfcr", DUMMY, 0, 0},
+/* mfcr    */ {0x7C000026, 0, DUMMY, 0, DUMMY, 0, DUMMY, 0, GR, 21, 0, "mfcr", DUMMY, 0, XFX_FORM_RT_FXM_EOP_RC},
 /* or      */ {0x7C000378, 0, GR, 21, GR, 11, DUMMY, DUMMY, GR, 16, 0x44, "or", DUMMY, CPU_FIXED_LOGIC, X_FORM_RS_RA_RB_eop_rc},
 /* ori     */ {0x60000000, 0, GR, 21, IMM_DATA, 0, DUMMY, DUMMY, GR, 16, 0x43, "ori", DUMMY, CPU_FIXED_LOGIC, D_FORM_RS_RA_UIM},
 /* and     */ {0x7C000038, 0, GR, 21, GR, 11, DUMMY, DUMMY, GR, 16, 0x44, "and", DUMMY, CPU_FIXED_LOGIC, X_FORM_RS_RA_RB_eop_rc},
 /* stfd    */ {0xD8000000, 0, GR, 16, IMM_DATA, 0, DUMMY, DUMMY, BFP_DP, 21, 0x13, "stfd", (sim_fptr)&simulate_stfd, BFP_STORE_DP, D_FORM_RT_RA_D},
 /* stxsdx  */ {0x7C000598, 0, GR, 16, GR, 11, DUMMY, DUMMY, SCALAR_DP, 21, 0x2,  "stxsdx",  (sim_fptr)&simulate_stxsdx, VSX_SCALAR_DP_STORE_ONLY, FORM_XX1_XT_RA_RB},
 /* stxvd2x */ {0x7C000798, 0, GR, 16, GR, 11, DUMMY, DUMMY, VECTOR_DP, 21, 0x2,  "stxvd2x",  (sim_fptr)&simulate_stxvd2x, VSX_VECTOR_DP_STORE_ONLY, FORM_XX1_XT_RA_RB},
-/* stxswx *** {0x0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "stxswx", 0, 0, 0}, ************/
 /* mffs    */ {0xFC00048E, 0, DUMMY, DUMMY, DUMMY, DUMMY, DUMMY, DUMMY, BFP_DP, 21, 0x14, "mffs", (sim_fptr)&simulate_mffs, BFP_FPSCR_ONLY, X_FORM_RT_RA_RB_eop_rc},
 /* stvx    */ {0x7C0001CE, 0, GR, 16, GR, 11, DUMMY, DUMMY, QGPR, 21, 0x31, "stvx", (sim_fptr)&simulate_stvx, VMX_STORE_ONLY, FORM_VT_VA_VB},
 /* stswi   */ {0x7C0005AA, 0, IMM_DATA, 11  , GR, 16, DUMMY, DUMMY , GR , 21 , 0x59, "stswi",  DUMMY, CPU_FIXED_STORE, X_FORM_RS_RA_NB_eop},
 /* oris    */ {0x64000000, 0, GR, 21, IMM_DATA,0 , DUMMY, DUMMY, GR, 16, 0x43, "oris", DUMMY, CPU_FIXED_LOGIC, D_FORM_RS_RA_UIM},
 /* dcbt    */ {0x7C00022C, 0, GR, 16, GR, 11, DUMMY, DUMMY,  IMM_DATA, 21 , 0x5D, "dcbt",   DUMMY, CPU_CACHE, X_FORM_TH_RA_RB},
-/* mfspr   */ {0x7C0002A6, 0, SPR_REG, 16,DUMMY ,DUMMY ,DUMMY, DUMMY, GR, 21, 0x53, "mfspr " , DUMMY, CPU_FIXED_SPR , X_FX_FORM_RT_SPR_eop},
+/* mfspr   */ {0x7C0002A6, 0, SPR_REG, 11, DUMMY ,DUMMY ,DUMMY, DUMMY, GR, 21, 0x53, "mfspr " , DUMMY, CPU_FIXED_SPR , X_FX_FORM_RT_SPR_eop},
 /* mtspr   */ {0x7C0003A6, 0, GR, 21,DUMMY ,DUMMY ,DUMMY, DUMMY, SPR_REG, 16, 0x52, "mtspr " , DUMMY, CPU_FIXED_SPR , X_FX_FORM_RS_SPR_eop},
 /* crxor   */ {0x4C000182, 0, CR_T, 16, CR_T,11, DUMMY, DUMMY, CR_T, 21, 0x41, "crxor", DUMMY, CPU_COND_LOG, X_FORM_BT_BA_BB_eop_rc},
 /* creqv   */ {0x4C000242, 0, CR_T, 16, CR_T,11, DUMMY, DUMMY, CR_T, 21, 0x41, "creqv", DUMMY, CPU_COND_LOG, X_FORM_BT_BA_BB_eop_rc},
-/* branch  */ {0x4e800020, 0, DUMMY, DUMMY, DUMMY, DUMMY, DUMMY, DUMMY, DUMMY, DUMMY, 0, "b", DUMMY, DUMMY, DUMMY},
-/* brlink  */ {0x48000000, 0, IMM_DATA, 0, DUMMY, 0, DUMMY, 0, DUMMY, 0, 0, "bl", DUMMY, 0, 0},
+/* branch  */ {0x48000000, 0, DUMMY , DUMMY, DUMMY, DUMMY, DUMMY, DUMMY,  IMM_DATA, 2, 0x5E, "b",  DUMMY, CPU_BRANCH, I_FORM_LI_AA_LK},
+/* brlink  */ {0x48000001, 0, DUMMY , DUMMY, DUMMY, DUMMY, DUMMY, DUMMY,  IMM_DATA, 2, 0x5E, "bl", DUMMY, CPU_BRANCH, I_FORM_LI_AA_LK},
 /* stbcx.  */ {0x7C00056D, 0, GR, 11, GR, 16, DUMMY, DUMMY,  GR, 21,   0x55, "stbcx." ,  DUMMY, CPU_ATOMIC_STORE, X_FORM_RS_RA_RB_eop},
 /* sthcx.  */ {0x7C0005AD, 0, GR, 11, GR, 16, DUMMY, DUMMY,  GR, 21,   0x55, "sthcx." ,  DUMMY, CPU_ATOMIC_STORE, X_FORM_RS_RA_RB_eop},
 /* stwcx.  */ {0x7C00012D, 0, GR, 11, GR, 16, DUMMY, DUMMY,  GR, 21,   0x55, "stwcx." ,  DUMMY, CPU_ATOMIC_STORE, X_FORM_RS_RA_RB_eop},
@@ -91,10 +89,14 @@ void decode_tc_instructions(int cno)
 		if ( cptr->instr_index[i] & 0x10000000 ) { /* regular instruction stream */
         	table_index = cptr->instr_index[i] & ~(0x10000000);
 			ins_tuple = &(cptr->enabled_ins_table[table_index].instr_table);
+		} else if (cptr->instr_index[i] & 0x20000000) {      /* dependent instruction stream */
+            table_index = cptr->instr_index[i] & ~(0x20000000);
+            ins_tuple = &(dep_instructions_array[table_index]);
+		}
 
-			switch ( ins_tuple->insfrm ) {
-				case D_FORM_RT_RA_D:
-				{
+		switch ( ins_tuple->insfrm ) {
+			case D_FORM_RT_RA_D:
+			{
 					d_form_rt_ra_d *ptr;
 					ptr = (d_form_rt_ra_d *)instr;
 
@@ -117,10 +119,10 @@ void decode_tc_instructions(int cno)
 					}
 
 					break;
-				}
+			}
 
-				case X_FORM_RT_RA_RB_eop_rc:
-				{
+			case X_FORM_RT_RA_RB_eop_rc:
+			{
 					x_form_rt_ra_rb_eop_rc *ptr;
 					ptr = (x_form_rt_ra_rb_eop_rc *)instr;
 
@@ -155,10 +157,10 @@ void decode_tc_instructions(int cno)
 					}
 
 					break;
-				}
+			}
 
-				case X_FORM_RT_RA_RB_eop_EH:
-				{
+			case X_FORM_RT_RA_RB_eop_EH:
+			{
 					x_form_rt_ra_rb_eop_eh *ptr;
 					ptr = (x_form_rt_ra_rb_eop_eh *)instr;
 
@@ -185,10 +187,10 @@ void decode_tc_instructions(int cno)
 					}
 
 					break;
-				}
+			}
 
-				case X_FORM_BF_RA_RB_eop_rc:
-				{
+			case X_FORM_BF_RA_RB_eop_rc:
+			{
 					x_form_bf_ra_rb_eop_rc *ptr;
 					ptr = (x_form_bf_ra_rb_eop_rc *)instr;
 
@@ -204,10 +206,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,f%d", mnemonic, ptr->rb);
 
 					break;
-				}
+			}
 
-				case X_FORM_BF_BFA_eop_rc:
-				{
+			case X_FORM_BF_BFA_eop_rc:
+			{
 					x_form_bf_bfa_eop_rc *ptr;
 					ptr = (x_form_bf_bfa_eop_rc *)instr;
 			
@@ -219,10 +221,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->bfa);
 
 					break;
-				}
+			}
 
-				case X_FORM_BF_W_U_eop_rc:
-				{
+			case X_FORM_BF_W_U_eop_rc:
+			{
 					x_form_bf_w_u_eop_rc *ptr;
 					ptr = (x_form_bf_w_u_eop_rc *)instr;
 
@@ -236,9 +238,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->w);
 
 					break;
-				}
-				case FORM_X_BF_UIM_FB:
-				{
+			}
+
+			case FORM_X_BF_UIM_FB:
+			{
 					Form_X_BF_UIM_FB *ptr;
 					ptr = (Form_X_BF_UIM_FB *)instr;
 
@@ -254,10 +257,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,f%d", mnemonic, ptr->frb);
 
 					break;
-				}
+			}
 
-				case X_FORM_RT_S_SP_RB_eop_rc:
-				{
+			case X_FORM_RT_S_SP_RB_eop_rc:
+			{
 					x_form_rt_s_sp_rb_eop_rc *ptr;
 					ptr = (x_form_rt_s_sp_rb_eop_rc *)instr;
 
@@ -277,10 +280,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,f%d", mnemonic, ptr->rb);
 
 					break;
-				}
+			}
 
-				case XFL_FORM_L_FLM_W_RB_eop_rc:
-				{
+			case XFL_FORM_L_FLM_W_RB_eop_rc:
+			{
 					xfl_form_l_flm_w_rb_eop_rc *ptr;
 					ptr = (xfl_form_l_flm_w_rb_eop_rc *)instr;
 
@@ -294,10 +297,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->w);
 
 					break;
-				}
+			}
 
-				case A_FORM_RT_RA_RB_RC_eop_rc:
-				{
+			case A_FORM_RT_RA_RB_RC_eop_rc:
+			{
 					a_form_rt_ra_rb_rc_eop_rc *ptr;
 					ptr = (a_form_rt_ra_rb_rc_eop_rc *)instr;
 
@@ -327,10 +330,10 @@ void decode_tc_instructions(int cno)
 					}
 
 					break;
-				}
+			}
 
-				case FORM_XX1_RA_XS :
-				{
+			case FORM_XX1_RA_XS :
+			{
 					int vsr_t;
 					Form_XX1_RA_XS *ptr;
 					ptr = (Form_XX1_RA_XS*)instr;
@@ -342,10 +345,10 @@ void decode_tc_instructions(int cno)
 
 					sprintf(mnemonic, "%s r%d,x%d", ins_tuple->ins_name, ptr->target, vsr_t);
 					break;
-				}
+			}
 
-				case FORM_XX1_XT_RA :
-				{
+			case FORM_XX1_XT_RA :
+			{
 					int vsr_t;
 					Form_XX1_XT_RA *ptr;
 					ptr = (Form_XX1_XT_RA*)instr;
@@ -356,10 +359,10 @@ void decode_tc_instructions(int cno)
 
 					sprintf(mnemonic, "%s x%d,r%d", ins_tuple->ins_name, vsr_t, ptr->source);
 					break;
-				}
+			}
 
-				case FORM_XX1_XT_RA_RB :
-				{
+			case FORM_XX1_XT_RA_RB :
+			{
 					int vsr_t;
 					Form_XX1_XT_RA_RB *ptr;
 					ptr = (Form_XX1_XT_RA_RB*)instr;
@@ -371,10 +374,10 @@ void decode_tc_instructions(int cno)
 
 					sprintf(mnemonic, "%s x%d,r%d,r%d", ins_tuple->ins_name, vsr_t,ptr->src1, ptr->src2);
 					break;
-				}
+			}
 
-				case FORM_XX2_XT_XB :
-				{
+			case FORM_XX2_XT_XB :
+			{
 					int vsr_t, vsr1;
 					Form_XX2_XT_XB *ptr;
 					ptr = (Form_XX2_XT_XB *)instr;
@@ -386,10 +389,10 @@ void decode_tc_instructions(int cno)
 
 					sprintf(mnemonic, "%s x%d,x%d", ins_tuple->ins_name, vsr_t, vsr1);
 					break;
-				}
+			}
 
-				case FORM_XX2_BF_XB:
-				{
+			case FORM_XX2_BF_XB:
+			{
 					int vsr1;
 					Form_XX2_BF_XB *ptr;
 					ptr = (Form_XX2_BF_XB *)instr;
@@ -400,10 +403,10 @@ void decode_tc_instructions(int cno)
 
 					sprintf(mnemonic, "%s %d, x%d", ins_tuple->ins_name, ptr->BF,vsr1);
 					break;
-				}
+			}
 
-				case FORM_XX2_XT_UIM_XB:
-				{
+			case FORM_XX2_XT_UIM_XB:
+			{
 					int vsr_t, vsr1;
 					Form_XX2_XT_UIM_XB *ptr;
 					ptr = (Form_XX2_XT_UIM_XB *)instr;
@@ -415,9 +418,10 @@ void decode_tc_instructions(int cno)
 
 					sprintf(mnemonic, "%s x%d,x%d,%d", ins_tuple->ins_name,vsr_t,vsr1,ptr->uim);
 					break;
-				}
-				case FORM_XX2_XT_UIM4_XB:
-				{
+			}
+
+			case FORM_XX2_XT_UIM4_XB:
+			{
 					int vsr_t, vsr1;
 					Form_XX2_XT_UIM4_XB *ptr;
 					ptr = (Form_XX2_XT_UIM4_XB *)instr;
@@ -430,9 +434,10 @@ void decode_tc_instructions(int cno)
 
 					sprintf(mnemonic, "%s x%d,x%d,%d", ins_tuple->ins_name, vsr_t, vsr1, ptr->uim4);
 					break;
-				}
-				case FORM_XX1_IMM8:
-				{
+			}
+
+			case FORM_XX1_IMM8:
+			{
 					int vsr_t;
 					Form_XX1_IMM8 *ptr;
 					ptr = (Form_XX1_IMM8 *)instr;
@@ -443,9 +448,10 @@ void decode_tc_instructions(int cno)
 
 					sprintf(mnemonic, "%s x%d,%d", ins_tuple->ins_name, vsr_t, ptr->imm8);
 					break;
-				}
-				case FORM_XX2_DX_DC_DM:
-				{
+			}
+
+			case FORM_XX2_DX_DC_DM:
+			{
 					int vsr_t, vsr1;
 					uint32 dcmx = 0;
 					Form_XX2_dx_dc_dm *ptr;
@@ -460,10 +466,10 @@ void decode_tc_instructions(int cno)
 
 					sprintf(mnemonic, "%s x%d,x%d,%d", ins_tuple->ins_name, vsr_t, vsr1, dcmx);
 					break;
-				}
+			}
 
-				case FORM_XX3_XT_XA_XB:
-				{
+			case FORM_XX3_XT_XA_XB:
+			{
 					int vsr_t, vsr1, vsr2;
 					Form_XX3_XT_XA_XB *ptr;
 					ptr = (Form_XX3_XT_XA_XB *)instr;
@@ -478,10 +484,10 @@ void decode_tc_instructions(int cno)
 
 					sprintf(mnemonic, "%s x%d,x%d,x%d", ins_tuple->ins_name, vsr_t, vsr1, vsr2);
 					break;
-				}
+			}
 
-				case FORM_XX3_RC_XT_XA_XB:
-				{
+			case FORM_XX3_RC_XT_XA_XB:
+			{
 					int vsr_t, vsr1, vsr2;
 					Form_XX3_RC_XT_XA_XB *ptr;
 					ptr = (Form_XX3_RC_XT_XA_XB *)instr;
@@ -497,10 +503,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s x%d,x%d,x%d",ins_tuple->ins_name, vsr_t, vsr1, vsr2);
 
 					break;
-				}
+			}
 
-				case FORM_XX3_BF_XA_XB:
-				{
+			case FORM_XX3_BF_XA_XB:
+			{
 					int vsr1, vsr2;
 					Form_XX3_BF_XA_XB *ptr;
 					ptr = (Form_XX3_BF_XA_XB *)instr;
@@ -514,10 +520,10 @@ void decode_tc_instructions(int cno)
 
 					sprintf(mnemonic, "%s %d,x%d,x%d",ins_tuple->ins_name, ptr->BF, vsr1, vsr2);
 					break;
-				}
+			}
 
-				case FORM_XX3_XT_XA_XB_2Bit:
-				{
+			case FORM_XX3_XT_XA_XB_2Bit:
+			{
 					int vsr_t, vsr1, vsr2;
 					Form_XX3_XT_XA_XB_2Bit *ptr;
 					ptr = (Form_XX3_XT_XA_XB_2Bit *)instr;
@@ -532,10 +538,10 @@ void decode_tc_instructions(int cno)
 
 					sprintf(mnemonic, "%s x%d,x%d,x%d,%d",ins_tuple->ins_name, vsr_t, vsr1, vsr2, ptr->SHW_DM);
 					break;
-				}
+			}
 
-				case FORM_XX4_XT_XA_XB_XC:
-				{
+			case FORM_XX4_XT_XA_XB_XC:
+			{
 					int vsr_t, vsr1, vsr2, vsr3;
 					Form_XX4_XT_XA_XB_XC *ptr;
 					ptr = (Form_XX4_XT_XA_XB_XC *)instr;
@@ -552,10 +558,10 @@ void decode_tc_instructions(int cno)
 
 					sprintf(mnemonic, "%s x%d,x%d,x%d,x%d",ins_tuple->ins_name, vsr_t, vsr1, vsr2, vsr3);
 					break;
-				}
+			}
 
-				case Z_FORM_RT_RA_SH_eop_rc:
-				{
+			case Z_FORM_RT_RA_SH_eop_rc:
+			{
 					z_form_rt_ra_sh_eop_rc *ptr;
 					ptr = (z_form_rt_ra_sh_eop_rc *) instr;
 
@@ -565,10 +571,10 @@ void decode_tc_instructions(int cno)
 
 					sprintf(mnemonic, "%s f%d,f%d,0x%x", ins_tuple->ins_name, ptr->rt, ptr->ra, ptr->sh);
 					break;
-				}
+			}
 
-				case Z_FORM_BF_RA_DM_eop_rc:
-				{
+			case Z_FORM_BF_RA_DM_eop_rc:
+			{
 					z_form_bf_ra_dm_eop_rc *ptr;
 					ptr = (z_form_bf_ra_dm_eop_rc *)instr;
 
@@ -578,10 +584,10 @@ void decode_tc_instructions(int cno)
 
 					sprintf(mnemonic, "%s 0x%x,f%d,0x%x", ins_tuple->ins_name, ptr->bf, ptr->ra,  ptr->dm);
 					break;
-				}
+			}
 
-				case Z_FORM_RT_D_RB_RMC_eop_rc:
-				{
+			case Z_FORM_RT_D_RB_RMC_eop_rc:
+			{
 					z_form_rt_d_rb_rmc_eop_rc *ptr;
 					ptr = (z_form_rt_d_rb_rmc_eop_rc *)instr;
 
@@ -602,10 +608,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,f%d", mnemonic, ptr->rb);
 					sprintf(mnemonic, "%s,0x%x", mnemonic, ptr->rm);
 					break;
-				}
+			}
 
-				case Z_FORM_RT_R_RB_RMC_eop_rc:
-				{
+			case Z_FORM_RT_R_RB_RMC_eop_rc:
+			{
 					z_form_rt_r_rb_rmc_eop_rc *ptr;
 					ptr = (z_form_rt_r_rb_rmc_eop_rc *)instr;
 
@@ -618,10 +624,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,f%d", mnemonic, ptr->rb);
 					sprintf(mnemonic, "%s,0x%x", mnemonic, ptr->rm);
 					break;
-				}
+			}
 
-				case FORM_VT_VA_VB:
-				{
+			case FORM_VT_VA_VB:
+			{
 					Form_VT_VA_VB *ptr;
 					ptr = (Form_VT_VA_VB *) instr;
 					imm_data_flag = 0;
@@ -677,10 +683,10 @@ void decode_tc_instructions(int cno)
 						sprintf(mnemonic, "%s,0x%x", mnemonic, (ptr->xopcode & 0x3C0) >> 6);
 					}
 					break;
-				}
+			}
 
-				case FORM_VT_VA_VB_VC:
-				{
+			case FORM_VT_VA_VB_VC:
+			{
 					Form_VT_VA_VB_VC *ptr;
                     ptr = (Form_VT_VA_VB_VC *) instr;
 
@@ -691,9 +697,10 @@ void decode_tc_instructions(int cno)
 
 					sprintf(mnemonic, "%s v%d,v%d,v%d,v%d", ins_tuple->ins_name, ptr->vt, ptr->va, ptr->vb, ptr->vc);
 					break;
-				}
-				case FORM_VT_VA_ST_SIX:
-				{
+			}
+
+			case FORM_VT_VA_ST_SIX:
+			{
 					Form_VT_VA_ST_SIX *ptr;
                     ptr = (Form_VT_VA_ST_SIX *) instr;
 					
@@ -704,9 +711,10 @@ void decode_tc_instructions(int cno)
 				
 					sprintf(mnemonic, "%s v%d,v%d,%d,%d", ins_tuple->ins_name, ptr->vt, ptr->va, ptr->st, ptr->six);
 					break;
-				}
-				case X_FORM_BT_BA_BB_eop_rc:
-				{
+			}
+
+			case X_FORM_BT_BA_BB_eop_rc:
+			{
 					x_form_bt_ba_bb *ptr;
 					ptr = (x_form_bt_ba_bb *)instr;
 
@@ -719,10 +727,10 @@ void decode_tc_instructions(int cno)
 						sprintf(mnemonic, "%s,crb%d", mnemonic, ptr->bb);
 					}
 					break;
-				}
+			}
 
-				case X_FORM_RT_RA_RB_OE_eop_rc:
-				{
+			case X_FORM_RT_RA_RB_OE_eop_rc:
+			{
 					x_form_rt_ra_rb_oe_eop_rc *ptr;
 					ptr = (x_form_rt_ra_rb_oe_eop_rc *)instr;
 
@@ -732,10 +740,10 @@ void decode_tc_instructions(int cno)
 
 					sprintf(mnemonic, "%s r%d,r%d,r%d", ins_tuple->ins_name,  ptr->rt, ptr->ra, ptr->rb);
 					break;
-				}
+			}
 
-				case X_FORM_RT_RA_OE_eop_rc:
-				{
+			case X_FORM_RT_RA_OE_eop_rc:
+			{
 					x_form_rt_ra_oe_eop_rc *ptr;
 					ptr = (x_form_rt_ra_oe_eop_rc *)instr;
 
@@ -744,9 +752,10 @@ void decode_tc_instructions(int cno)
 
 					sprintf(mnemonic, "%s r%d,r%d", ins_tuple->ins_name, ptr->rt, ptr->ra);
 					break;
-				}
-				case D_FORM_RS_RA_UIM:
-				{
+			}
+
+			case D_FORM_RS_RA_UIM:
+			{
 					d_form_rs_ra_uim   *ptr;
 					ptr = (d_form_rs_ra_uim *)instr;
 
@@ -759,9 +768,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rs);
 					sprintf(mnemonic, "%s,0x%x", mnemonic, ptr->uim);
 					break;
-				}
-				case X_FORM_RS_RA_RB_eop_rc:
-				{
+			}
+
+			case X_FORM_RS_RA_RB_eop_rc:
+			{
 					x_form_rs_ra_rb_eop_rc *ptr;
 					ptr = (x_form_rs_ra_rb_eop_rc *)instr;
 
@@ -774,10 +784,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rs);
 					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rb);
 					break;
-				}
+			}
 
-				case X_FORM_RS_RA_eop_rc:
-				{
+			case X_FORM_RS_RA_eop_rc:
+			{
 					x_form_rs_ra_eop_rc *ptr;
 					ptr = (x_form_rs_ra_eop_rc *)instr;
 
@@ -788,10 +798,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%sr%d", mnemonic, ptr->ra);
 					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rs);
 					break;
-				}
+			}
 
-				case X_FORM_RS_RA_eop:
-				{
+			case X_FORM_RS_RA_eop:
+			{
 					x_form_rs_ra_eop *ptr;
 					ptr = (x_form_rs_ra_eop *)instr;
 
@@ -802,10 +812,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%sr%d", mnemonic, ptr->ra);
 					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rs);
 					break;
-				}
+			}
 
-				case MDFORM_RS_RA_SH_MB_rc:
-				{
+			case MDFORM_RS_RA_SH_MB_rc:
+			{
 					mdform_rs_ra_sh_mb_rc *ptr;
 					ptr = (mdform_rs_ra_sh_mb_rc *)instr;
 
@@ -821,10 +831,10 @@ void decode_tc_instructions(int cno)
 						sprintf(mnemonic, "%s,%d", mnemonic, ((ptr->mb1) + ((ptr->mb2)*32)) );
 					}
 					break;
-				}
+			}
 
-				case MFORM_RS_RA_SH_MB_ME_rc:
-				{
+			case MFORM_RS_RA_SH_MB_ME_rc:
+			{
 					mform_rs_ra_sh_mb_me_rc *ptr;
 					ptr = (mform_rs_ra_sh_mb_me_rc *)instr;
 
@@ -839,10 +849,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->mb);
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->me);
 					break;
-				}
+			}
 
-				case MDSFORM_RS_RA_RB_MB_eop_rc:
-				{
+			case MDSFORM_RS_RA_RB_MB_eop_rc:
+			{
 					mdsform_rs_ra_rb_mb_eop_rc *ptr;
 					ptr = (mdsform_rs_ra_rb_mb_eop_rc *)instr;
 
@@ -856,10 +866,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rb);
 					sprintf(mnemonic, "%s,%d", mnemonic, ((ptr->mb1) + ((ptr->mb2)*32)) );
 					break;
-				}
+			}
 
-				case MDSFORM_RS_RA_RB_ME_eop_rc:
-				{
+			case MDSFORM_RS_RA_RB_ME_eop_rc:
+			{
 					mdsform_rs_ra_rb_me_eop_rc *ptr;
 					ptr = (mdsform_rs_ra_rb_me_eop_rc *)instr;
 
@@ -873,10 +883,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rb);
 					sprintf(mnemonic, "%s,%d", mnemonic, ((ptr->me1) + ((ptr->me2)*32)) );
 					break;
-				}
+			}
 
-				case MFORM_RS_RA_RB_MB_ME_rc:
-				{
+			case MFORM_RS_RA_RB_MB_ME_rc:
+			{
 					mform_rs_ra_rb_mb_me_rc *ptr;
 					ptr = (mform_rs_ra_rb_mb_me_rc *)instr;
 
@@ -891,10 +901,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->mb);
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->me);
 					break;
-				}
+			}
 
-				case XS_FORM_RS_RA_SH_eop_rc:
-				{
+			case XS_FORM_RS_RA_SH_eop_rc:
+			{
 					xs_form_rs_ra_sh_eop_rc *ptr;
 					ptr = (xs_form_rs_ra_sh_eop_rc *)instr;
 
@@ -906,10 +916,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rs);
 					sprintf(mnemonic, "%s,%d", mnemonic, ((ptr->sh1)+((ptr->sh2)*32)) );
 					break;
-				}
+			}
 
-				case X_FORM_RS_RA_SH_eop_rc:
-				{
+			case X_FORM_RS_RA_SH_eop_rc:
+			{
 					x_form_rs_ra_sh_eop_rc *ptr;
 					ptr = (x_form_rs_ra_sh_eop_rc *)instr;
 
@@ -921,10 +931,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rs);
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->sh);
 					break;
-				}
+			}
 
-				case X_FX_FORM_RS_SPR_eop:
-				{
+			case X_FX_FORM_RS_SPR_eop:
+			{
 					x_fx_form_rs_spr_eop *ptr;
 					ptr = (x_fx_form_rs_spr_eop *)instr;
 
@@ -935,10 +945,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s%d", mnemonic, ((ptr->sprL)+((ptr->sprU)*32)));
 					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rs);
 					break;
-				}
+			}
 
-				case X_FX_FORM_RT_SPR_eop:
-				{
+			case X_FX_FORM_RT_SPR_eop:
+			{
 					x_fx_form_rt_spr_eop *ptr;
 					ptr = (x_fx_form_rt_spr_eop *)instr;
 
@@ -949,10 +959,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%sr%d", mnemonic, ptr->rt);
 					sprintf(mnemonic, "%s,%d", mnemonic, ((ptr->sprL)+((ptr->sprU)*32)));
 					break;
-				}
+			}
 
-				case X_FX_FORM_RS_FXM_eop:
-				{
+			case X_FX_FORM_RS_FXM_eop:
+			{
 					x_fx_form_rs_fxm_eop *ptr;
 					ptr = (x_fx_form_rs_fxm_eop *)instr;
 
@@ -963,10 +973,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s%d", mnemonic, (ptr->FXM));
 					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rs);
 					break;
-				}
+			}
 
-				case X_FORM_RS_RA_RB_eop:
-				{
+			case X_FORM_RS_RA_RB_eop:
+			{
 					x_form_rs_ra_rb_eop *ptr;
 					ptr = (x_form_rs_ra_rb_eop *)instr;
 
@@ -990,9 +1000,10 @@ void decode_tc_instructions(int cno)
 					}
 
 					break;
-				}
-				case D_FORM_RS_RA_D:
-				{
+			}
+
+			case D_FORM_RS_RA_D:
+			{
 					d_form_rs_ra_d  *ptr;
 					ptr = (d_form_rs_ra_d *)instr;
 
@@ -1012,10 +1023,10 @@ void decode_tc_instructions(int cno)
 						sprintf(mnemonic, "%s(r%d)", mnemonic, ptr->ra);
 					}
 					break;
-				}
+			}
 
-				case D_FORM_RS_RA_DS:
-				{
+			case D_FORM_RS_RA_DS:
+			{
 					d_form_rs_ra_ds  *ptr;
 					ptr = (d_form_rs_ra_ds *)instr;
 
@@ -1035,10 +1046,10 @@ void decode_tc_instructions(int cno)
 						sprintf(mnemonic, "%s(r%d)", mnemonic, ptr->ra);
 					}
 					break;
-				}
+			}
 
-				case D_FORM_RT_RA_SI:
-				{
+			case D_FORM_RT_RA_SI:
+			{
 					d_form_rt_ra_si  *ptr;
 					ptr = (d_form_rt_ra_si *)instr;
 
@@ -1058,9 +1069,10 @@ void decode_tc_instructions(int cno)
 					}
 					sprintf(mnemonic, "%s,0x%x", mnemonic, ptr->uim);
 					break;
-				}
-				case X_FORM_L_E:
-				{
+			}
+
+			case X_FORM_L_E:
+			{
 					x_form_l_e  *ptr;
 					ptr = (x_form_l_e *)instr;
 
@@ -1071,17 +1083,17 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s%d", mnemonic, ptr->l);
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->e);
 				    break;
-				}
+			}
 
-				case XL_FORM:
-				{
+			case XL_FORM:
+			{
 
 				      sprintf(mnemonic, "%s ", ins_tuple->ins_name);
 				      break;
-				}
+			}
 
-				case X_FORM_RS_RA_NB_eop:
-				{
+			case X_FORM_RS_RA_NB_eop:
+			{
 					x_form_rs_ra_nb_eop  *ptr;
 					ptr = (x_form_rs_ra_nb_eop *)instr;
 
@@ -1100,10 +1112,10 @@ void decode_tc_instructions(int cno)
 					}
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->uim);
 					break;
-				}
+			}
 
-				case D_FORM_BF_L_RA_SI:
-				{
+			case D_FORM_BF_L_RA_SI:
+			{
 					d_form_bf_l_ra_si  *ptr;
 					ptr = (d_form_bf_l_ra_si *)instr;
 
@@ -1118,10 +1130,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->ra);
 					sprintf(mnemonic, "%s,0x%x", mnemonic, ptr->uim);
 					break;
-				}
+			}
 
-				case X_FORM_BF_L_RA_RB:
-				{
+			case X_FORM_BF_L_RA_RB:
+			{
 					x_form_bf_l_ra_rb  *ptr;
 					ptr = (x_form_bf_l_ra_rb *)instr;
 
@@ -1141,10 +1153,10 @@ void decode_tc_instructions(int cno)
 					
 					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rb);
 					break;
-				}
+			}
 
-				case X_FORM_RA_RB:
-				{
+			case X_FORM_RA_RB:
+			{
 					x_form_ra_rb_eop  *ptr;
 					ptr = (x_form_ra_rb_eop *)instr;
 
@@ -1155,10 +1167,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%sr%d", mnemonic, ptr->ra);
 					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rb);
 					break;
-				}
+			}
 
-				case X_FORM_L_RA_RB:
-				{
+			case X_FORM_L_RA_RB:
+			{
 					x_form_l_ra_rb_eop  *ptr;
 					ptr = (x_form_l_ra_rb_eop *)instr;
 
@@ -1171,10 +1183,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rb);
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->l);
 					break;
-				}
+			}
 
-				case X_FORM_TH_RA_RB:
-				{
+			case X_FORM_TH_RA_RB:
+			{
 					x_form_th_ra_rb_eop  *ptr;
 					ptr = (x_form_th_ra_rb_eop *)instr;
 
@@ -1187,27 +1199,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rb);
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->th);
 					break;
-				}
+			}
 
-				case I_FORM_LI_AA_LK:
-				{
-					i_form_li_aa_lk  *ptr;
-					ptr = (i_form_li_aa_lk *)instr;
-
-
-					sprintf(mnemonic, "%s ", ins_tuple->ins_name);
-					if ((ptr->li) & 0xff0000) {
-					  	sprintf(mnemonic, "%s$-0x%x ",mnemonic, (-((ptr->li)*4) & 0x00000fff));
-						cptr->dc_instr[j].tgt_val = (-((ptr->li)*4) & 0x00000fff); 
-					} else {
-					  	sprintf(mnemonic, "%s$+0x%x ",mnemonic,((ptr->li)*4));
-						cptr->dc_instr[j].tgt_val = ((ptr->li)*4); 
-					}
-					break;
-				}
-
-				case B_FORM_BO_BI_BD_AA_LK:
-				{
+			case B_FORM_BO_BI_BD_AA_LK:
+			{
 					b_form_bo_bi_bd_aa_lk  *ptr;
 					ptr = (b_form_bo_bi_bd_aa_lk *)instr;
 
@@ -1225,10 +1220,10 @@ void decode_tc_instructions(int cno)
 						cptr->dc_instr[j].op_val[1] = (ptr->bd)*4;
 					}
 					break;
-				}
+			}
 
-				case XL_FORM_BO_BI_LK:
-				{
+			case XL_FORM_BO_BI_LK:
+			{
 					xl_form_bo_bi_lk  *ptr;
 					ptr = (xl_form_bo_bi_lk *)instr;
 
@@ -1241,9 +1236,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,%d",mnemonic,ptr->bi);
 					sprintf(mnemonic, "%s,%d",mnemonic,ptr->bh);
 					break;
-				}
-				case D_FORM_RT_RA_DQ_PT:
-				{
+			}
+
+			case D_FORM_RT_RA_DQ_PT:
+			{
 					d_form_rt_ra_uim_pt  *ptr;
 					ptr = (d_form_rt_ra_uim_pt *)instr;
 
@@ -1258,9 +1254,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s(r%d) ",mnemonic,ptr->ra);
 					sprintf(mnemonic, "%s,%d",mnemonic,ptr->pt);
 					break;
-				}
-				case X_FORM_CT_RA_RB_eop:
-				{
+			}
+
+			case X_FORM_CT_RA_RB_eop:
+			{
 					x_form_ct_ra_rb_eop  *ptr;
 					ptr = (x_form_ct_ra_rb_eop *)instr;
 
@@ -1273,9 +1270,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,r%d ",mnemonic,ptr->ra);
 					sprintf(mnemonic, "%s,r%d",mnemonic,ptr->rb);
 					break;
-				}
-				case X_FORM_Rx_Rx_Rx_eop_rc:
-				{
+			}
+
+			case X_FORM_Rx_Rx_Rx_eop_rc:
+			{
 					x_form_rx_rx_rx_eop_rc *ptr;
 					ptr = (x_form_rx_rx_rx_eop_rc *)instr;
 					sprintf(mnemonic, "%s ", ins_tuple->ins_name);
@@ -1283,9 +1281,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->ry);
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->rz);
 					break;
-				}
-				case X_FORM_RS_RA_FC_eop:
-				{
+			}
+
+			case X_FORM_RS_RA_FC_eop:
+			{
 					x_form_rs_ra_nb_eop *ptr;
 					ptr = (x_form_rs_ra_nb_eop *)instr;
 
@@ -1298,9 +1297,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->ra);
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->uim);
 					break;
-				}
-				case DX_FORM_RT_D1_D0_D2:
-				{
+			}
+
+			case DX_FORM_RT_D1_D0_D2:
+			{
 					dx_form_rt_d1_d0_d2 *ptr;
 					ptr = (dx_form_rt_d1_d0_d2 *)instr;
 
@@ -1315,9 +1315,10 @@ void decode_tc_instructions(int cno)
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->d0);
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->d2);
 					break;
-				}
-				case X_FORM_RT_BFA:
-				{
+			}
+
+			case X_FORM_RT_BFA:
+			{
 					x_form_rt_bfa *ptr;
 					ptr = (x_form_rt_bfa *)instr;
 
@@ -1325,12 +1326,13 @@ void decode_tc_instructions(int cno)
 					cptr->dc_instr[j].op_val[0] = ptr->BFA;
 
 					sprintf(mnemonic, "%s ", ins_tuple->ins_name);
-					sprintf(mnemonic, "%s%d", mnemonic, ptr->rt);
+					sprintf(mnemonic, "%sr%d", mnemonic, ptr->rt);
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->BFA);
 					break;
-				}
-				case X_FORM_BF_DCMX_vrb_eop_rc:
-				{
+			}
+
+			case X_FORM_BF_DCMX_vrb_eop_rc:
+			{
 					x_form_bf_dcmx_vrb_eop_rc *ptr;
 					ptr = (x_form_bf_dcmx_vrb_eop_rc *)instr;
 
@@ -1347,579 +1349,42 @@ void decode_tc_instructions(int cno)
 					}
 					sprintf(mnemonic, "%s,%d", mnemonic, ptr->dcmx);
 					break;
-				}
-				default:
+			}
+
+			case XFX_FORM_RT_FXM_EOP_RC:
+			{
+					xfx_form_rt_fxm_eop_rc *ptr;
+                    ptr = (xfx_form_rt_fxm_eop_rc *)instr;
+
+                    cptr->dc_instr[j].tgt_val = ptr->rt;
+
+                    sprintf(mnemonic, "%s r%d", ins_tuple->ins_name, ptr->rt);
+
+                    break;
+			}
+
+			case I_FORM_LI_AA_LK:
+			{
+                    i_form_li_aa_lk *ptr;
+                    ptr = (i_form_li_aa_lk *)instr;
+                    if ((ptr->li) & 0xff0000) {
+                   		if (strcmp("b", ins_tuple->ins_name) == 0) {
+                      		sprintf(mnemonic, "%s$-0x%x ", ins_tuple->ins_name, (-((ptr->li)*4) & 0x00000fff));
+							cptr->dc_instr[j].tgt_val = (-((ptr->li)*4) & 0x00000fff); 
+						} else { /* bl */
+                      		sprintf(mnemonic, "%s$-0x%x ", ins_tuple->ins_name, ((-((ptr->li)*4)) & 0x00ffffff));	
+							cptr->dc_instr[j].tgt_val = (-((ptr->li)*4) & 0x00ffffff); 
+						}
+                    } else {
+                      	sprintf(mnemonic, "%s$+0x%x ", ins_tuple->ins_name,((ptr->li)*4));
+						cptr->dc_instr[j].tgt_val = (-((ptr->li)*4) & 0x00ffffff); 
+                    }
+                    break;
+			}
+
+			default:
 					DPRINT(hlog, "Regular Instr, Offset: 0x%x, Machine code: 0x%x, does not match to any form type!!!\n", cptr->instr_index[i], *instr);
 					instr++;
-			}
-		}
-		else if (cptr->instr_index[i] & 0x20000000) {      /* dependent instruction stream */
-        	table_index = cptr->instr_index[i] & ~(0x20000000);
-			ins_tuple = &(dep_instructions_array[table_index]);
-			switch ( (cptr->instr_index[i] & ~(0x20000000)) ) {
-				case addi:
-				{
-					d_form_rt_ra_d *ptr;
-					ptr = (d_form_rt_ra_d *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rt;
-					cptr->dc_instr[j].op_val[1] = ptr->ra;
-					cptr->dc_instr[j].op_val[0] = ptr->d;
-
-					sprintf(mnemonic, "%s ", "addi");
-					sprintf(mnemonic, "%sr%d", mnemonic, ptr->rt);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->ra);
-					sprintf(mnemonic, "%s,0x%x", mnemonic, ptr->d);
-
-					break;
-				}
-
-				case addis:
-				{
-					d_form_rt_ra_d *ptr;
-					ptr = (d_form_rt_ra_d *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rt;
-					cptr->dc_instr[j].op_val[1] = ptr->ra;
-					cptr->dc_instr[j].op_val[0] = ptr->d;
-
-
-					sprintf(mnemonic, "%s ", "addis");
-					sprintf(mnemonic, "%sr%d", mnemonic, ptr->rt);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->ra);
-					sprintf(mnemonic, "%s,0x%x", mnemonic, ptr->d);
-
-					break;
-				}
-
-				case mfcr:
-				{
-					xfx_form_rt_fxm_eop_rc *ptr;
-					ptr = (xfx_form_rt_fxm_eop_rc *)instr;
-
-
-					cptr->dc_instr[j].tgt_val = ptr->rt;
-
-					sprintf(mnemonic, "%s r%d", "mfcr", ptr->rt);
-
-					break;
-				}
-
-				case stwx:
-				{
-					x_form_rt_ra_rb_eop_rc *ptr;
-					ptr = (x_form_rt_ra_rb_eop_rc *)instr;
-
-
-					cptr->dc_instr[j].tgt_val = ptr->rt;
-					cptr->dc_instr[j].op_val[0] = ptr->ra;
-					cptr->dc_instr[j].op_val[1] = ptr->rb;
-
-					sprintf(mnemonic, "%s ", "stwx");
-					sprintf(mnemonic, "%sr%d,r%d,r%d",mnemonic,  ptr->rt, ptr->ra, ptr->rb);
-
-					break;
-				}
-
-				case mffs:
-				{
-					x_form_rt_ra_rb_eop_rc *ptr;
-					ptr = (x_form_rt_ra_rb_eop_rc *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rt;
-
-					sprintf(mnemonic, "%s ", "mffs");
-					sprintf(mnemonic, "%sf%d",mnemonic,  ptr->rt);
-
-					break;
-				}
-				case or:
-				{
-					x_form_rt_ra_rb_eop_rc *ptr;
-					ptr = (x_form_rt_ra_rb_eop_rc *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rt;
-					cptr->dc_instr[j].op_val[0] = ptr->ra;
-					cptr->dc_instr[j].op_val[1] = ptr->rb;
-
-					sprintf(mnemonic, "%s ", "or");
-					sprintf(mnemonic, "%sr%d,r%d,r%d", mnemonic, ptr->ra, ptr->rt, ptr->rb);
-					break;
-				}
-				case oris:
-				{
-					d_form_rt_ra_d *ptr;
-					ptr = (d_form_rt_ra_d *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rt;
-					cptr->dc_instr[j].op_val[0] = ptr->ra;
-					cptr->dc_instr[j].op_val[1] = ptr->d;
-
-					sprintf(mnemonic, "%s ", "oris");
-					sprintf(mnemonic, "%sr%d,r%d,0x%x",  mnemonic,ptr->ra, ptr->rt, ptr->d);
-
-					break;
-				}
-				case ori:
-				{
-					d_form_rt_ra_d *ptr;
-					ptr = (d_form_rt_ra_d *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rt;
-					cptr->dc_instr[j].op_val[0] = ptr->ra;
-					cptr->dc_instr[j].op_val[1] = ptr->d;
-
-					sprintf(mnemonic, "%s ", "ori");
-					sprintf(mnemonic, "%sr%d,r%d,0x%x",  mnemonic,ptr->ra, ptr->rt, ptr->d);
-
-					break;
-				}
-				case and:
-				{
-					x_form_rt_ra_rb_eop_rc *ptr;
-					ptr = (x_form_rt_ra_rb_eop_rc *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rt;
-					cptr->dc_instr[j].op_val[0] = ptr->ra;
-					cptr->dc_instr[j].op_val[1] = ptr->rb;
-
-					sprintf(mnemonic, "%s ", "and");
-					sprintf(mnemonic, "%sr%d,r%d,r%d", mnemonic, ptr->ra, ptr->rt, ptr->rb);
-
-					break;
-				}
-				case stfd:
-				{
-					d_form_rt_ra_d *ptr;
-					ptr = (d_form_rt_ra_d *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rt;
-					cptr->dc_instr[j].op_val[0] = ptr->ra;
-					cptr->dc_instr[j].op_val[1] = ptr->d;
-
-					sprintf(mnemonic, "%s ", "stfd");
-					sprintf(mnemonic, "%sf%d,0x%x(r%d)", mnemonic, ptr->rt, ptr->d, ptr->ra);
-
-					break;
-				}
-				case stxsdx:
-				{
-					Form_XX1_XT_RA_RB *ptr;
-					ptr = (Form_XX1_XT_RA_RB *)instr;
-
-					cptr->dc_instr[j].op_val[0] = ptr->src1;
-					cptr->dc_instr[j].op_val[1] = ptr->src2;
-
-					sprintf(mnemonic, "%s ", "stxsdx");
-
-					if ( ptr->TX ) {
-						cptr->dc_instr[j].tgt_val = ptr->target + 32;
-						sprintf(mnemonic, "%sx%d,r%d,r%d", mnemonic, (ptr->target + 32), ptr->src1, ptr->src2);
-					}
-					else {
-						cptr->dc_instr[j].tgt_val = ptr->target;
-						sprintf(mnemonic, "%sx%d,r%d,r%d", mnemonic, ptr->target, ptr->src1, ptr->src2);
-					}
-					break;
-				}
-				case stxvd2x:
-				{
-					Form_XX1_XT_RA_RB *ptr;
-					ptr = (Form_XX1_XT_RA_RB *)instr;
-
-					cptr->dc_instr[j].op_val[0] = ptr->src1;
-					cptr->dc_instr[j].op_val[1] = ptr->src2;
-					sprintf(mnemonic, "%s ", "stxvd2x");
-
-					if ( ptr->TX ) {
-						cptr->dc_instr[j].tgt_val = ptr->target + 32;
-						sprintf(mnemonic, "%sx%d,r%d,r%d", mnemonic, (ptr->target + 32), ptr->src1, ptr->src2);
-					}
-					else {
-						cptr->dc_instr[j].tgt_val = ptr->target;
-						sprintf(mnemonic, "%sx%d,r%d,r%d", mnemonic, ptr->target, ptr->src1, ptr->src2);
-					}
-
-					break;
-				}
-
-				case vmx_stvx:
-				{
-					Form_VT_VA_VB *ptr;
-					ptr = (Form_VT_VA_VB *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->vt;
-					cptr->dc_instr[j].op_val[0] = ptr->va;
-					cptr->dc_instr[j].op_val[1] = ptr->vb;
-
-					sprintf(mnemonic, "%s ", "stvx");
-					sprintf(mnemonic, "%sv%d,r%d,r%d", mnemonic, ptr->vt, ptr->va, ptr->vb);
-
-					break;
-				}
-				case stswi:
-				{
-					x_form_rs_ra_nb_eop  *ptr;
-					ptr = (x_form_rs_ra_nb_eop *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rs;
-					cptr->dc_instr[j].op_val[1] = ptr->ra;
-					cptr->dc_instr[j].op_val[0] = ptr->uim;
-
-					sprintf(mnemonic, "%s ", "stswi");
-					sprintf(mnemonic, "%sr%d", mnemonic, ptr->rs);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->ra);
-					sprintf(mnemonic, "%s,%d", mnemonic, ptr->uim);
-					break;
-				}
-
-				case dcbt:
-				{
-					x_form_th_ra_rb_eop  *ptr;
-					ptr = (x_form_th_ra_rb_eop *)instr;
-					sprintf(mnemonic, "%s ", "dcbt");
-
-					cptr->dc_instr[j].op_val[0] = ptr->ra;
-					cptr->dc_instr[j].op_val[1] = ptr->rb;
-					cptr->dc_instr[j].tgt_val = ptr->th;
-
-					sprintf(mnemonic, "%sr%d", mnemonic, ptr->ra);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rb);
-					sprintf(mnemonic, "%s,%d", mnemonic, ptr->th);
-					break;
-				}
-
-				case mfspr:
-				{
-					x_fx_form_rt_spr_eop *ptr;
-					ptr = (x_fx_form_rt_spr_eop *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rt;
-					cptr->dc_instr[j].op_val[0] = (ptr->sprL)+((ptr->sprU)*32); 
-
-					sprintf(mnemonic, "%s ", "mfspr");
-					sprintf(mnemonic, "%sr%d", mnemonic, ptr->rt);
-					sprintf(mnemonic, "%s,%d", mnemonic, ((ptr->sprL)+((ptr->sprU)*32)));
-					break;
-				}
-
-				case mtspr:
-				{
-					x_fx_form_rs_spr_eop *ptr;
-					ptr = (x_fx_form_rs_spr_eop *)instr;
-
-					cptr->dc_instr[j].tgt_val = (ptr->sprL)+((ptr->sprU)*32); 
-					cptr->dc_instr[j].op_val[0] = ptr->rs;  
-
-					sprintf(mnemonic, "%s ", "mtspr");
-					sprintf(mnemonic, "%s%d", mnemonic, ((ptr->sprL)+((ptr->sprU)*32)));
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rs);
-					break;
-				}
-				case crxor:
-				{
-					x_form_bt_ba_bb *ptr;
-					ptr = (x_form_bt_ba_bb *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->bt;
-                    cptr->dc_instr[j].op_val[0] = ptr->ba;
-                    cptr->dc_instr[j].op_val[1] = ptr->bb;
-
-					sprintf(mnemonic, "%s ", "crxor");
-					sprintf(mnemonic, "%scr%d", mnemonic, ptr->bt);
-					sprintf(mnemonic, "%s,cr%d", mnemonic, ptr->ba);
-					sprintf(mnemonic, "%s,cr%d", mnemonic, ptr->bb);
-					break;
-				}
-
-				case creqv:
-				{
-					x_form_bt_ba_bb *ptr;
-					ptr = (x_form_bt_ba_bb *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->bt;
-                    cptr->dc_instr[j].op_val[0] = ptr->ba;
-                    cptr->dc_instr[j].op_val[0] = ptr->bb;
-
-					sprintf(mnemonic, "%s ", "creqv");
-					sprintf(mnemonic, "%scr%d", mnemonic, ptr->bt);
-					sprintf(mnemonic, "%s,cr%d", mnemonic, ptr->ba);
-					sprintf(mnemonic, "%s,cr%d", mnemonic, ptr->bb);
-					break;
-				}
-				case branch:
-				{
-					i_form_li_aa_lk *ptr;
-					ptr = (i_form_li_aa_lk *)instr;
-					sprintf(mnemonic, "%s ", "b");
-					if((ptr->li) & 0xff0000) {
-					  sprintf(mnemonic, "%s$-0x%x ",mnemonic, (-((ptr->li)*4) & 0x00000fff));
-					} else {
-					  sprintf(mnemonic, "%s$+0x%x ",mnemonic,((ptr->li)*4));
-					}
-					break;
-				}
-			    case brlink:
-				{
-					i_form_li_aa_lk  *ptr;
-					ptr = (i_form_li_aa_lk *)instr;
-					sprintf(mnemonic, "%s ","bl");
-					if((ptr->li) & 0xff0000) {
-					  sprintf(mnemonic, "%s$-0x%x ",mnemonic, ((-((ptr->li)*4)) & 0x00ffffff));
-					} else {
-					  sprintf(mnemonic, "%s$+0x%x ",mnemonic,((ptr->li)*4));
-					}
-					break;
-				}
-				case stbcx:
-				{
-					x_form_rs_ra_rb_eop_rc *ptr;
-					ptr = (x_form_rs_ra_rb_eop_rc *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rs;
-                    cptr->dc_instr[j].op_val[0] = ptr->ra;
-                    cptr->dc_instr[j].op_val[1] = ptr->rb;
-
-					sprintf(mnemonic, "%s ", "stbcx.");
-					sprintf(mnemonic, "%sr%d", mnemonic, ptr->rs);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->ra);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rb);
-					break;
-				}
-				case sthcx:
-				{
-					x_form_rs_ra_rb_eop_rc *ptr;
-					ptr = (x_form_rs_ra_rb_eop_rc *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rs;
-                    cptr->dc_instr[j].op_val[0] = ptr->ra;
-                    cptr->dc_instr[j].op_val[1] = ptr->rb;
-
-					sprintf(mnemonic, "%s ", "sthcx.");
-					sprintf(mnemonic, "%sr%d", mnemonic, ptr->rs);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->ra);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rb);
-					break;
-				}
-
-				case stwcx:
-				{
-					x_form_rs_ra_rb_eop_rc *ptr;
-					ptr = (x_form_rs_ra_rb_eop_rc *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rs;
-                    cptr->dc_instr[j].op_val[0] = ptr->ra;
-                    cptr->dc_instr[j].op_val[1] = ptr->rb;
-
-					sprintf(mnemonic, "%s ", "stwcx.");
-					sprintf(mnemonic, "%sr%d", mnemonic, ptr->rs);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->ra);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rb);
-					break;
-				}
-
-				case stdcx:
-				{
-					x_form_rs_ra_rb_eop_rc *ptr;
-					ptr = (x_form_rs_ra_rb_eop_rc *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rs;
-                    cptr->dc_instr[j].op_val[0] = ptr->ra;
-                    cptr->dc_instr[j].op_val[1] = ptr->rb;
-
-					sprintf(mnemonic, "%s ", "stdcx.");
-					sprintf(mnemonic, "%sr%d", mnemonic, ptr->rs);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->ra);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rb);
-					break;
-				}
-
-				case stswx:
-				{
-					x_form_rt_ra_rb_eop_rc *ptr;
-					ptr = (x_form_rt_ra_rb_eop_rc *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rt;
-                    cptr->dc_instr[j].op_val[0] = ptr->ra;
-                    cptr->dc_instr[j].op_val[1] = ptr->rb;
-
-					sprintf(mnemonic, "%s ", "stswx");
-					sprintf(mnemonic, "%sr%d,r%d,r%d",mnemonic,  ptr->rt, ptr->ra, ptr->rb);
-
-					break;
-				}
-
-				case stbx:
-				{
-					x_form_rs_ra_rb_eop_rc *ptr;
-					ptr = (x_form_rs_ra_rb_eop_rc *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rs;
-                    cptr->dc_instr[j].op_val[0] = ptr->ra;
-                    cptr->dc_instr[j].op_val[1] = ptr->rb;
-
-					sprintf(mnemonic, "%s ", "stbx");
-					sprintf(mnemonic, "%sr%d", mnemonic, ptr->rs);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->ra);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rb);
-					break;
-				}
-
-				case sthx:
-				{
-					x_form_rs_ra_rb_eop_rc *ptr;
-					ptr = (x_form_rs_ra_rb_eop_rc *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rs;
-                    cptr->dc_instr[j].op_val[0] = ptr->ra;
-                    cptr->dc_instr[j].op_val[1] = ptr->rb;
-
-					sprintf(mnemonic, "%s ", "sthx");
-					sprintf(mnemonic, "%sr%d", mnemonic, ptr->rs);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->ra);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rb);
-					break;
-				}
-
-				case stdx:
-				{
-					x_form_rs_ra_rb_eop_rc *ptr;
-					ptr = (x_form_rs_ra_rb_eop_rc *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rs;
-                    cptr->dc_instr[j].op_val[0] = ptr->ra;
-                    cptr->dc_instr[j].op_val[1] = ptr->rb;
-
-					sprintf(mnemonic, "%s ", "stdx");
-					sprintf(mnemonic, "%sr%d", mnemonic, ptr->rs);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->ra);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rb);
-					break;
-				}
-
-				case lbzx:
-				{
-					x_form_rt_ra_rb_eop_rc *ptr;
-					ptr = (x_form_rt_ra_rb_eop_rc *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rt;
-                    cptr->dc_instr[j].op_val[0] = ptr->ra;
-                    cptr->dc_instr[j].op_val[1] = ptr->rb;
-
-					sprintf(mnemonic, "%s ", "lbzx");
-					sprintf(mnemonic, "%sr%d,r%d,r%d",mnemonic,  ptr->rt, ptr->ra, ptr->rb);
-					break;
-				}
-
-				case lhzx:
-				{
-					x_form_rt_ra_rb_eop_rc *ptr;
-					ptr = (x_form_rt_ra_rb_eop_rc *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rt;
-                    cptr->dc_instr[j].op_val[0] = ptr->ra;
-                    cptr->dc_instr[j].op_val[1] = ptr->rb;
-
-					sprintf(mnemonic, "%s ", "lhzx");
-					sprintf(mnemonic, "%sr%d,r%d,r%d",mnemonic,  ptr->rt, ptr->ra, ptr->rb);
-					break;
-				}
-
-				case lwzx:
-				{
-					x_form_rt_ra_rb_eop_rc *ptr;
-					ptr = (x_form_rt_ra_rb_eop_rc *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rt;
-                    cptr->dc_instr[j].op_val[0] = ptr->ra;
-                    cptr->dc_instr[j].op_val[1] = ptr->rb;
-
-					sprintf(mnemonic, "%s ", "lwzx");
-					sprintf(mnemonic, "%sr%d,r%d,r%d",mnemonic,  ptr->rt, ptr->ra, ptr->rb);
-					break;
-				}
-
-				case ldx:
-				{
-					x_form_rt_ra_rb_eop_rc *ptr;
-					ptr = (x_form_rt_ra_rb_eop_rc *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rt;
-                    cptr->dc_instr[j].op_val[0] = ptr->ra;
-                    cptr->dc_instr[j].op_val[1] = ptr->rb;
-
-					sprintf(mnemonic, "%s ", "ldx");
-					sprintf(mnemonic, "%sr%d,r%d,r%d",mnemonic,  ptr->rt, ptr->ra, ptr->rb);
-					break;
-				}
-
-				case std:
-				{
-					d_form_rs_ra_ds  *ptr;
-					ptr = (d_form_rs_ra_ds *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rs;
-                    cptr->dc_instr[j].op_val[0] = ptr->uim;
-                    cptr->dc_instr[j].op_val[1] = ptr->ra;
-
-					sprintf(mnemonic, "%s ", "std" );
-					sprintf(mnemonic, "%sr%d", mnemonic, ptr->rs);
-					sprintf(mnemonic, "%s,0x%x", mnemonic, ptr->uim);
-					sprintf(mnemonic, "%s(r%d)", mnemonic, ptr->ra);
-					break;
-				}
-
-				case stmw:
-				{
-					d_form_rs_ra_d  *ptr;
-					ptr = (d_form_rs_ra_d *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rs;
-                    cptr->dc_instr[j].op_val[0] = ptr->uim;
-                    cptr->dc_instr[j].op_val[1] = ptr->ra;
-
-					sprintf(mnemonic, "%s ", "stmw" );
-					sprintf(mnemonic, "%sr%d", mnemonic, ptr->rs);
-					sprintf(mnemonic, "%s,0x%x", mnemonic, ptr->uim);
-					sprintf(mnemonic, "%s(r%d)", mnemonic, ptr->ra);
-					break;
-				}
-				case stqcx:
-				{
-					x_form_rs_ra_rb_eop_rc *ptr;
-					ptr = (x_form_rs_ra_rb_eop_rc *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->rs;
-                    cptr->dc_instr[j].op_val[0] = ptr->ra;
-                    cptr->dc_instr[j].op_val[1] = ptr->rb;
-
-					sprintf(mnemonic, "%s ", "stqcx.");
-					sprintf(mnemonic, "%sr%d", mnemonic, ptr->rs);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->ra);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rb);
-					break;
-				}
-				case cmp:
-				{
-					x_form_bf_l_ra_rb  *ptr;
-					ptr = (x_form_bf_l_ra_rb *)instr;
-
-					cptr->dc_instr[j].tgt_val = ptr->cr_t;
-                    cptr->dc_instr[j].op_val[1] = ptr->l;
-                    cptr->dc_instr[j].op_val[0] = ptr->ra;
-                    cptr->dc_instr[j].op_val[2] = ptr->rb;
-
-					sprintf(mnemonic, "%s", "cmp ");
-					sprintf(mnemonic, "%scrf%d", mnemonic, ptr->cr_t);
-					sprintf(mnemonic, "%s,%d", mnemonic, ptr->l);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->ra);
-					sprintf(mnemonic, "%s,r%d", mnemonic, ptr->rb);
-					break;
-				}
-				default:
-					DPRINT(hlog, "Dependent Instr, Offset: 0x%x, Machine code: 0x%x, does not match to any form type!!!\n", cptr->instr_index[i], *instr);
-					instr++;
-			}
 		}
 
 		/* target data type */
@@ -2003,7 +1468,7 @@ void delete_reg_use_list(struct reguse *reg_node)
 struct reguse *prepare_ls_call_list(FILE *dump, int cno, int cmp_offset) 
 {
 	uint16 tgt_type;
-	int i, j, k, tc_index = -1, index_found = -1;
+	int i, k, tc_index = -1, index_found = -1;
 	client_data *cptr = global_sdata[INITIAL_BUF].cdata_ptr[cno];
 
 	/* find the nearest matching offset if miscomparing offset is not directly used by load/store instructions */ 

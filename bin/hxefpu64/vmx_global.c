@@ -16,7 +16,9 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-static char sccsid[] = "@(#)38	1.1.3.16  src/htx/usr/lpp/htx/bin/hxefpu64/vmx_global.c, exer_fpu, htxubuntu 1/4/16 02:33:19";
+
+/*static char sccsid[] = "%Z%%M%	%I%  %W% %G% %U%";*/
+
 #include "framework.h"
 
 extern struct server_data global_sdata[];
@@ -89,7 +91,7 @@ struct instruction_masks vmx_instructions_array[] = {
 /*  Vector Shift Inst  */
 
 /*  vsl		  {0x100001C4, 0, QGPR, 16, QGPR, 11, DUMMY, DUMMY, QGPR, 21, 0x32, "vsl", (sim_fptr)&simulate_vsl, VMX_MISC_ONLY, FORM_VT_VA_VB}, */
-/*  vsldoi	*/  {0x1000012C, 0, IMM_DATA, 6, QGPR, 11, QGPR, 16, QGPR, 21, 0x33, "vsldoi", (sim_fptr)&simulate_vsldoi, VMX_MISC_ONLY, FORM_VT_VA_VB},
+/*  vsldoi	*/  {0x1000002C, 0, QGPR, 16, QGPR, 11, IMM_DATA, 6, QGPR, 21, 0x33, "vsldoi", (sim_fptr)&simulate_vsldoi, VMX_MISC_ONLY, FORM_VT_VA_VB},
 /*  vslo	*/  {0x1000040C, 0, QGPR, 16, QGPR, 11, DUMMY, DUMMY, QGPR, 21, 0x32, "vslo", (sim_fptr)&simulate_vslo, VMX_MISC_ONLY, FORM_VT_VA_VB},
 /*  vsr		  {0x100002C4, 0, QGPR, 16, QGPR, 11, DUMMY, DUMMY, QGPR, 21, 0x32, "vsr", (sim_fptr)&simulate_vsr, VMX_MISC_ONLY, FORM_VT_VA_VB}, */
 /* vsro		*/  {0x1000044C, 0, QGPR, 16, QGPR, 11, DUMMY, DUMMY, QGPR, 21, 0x32, "vsro", (sim_fptr)&simulate_vsro, VMX_MISC_ONLY, FORM_VT_VA_VB},
@@ -346,7 +348,7 @@ struct instruction_masks vmx_p8_instructions_array[] = {
 
 struct instruction_masks vmx_p8_dd2_instructions_array[] = {
 /* For All instructions supported in P8 DD2 and above */
-/* RFC02247.r3 - VMX Vector Integer Add, Vector Integer Subtract and Vector Bit Permute instructions */
+/* RFC02247.r3 - VMX Vector Integer Add, Vector Integer Substract and Vector Bit Permute instructions */
 /* vadduqm  */  {0x10000100, 0, QGPR, 16, QGPR, 11, DUMMY, DUMMY, QGPR, 21, 0x32, "vadduqm",  (sim_fptr)&simulate_vadduqm,  VMX_INT_ARITHMETIC_UNSIGNED_ONLY, FORM_VT_VA_VB},
 /* vaddeuqm */  {0x1000003C, 0, QGPR, 16, QGPR, 11, QGPR,      6, QGPR, 21, 0x32, "vaddeuqm", (sim_fptr)&simulate_vaddeuqm, VMX_INT_ARITHMETIC_UNSIGNED_ONLY, FORM_VT_VA_VB_VC},
 /* vaddcuq  */  {0x10000140, 0, QGPR, 16, QGPR, 11, DUMMY, DUMMY, QGPR, 21, 0x32, "vaddcuq",  (sim_fptr)&simulate_vaddcuq,  VMX_INT_ARITHMETIC_UNSIGNED_ONLY, FORM_VT_VA_VB},
@@ -473,7 +475,7 @@ void class_vmx_load_gen(uint32 client_no, uint32 random_no, struct instruction_m
         /* Generate tgt VMX reg and figure out its data type */
         vsrs = &(cptr->vsrs[temp->tgt_dtype]);
         vsr4 = vsrs->head[VMX]->vsr_no;
-        vmx_vsr4 = vsr4 - 32;
+        vmx_vsr4 =  (vsr4 > 32)?vsr4 - 32: vsr4;
 		/* see if the target VSR is dirty. If yes, save it in store area */
         if( (0x1ULL << vsr4) & vsrs->dirty_mask) {
                 /* reserve memory for store */
@@ -542,7 +544,7 @@ void class_vmx_store_gen(uint32 client_no, uint32 random_no, struct instruction_
         /* Generate tgt VMX reg and figure out its data type */
         vsrs = &(cptr->vsrs[temp->tgt_dtype]);
         vsr4 = vsrs->head[VMX]->vsr_no;
-        vmx_vsr4 = vsr4 - 32;
+        vmx_vsr4 =  (vsr4 > 32)?vsr4 - 32: vsr4;
 	/* Reset dirty bit corresponding to target VSR */
         vsrs->dirty_mask &= (~(0x1ULL << vsr4));
         /* reserve memory for store */
@@ -558,7 +560,7 @@ void class_vmx_store_gen(uint32 client_no, uint32 random_no, struct instruction_
         tgt = (vmx_vsr4 & 0x1f) << (temp->tgt_pos);
 
         mcode = (temp->op_eop_mask | op1 | op2 | tgt);
-
+		printf("mcode: 0x%x, op1: %d, op2: %d, tgt: %d, eop_mask: 0x%x\n", mcode, op1 >> temp->op1_pos, op2 >> temp->op2_pos, tgt >> temp->tgt_pos, temp->op_eop_mask);
         /* save offset */
         *tc_memory = mcode;
         cptr->tc_ptr[INITIAL_BUF]->ea_off[prolog_size + num_ins_built] = store_off;
@@ -574,7 +576,7 @@ void class_vmx_store_gen(uint32 client_no, uint32 random_no, struct instruction_
 void class_vmx_normal_gen(uint32 client_no, uint32 random_no, struct instruction_masks *temp, int index)
 {
     uint32 vsr1, vsr2, vsr3, vsr4;
-    uint32 op1, op2, op3, tgt, tgt_reg_no;
+    uint32 op1 = 0, op2 = 0, op3 = 0, tgt = 0, tgt_reg_no = 0;
     uint32 vmx_vsr1, vmx_vsr2, vmx_vsr3, vmx_vsr4;
 	uint32 mcode, store_off, addi_mcode;
     uint32 prolog_size, *tc_memory, num_ins_built;
@@ -586,7 +588,7 @@ void class_vmx_normal_gen(uint32 client_no, uint32 random_no, struct instruction
     num_ins_built = cptr->num_ins_built;
     tc_memory = &(cptr->tc_ptr[INITIAL_BUF]->tc_ins[prolog_size + num_ins_built]);
 
-	if(temp->op1_dtype != QGPR && temp->op1_dtype != VECTOR_SP && temp->op1_dtype != DUMMY)
+	if((temp->op1_dtype != QGPR) && (temp->op1_dtype != VECTOR_SP) && (temp->op1_dtype != DUMMY))
 	{
 	    switch(temp->op1_dtype)
 	    {
@@ -622,7 +624,7 @@ void class_vmx_normal_gen(uint32 client_no, uint32 random_no, struct instruction
          */
 	     MOVE_VSR_TO_END(client_no, temp->op1_dtype, VMX);
 		 vsrs->dirty_mask &= (~(0x1ULL << vsr1));
-		 vmx_vsr1 = vsr1 - 32;
+		 vmx_vsr1 = (vsr1 > 32)? vsr1 - 32:vsr1;
          op1 = (vmx_vsr1 & 0x1f) << (temp->op1_pos);
 	}
 
@@ -656,7 +658,7 @@ void class_vmx_normal_gen(uint32 client_no, uint32 random_no, struct instruction
      	*/
     	MOVE_VSR_TO_END(client_no, temp->op2_dtype, VMX);
 		vsrs->dirty_mask &= (~(0x1ULL << vsr2));
-		vmx_vsr2 = vsr2 - 32;
+		vmx_vsr2 = (vsr2 > 32)?vsr2 - 32: vsr2;
     	op2 = (vmx_vsr2 & 0x1f) << (temp->op2_pos);
 	}
 
@@ -668,7 +670,7 @@ void class_vmx_normal_gen(uint32 client_no, uint32 random_no, struct instruction
 			tgt = (vsr4 & 0x1f) << (temp->tgt_pos);
 		} else {
 			vsr4 = vsrs->head[VMX]->vsr_no;
-			vmx_vsr4 = vsr4 - 32;
+        	vmx_vsr4 =  (vsr4 > 32)?vsr4 - 32: vsr4;
 			tgt = (vmx_vsr4 & 0x1f) << (temp->tgt_pos);
 		}
 		tgt_reg_no = vsr4;
@@ -707,13 +709,13 @@ void class_vmx_normal_gen(uint32 client_no, uint32 random_no, struct instruction
 			*/
 			MOVE_VSR_TO_END(client_no, temp->op3_dtype, VMX);
 			vsrs->dirty_mask &= (~(0x1ULL << vsr3));
-			vmx_vsr3 = vsr3 - 32;
+			vmx_vsr3 = (vsr3 > 32)?vsr3 - 32:vsr3;
 			op3 = (vmx_vsr3 & 0x1f) << (temp->op3_pos);
 		}
 
    	   	vsrs = &(sdata->cdata_ptr[client_no]->vsrs[temp->tgt_dtype]);
 		vsr4 = vsrs->head[VMX]->vsr_no;
-		vmx_vsr4 = vsr4 - 32;
+        vmx_vsr4 =  (vsr4 > 32)?vsr4 - 32: vsr4;
 		tgt = (vmx_vsr4 & 0x1f) << (temp->tgt_pos);
 		tgt_reg_no = vsr4;
 
