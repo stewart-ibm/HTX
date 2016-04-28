@@ -230,7 +230,7 @@ void update_thread_config(char *affinity, thread_config_params cur_config)
                     if ((k == (shm_addr.hdr_addr)->num_entries) && (exer_found == 0)) {
                         sprintf(msg, "Exerciser %s defined in config file is not found in MDT file currently being run.\nHence, equaliser process exiting.", th->th_config.dev_name);
                         htxd_send_message(msg, 0, HTX_SYS_SOFT_ERROR, HTX_SYS_MSG);
-                        return(-1);
+                        return;
                     }
                     num_tests++;
                 }
