@@ -8,12 +8,13 @@ else
 ARCH=ppc64
 endif
 MKDIR=/bin/mkdir -p
-CC=/usr/bin/gcc -m64
-CPP=/usr/bin/g++ -m64
+AS?=/usr/bin/as
+CC?=/usr/bin/gcc -m64
+CPP?=/usr/bin/g++ -m64
 RM=/bin/rm
 CP=/bin/cp
-AR=/usr/bin/ar
-LD=/usr/bin/ld
+AR?=/usr/bin/ar
+LD?=/usr/bin/ld
 LDFLAGS=
 CFLAGS=-D__HTX_LINUX__ -DTRUE=1 -DFALSE=0 -D__64BIT__
 ifeq ($(HTX_RELEASE), $(filter ${HTX_RELEASE},"htxubuntu" "htxsles12" "htxrhel72le" "htxfedorale"))
