@@ -1,21 +1,7 @@
-/* IBM_PROLOG_BEGIN_TAG */
-/* 
- * Copyright 2003,2016 IBM International Business Machines Corp.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-/* IBM_PROLOG_END_TAG */
+
+/*  @(#)85        1.15.1.19  src/htx/usr/lpp/htx/lib/htxsyscfg64/htxsyscfg.c, htx_libhtxsyscfg64, htxfedora 5/19/15 01:28:11									
+
+	  */
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -1734,7 +1720,7 @@ int get_env_details_update(void)
 	strcpy(e->virt_typ,"PVM_GUEST");
 	strcpy(e->proc_shared_mode,"no");
 
-	r1 = get_cmd_op(dest,"cat /proc/ppc64/lparcfg 2> /dev/null | grep shared_processor_mode | awk -F= '{print $2}'");
+	r1 = get_cmd_op(dest,"cat /proc/ppc64/lparcfg | grep shared_processor_mode | awk -F= '{print $2}'");
 	temp = atoi(dest);
 	if (temp > 0)
     {

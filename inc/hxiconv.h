@@ -1,21 +1,18 @@
-/* IBM_PROLOG_BEGIN_TAG */
-/* 
- * Copyright 2003,2016 IBM International Business Machines Corp.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-/* IBM_PROLOG_END_TAG */
+/* IBM_PROLOG_BEGIN_TAG                                                   */
+/* This is an automatically generated prolog.                             */
+/*                                                                        */
+/* htxltsbml src/htx/usr/lpp/htx/inc/hxiconv.h 1.3                        */
+/*                                                                        */
+/* Licensed Materials - Property of IBM                                   */
+/*                                                                        */
+/* COPYRIGHT International Business Machines Corp. 2010                   */
+/* All Rights Reserved                                                    */
+/*                                                                        */
+/* US Government Users Restricted Rights - Use, duplication or            */
+/* disclosure restricted by GSA ADP Schedule Contract with IBM Corp.      */
+/*                                                                        */
+/* IBM_PROLOG_END_TAG                                                     */
+/* @(#)32	1.3.4.1  src/htx/usr/lpp/htx/inc/hxiconv.h, htx_sup, htxubuntu 9/14/12 03:28:17 */
 
 /*
  *   FUNCTIONS: CLRLIN
@@ -26,11 +23,18 @@
 
 /*
 ****************************************************************************
+*****  I B M   I n t e r n a l   U s e   O n l y  **************************
+****************************************************************************
 *                                                                          *
 *  Module Name: hxiconv.h                                                  *
 *                                                                          *
 *  Description: HTX convenience definitions and declarations.              *
 *                                                                          *
+* CHANGE ACTIVITY =                                                        *
+*    DATE    :LEVEL:PROGRAMMER:DESCRIPTION                                 *
+*    MMMMMMMMNMMMMMNMMMMMMMMMMNMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM*
+*    01/04/00:1.7  :R GEBHARDT:Add enum for Add Device menu.               *
+*            :     :          :                                            *
 ****************************************************************************
 */
 
@@ -145,7 +149,7 @@
 
 
 /*
- * various mneumonics used throughout htx
+ * various mneumonics used thoughout htx
  */
 #define  EXTRA_ENTRIES	(unsigned int) (0)  /* # of spare entries in htx shm */
 #define  PSEUDO_EXTRA_ENTRIES	(unsigned int) (100)
@@ -165,7 +169,7 @@
 #define	KEY_NEWL	'\r'
 
 /*
- * Separate macros defined for Linux. Here, the function keys, and also the
+ * Seperate macros defined for Linux. Here, the function keys, and also the
  * other attributes like the NORMAL, STANDALONE, etc are given new definitions.
  */
 

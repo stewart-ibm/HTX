@@ -1,21 +1,3 @@
-/* IBM_PROLOG_BEGIN_TAG */
-/* 
- * Copyright 2003,2016 IBM International Business Machines Corp.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-/* IBM_PROLOG_END_TAG */
 /* @(#)44  1.9  src/htx/usr/lpp/htx/inc/htxlibdef.h, htx_libhtx, htx530 10/19/03 23:37:48 */
 /* Component = htx_libhtx_lx */
 
@@ -64,7 +46,7 @@ int hxfohft(int);
  *  function to read a pattern from a file and copy that pattern to a buffer
  */
 extern "C" {
-int hxfpat(char *, char *, size_t);
+int hxfpat(char *, char *, int);
 }
 
 /*
@@ -86,14 +68,14 @@ int hxf_startup_complete(struct htx_data *);
  *  function to update data for the HTX system
  */
 extern "C" {
-int hxfupdate(char, struct htx_data *);
+int hxfupdate_tunsafe(char, struct htx_data *);
 }
 
 /*
  *  Internal hxfupdate() function
  */
 extern "C" {
-int htx_error(struct htx_data *);
+void htx_error(struct htx_data *data, char* msg_send);
 }
 
 /*
@@ -107,7 +89,7 @@ int htx_finish(struct htx_data *, int *);
  *  Internal hxfupdate() function
  */
 extern "C" {
-void htx_process(struct htx_data *);
+void htx_update(struct htx_data *);
 }
 
 /*
@@ -207,7 +189,7 @@ int hxfohft(int);
 /*
  *  function to read a pattern from a file and copy that pattern to a buffer
  */
-int hxfpat(char *, char *, size_t);
+int hxfpat(char *, char *, int);
 
 /*
  *  function to save two compare buffers to files in the .../dump
@@ -228,7 +210,7 @@ int hxfupdate(char, struct htx_data *);
 /*
  *  Internal hxfupdate() function
  */
-int htx_error(struct htx_data *);
+void htx_error(struct htx_data *data, char* msg_send);
 
 /*
  *  Internal hxfupdate() function
@@ -238,7 +220,7 @@ int htx_finish(struct htx_data *, int *);
 /*
  *  Internal hxfupdate() function
  */
-void htx_process(struct htx_data *);
+void htx_update(struct htx_data *);
 
 /*
  *  Internal hxfupdate() function
@@ -291,5 +273,12 @@ char * htx_ctime(const time_t *p_time);
 
 
 #endif
+
+static const char IBM_copyright_string[]="\n\
+	Licensed Materials - Property of IBM\n\
+	(C) Copyright IBM Corp. 2010, 2013,  All rights reserved.\n\
+\n\
+	US Government Users Restricted Rights - Use, duplication or\n\
+	disclosure restricted by GSA ADP Schedule Contract with IBM Corp.\n";
 
 #endif  /* HTXLIBDEF_H */
