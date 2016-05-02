@@ -17,7 +17,7 @@
  */
 /* IBM_PROLOG_END_TAG */
 
-/* @(#)95	1.12.3.65  src/htx/usr/lpp/htx/bin/hxefpu64/framework.h, exer_fpu, htxubuntu 3/4/16 01:14:52 */
+/* %Z%%M%	%I%  %W% %G% %U% */
 
 #ifndef _HTX_FRAMEWORK_H
 #define _HTX_FRAMEWORK_H
@@ -121,7 +121,7 @@ struct enabled_instruction {
 #define MAX_SRC_OPRS	(3)
 struct decoded_instruction {
 	int instr_type;					/* Load, store or other instruction type					*/
-	volatile int marked;			/* flag, indicating instruction influencing miscompare 		*/ 
+	int marked;						/* flag, indicating instruction influencing miscompare 		*/ 
 	char mnemonic[50];				/* complete instruction in string format 					*/
     int ea_offset;					/* offset of load/store area in case of LS  instruction 	*/
 	uint16 tgt_dtype;				/* target type 												*/
@@ -944,64 +944,64 @@ extern struct server_data global_sdata[];
 #define	P9_DFP_TEST_QUAD			(DFP_TEST_QUAD	|P9_ONLY)
 #define	P9_DFP_TEST_LONG			(DFP_TEST_LONG	|P9_ONLY)
 
-#define	DFP_ALL						0x1FFFFFFF		|DFP_ONLY
+#define	DFP_ALL						(0x1FFFFFFF		|DFP_ONLY)
 
 #define         VMX_ONLY            0x0400000000000000ULL
 
-#define         VMX_LOAD_ONLY                           0x1             | VMX_ONLY
-#define         VMX_STORE_ONLY                          0x2             | VMX_ONLY
-#define         VMX_LOAD_ALIGNMENT_ONLY                 0x4             | VMX_ONLY
+#define         VMX_LOAD_ONLY                           (0x1             | VMX_ONLY)
+#define         VMX_STORE_ONLY                          (0x2             | VMX_ONLY)
+#define         VMX_LOAD_ALIGNMENT_ONLY                 (0x4             | VMX_ONLY)
 
-#define         VMX_INT_ARITHMETIC_SIGNED_ONLY          0x8             | VMX_ONLY
-#define         VMX_INT_ARITHMETIC_UNSIGNED_ONLY        0x10            | VMX_ONLY
+#define         VMX_INT_ARITHMETIC_SIGNED_ONLY          (0x8             | VMX_ONLY)
+#define         VMX_INT_ARITHMETIC_UNSIGNED_ONLY        (0x10            | VMX_ONLY)
 
-#define         VMX_INT_MUL_ADD_SIGNED_ONLY             0x20            | VMX_ONLY
-#define         VMX_INT_MUL_ADD_UNSIGNED_ONLY           0x40            | VMX_ONLY
+#define         VMX_INT_MUL_ADD_SIGNED_ONLY             (0x20            | VMX_ONLY)
+#define         VMX_INT_MUL_ADD_UNSIGNED_ONLY           (0x40            | VMX_ONLY)
 
-#define         VMX_INT_SUM_ACROSS_SIGNED_ONLY          0x80            | VMX_ONLY
-#define         VMX_INT_SUM_ACROSS_UNSIGNED_ONLY        0x100           | VMX_ONLY
+#define         VMX_INT_SUM_ACROSS_SIGNED_ONLY          (0x80            | VMX_ONLY)
+#define         VMX_INT_SUM_ACROSS_UNSIGNED_ONLY        (0x100           | VMX_ONLY)
 
-#define         VMX_INT_AVERAGE_SIGNED_ONLY             0x200           | VMX_ONLY
-#define         VMX_INT_AVERAGE_UNSIGNED_ONLY           0x400           | VMX_ONLY
+#define         VMX_INT_AVERAGE_SIGNED_ONLY             (0x200           | VMX_ONLY)
+#define         VMX_INT_AVERAGE_UNSIGNED_ONLY           (0x400           | VMX_ONLY)
 
-#define         VMX_INT_MAX_MIN_SIGNED_ONLY             0x800           | VMX_ONLY
-#define         VMX_INT_MAX_MIN_UNSIGNED_ONLY           0x1000          | VMX_ONLY
+#define         VMX_INT_MAX_MIN_SIGNED_ONLY             (0x800           | VMX_ONLY)
+#define         VMX_INT_MAX_MIN_UNSIGNED_ONLY           (0x1000          | VMX_ONLY)
 
-#define         VMX_INT_CMP_SIGNED_ONLY                 0x2000          | VMX_ONLY
-#define         VMX_INT_CMP_UNSIGNED_ONLY               0X4000          | VMX_ONLY
+#define         VMX_INT_CMP_SIGNED_ONLY                 (0x2000          | VMX_ONLY)
+#define         VMX_INT_CMP_UNSIGNED_ONLY               (0X4000          | VMX_ONLY)
 
-#define         VMX_INT_LOGICAL_ONLY                    0x8000          | VMX_ONLY
+#define         VMX_INT_LOGICAL_ONLY                    (0x8000          | VMX_ONLY)
 
-#define         VMX_INT_ROTATE_SHIFT_ONLY               0x10000         | VMX_ONLY
+#define         VMX_INT_ROTATE_SHIFT_ONLY               (0x10000         | VMX_ONLY)
 
-#define         VMX_FP_ARITHMETIC_ONLY                  0x20000         | VMX_ONLY
-#define         VMX_FP_MUL_ADD_SUB_ONLY                 0x40000         | VMX_ONLY
+#define         VMX_FP_ARITHMETIC_ONLY                  (0x20000         | VMX_ONLY)
+#define         VMX_FP_MUL_ADD_SUB_ONLY                 (0x40000         | VMX_ONLY)
 
-#define         VMX_FP_MAX_MIN_ONLY                     0x80000         | VMX_ONLY
-#define         VMX_FP_ROUND_CONV_ONLY                  0x100000        | VMX_ONLY
-#define         VMX_FP_CMP_ONLY                         0x200000        | VMX_ONLY
-#define         VMX_FP_ESTIMATE_ONLY                    0x400000        | VMX_ONLY
+#define         VMX_FP_MAX_MIN_ONLY                     (0x80000         | VMX_ONLY)
+#define         VMX_FP_ROUND_CONV_ONLY                  (0x100000        | VMX_ONLY)
+#define         VMX_FP_CMP_ONLY                         (0x200000        | VMX_ONLY)
+#define         VMX_FP_ESTIMATE_ONLY                    (0x400000        | VMX_ONLY)
 
-#define         VMX_VSCR_ONLY                           0x800000        | VMX_ONLY
-#define         VMX_MISC_ONLY                           0x1000000       | VMX_ONLY
-#define         VMX_DFP_ARITHMETIC                      0x2000000       | VMX_ONLY
-#define         P9_VMX_DFP_ARITHMETIC                   VMX_DFP_ARITHMETIC | P9_ONLY
+#define         VMX_VSCR_ONLY                           (0x800000        | VMX_ONLY)
+#define         VMX_MISC_ONLY                           (0x1000000       | VMX_ONLY)
+#define         VMX_DFP_ARITHMETIC                      (0x2000000       | VMX_ONLY)
+#define         P9_VMX_DFP_ARITHMETIC                   (VMX_DFP_ARITHMETIC | P9_ONLY)
 
-#define         VMX_LOAD_STORE_ALIGN                    0x7             | VMX_ONLY
+#define         VMX_LOAD_STORE_ALIGN                    (0x7             | VMX_ONLY)
 
-#define         VMX_INT_ARITHMETIC_SIGNED_ALL           0xAA8           | VMX_ONLY
-#define         VMX_INT_ARITHMETIC_UNSIGNED_ALL         0x1550          | VMX_ONLY
-#define         VMX_INT_ARITHMETIC_ALL                  0x1FF8          | VMX_ONLY
+#define         VMX_INT_ARITHMETIC_SIGNED_ALL           (0xAA8           | VMX_ONLY)
+#define         VMX_INT_ARITHMETIC_UNSIGNED_ALL         (0x1550          | VMX_ONLY)
+#define         VMX_INT_ARITHMETIC_ALL                  (0x1FF8          | VMX_ONLY)
 
-#define         VMX_INT_CMP_ALL                         0x6000          | VMX_ONLY
-#define         VMX_INT_SIGNED_ALL                      0x2AA8          | VMX_ONLY
-#define         VMX_INT_UNSIGNED_ALL                    0x1D550         | VMX_ONLY
+#define         VMX_INT_CMP_ALL                         (0x6000          | VMX_ONLY)
+#define         VMX_INT_SIGNED_ALL                      (0x2AA8          | VMX_ONLY)
+#define         VMX_INT_UNSIGNED_ALL                    (0x1D550         | VMX_ONLY)
 
-#define         VMX_FP_ARITHMETIC_ALL                   0x60000         | VMX_ONLY
+#define         VMX_FP_ARITHMETIC_ALL                   (0x60000         | VMX_ONLY)
 
-#define         VMX_INT_ALL                             0x1FFF8         | VMX_ONLY
-#define         VMX_FP_ALL                              0x7E0000        | VMX_ONLY
-#define         VMX_ALL                                 0x3FFFFFF       | VMX_ONLY
+#define         VMX_INT_ALL                             (0x1FFF8         | VMX_ONLY)
+#define         VMX_FP_ALL                              (0x7E0000        | VMX_ONLY)
+#define         VMX_ALL                                 (0x3FFFFFF       | VMX_ONLY)
 #define         P9_VMX_INT_LOGICAL_ONLY                	VMX_INT_LOGICAL_ONLY | P9_ONLY 
 #define			P9_VMX_INT_ARITHMETIC_UNSIGNED_ONLY		VMX_INT_ARITHMETIC_UNSIGNED_ONLY | P9_ONLY
 #define			P9_VMX_MISC_ONLY						VMX_MISC_ONLY	| P9_ONLY
@@ -1186,7 +1186,7 @@ void shuffle (int, uint16 *, uint16);
 void apply_rule_file_settings(void);
 int create_ins_cat_wise_tables(int cno);
 void set_ins_bias_array(int cno);
-void filter_masked_instruction_categories(int cno, uint64 mask, struct instruction_masks *table);
+int filter_masked_instruction_categories(int cno, uint64 mask, struct instruction_masks *table);
 void merge_instruction_tables(void);
 void init_random_no_generator(uint32);
 void client_func(void *cno);

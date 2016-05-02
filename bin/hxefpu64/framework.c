@@ -17,7 +17,7 @@
  */
 /* IBM_PROLOG_END_TAG */
 
-static char sccsid[] = "@(#)16	1.24.3.113  src/htx/usr/lpp/htx/bin/hxefpu64/framework.c, exer_fpu, htxubuntu 3/4/16 01:14:54";
+/*static char sccsid[] = "%Z%%M%	%I%  %W% %G% %U%";*/
 
 #include <errno.h>
 #include <string.h>
@@ -240,7 +240,7 @@ uint32 sizes_for_types[VSR_OP_TYPES] = {0, 8, 8, 16, 16, 16, 8, 8, 16, 16, 16, 1
 int
 main(int argc, char *argv[])
 {
-	int rc, rc1,rc2,i, j;
+	int rc, rc1, i, j;
 	uint32 prev_sao_val = 0;
 	char tb_fname[128];
 
@@ -302,7 +302,6 @@ main(int argc, char *argv[])
 
 		return(-1);
 	}
-
 	/*  Parse command line arguments */
 	strcpy(dinfo.device_name, argv[1]);
 	strcpy(dinfo.run_type, argv[2]);
@@ -695,7 +694,7 @@ main(int argc, char *argv[])
 	 * Forever loop. This loop runs till exer receives SIGTERM.
 	 */
 	do {
-		uint32 rule_no, threads;
+		uint32 rule_no;
 		struct client_data *cptr = NULL;
 		struct stanza_instr_stats stanza_stats[MAX_NUM_RULES];
 		bzero(stanza_stats, sizeof(struct stanza_instr_stats) * MAX_NUM_RULES);
@@ -1484,7 +1483,17 @@ client_func(void *cinfo)
 	/*
 	 * Read instructions filter masks from rule file and apply them on instruction table.
 	 */
-    filter_masked_instruction_categories(client_no, 0, master_instructions_array);
+    rc = filter_masked_instruction_categories(client_no, 0, master_instructions_array);
+	if (rc == 0) {/* num enabled instructions */
+		sprintf(msg, "Client: %d: filter_masked_instruction_categories: failed to select any instruction for the mask in rule file !!!\n", client_no);
+        hxfmsg(&hd, rc, HTX_HE_SOFT_ERROR, msg);
+        pthread_mutex_lock(&exit_flag_lock);
+        exit_flag = 1;
+        pthread_mutex_unlock(&exit_flag_lock);
+        if (!rule.testcase_sync) {
+            pthread_exit(&rc);
+        }
+    }
     /*
  	 * Create category wise instruction lists to manage the biasing.
      */
@@ -2729,11 +2738,8 @@ void dump_testcase_p7(int cno, int num_oper, int type, int num)
 void dump_instructions_p7(int cno, FILE *df)
 {
 	uint32 *instr, *offset, *initbase_offset;
-	instruction_masks *ins_tuple;
 	client_data *cptr;
 	int prolog_ins, stream_ins, epilog_ins, i;
-	unsigned short imm_data = 0, imm_data_flag;
-	char mnemonic[50];
 
 	instr = (uint32 *)global_sdata[INITIAL_BUF].cdata_ptr[cno]->tc_ptr[INITIAL_BUF]->tc_ins;
 	offset = global_sdata[INITIAL_BUF].cdata_ptr[cno]->tc_ptr[INITIAL_BUF]->ea_off;
@@ -4881,7 +4887,8 @@ create_context(int client_no)
 	 return(0);
 }
 
-void cleanup_mem_atexit(){
+void cleanup_mem_atexit(void)
+{
     cleanup_mem(0);
 }
 
@@ -4914,9 +4921,10 @@ cleanup_mem(int type)
 		sdata = &global_sdata[INITIAL_BUF];
 		cptr = sdata->cdata_ptr[i];
 		if(client_mem != NULL) {
-			if(cptr && (cptr->clog))
+			if(cptr && (cptr->clog)) {
 				fclose(cptr->clog);
 				cptr->clog = NULL;
+			}
 		}
 	}
 	if ( type == 0 ) {
@@ -4943,9 +4951,15 @@ cleanup_mem(int type)
 		}
 	}
 
-	if(client_mem != NULL) {
+	if (client_mem != NULL) {
 		free(client_mem);
 		client_mem = NULL;
+		int i, j;
+		for (i = 0; i < 3; i++) {
+        	for(j = 0; j < MAX_NUM_CPUS; j++) {
+            	global_sdata[i].cdata_ptr[j] = NULL; 
+        	}
+    	}
 	}
 	sighandler_exit_flag = 1;
 	return(0);
@@ -6251,9 +6265,9 @@ int compare_results(int cno, int *num)
 
 	/***********Validate GPRs********/
 	for(i = 11; i < NUM_GPRS; i++) {
-		if(tc1->tcc.gprs[i] != tc2->tcc.gprs[i] && i !=5 && i != 7) {
+		if (tc1->tcc.gprs[i] != tc2->tcc.gprs[i]) {
 			/* Miscompare */
-			sprintf(msg, "Miscompare in GPRs: %llx %llx \n", tc1->tcc.gprs[i], tc2->tcc.gprs[i]);
+			sprintf(msg, "Miscompare in GPR[%d]: %llx %llx \n", i, tc1->tcc.gprs[i], tc2->tcc.gprs[i]);
 			hxfmsg(&hd, -1, HTX_HE_SOFT_ERROR, msg);
 			rc = 2;
 			*num = i;
@@ -7348,7 +7362,7 @@ get_rule(int *line, FILE *fp, struct ruleinfo *r)
 					index++;
 					if (index >= MAX_NUM_CPUS) break;
 					strcpy(&tok_ary[index][0], chr_ptr);
-					mprintf("tok_ary[%d] = %s %llx s2 = %llx\n", index, tok_ary[index][0], (uint64)chr_ptr, (uint64)s2);
+					mprintf("tok_ary[%d] = %s %llx s2 = %llx\n", index, &tok_ary[index][0], (uint64)chr_ptr, (uint64)s2);
 				}
 				if (index >= MAX_NUM_CPUS) {
 					sprintf(msg, "line# %d: Bias rules for more than %d cpu threads", *line, MAX_NUM_CPUS);
@@ -7706,30 +7720,35 @@ merge_instruction_tables()
 			memcpy(&master_instructions_array[j], &cpu_p9_instructions_array[i], sizeof(struct instruction_masks));
 			i++; j++;
 		}
+		sprintf(str, "%sAdded %d CPU P9 instructions\n", str, i);
 
 		i=0;
 		while(j < MAX_INSTRUCTIONS && vmx_p9_instructions_array[i].op_eop_mask != 0xDEADBEEF) {
 			memcpy(&master_instructions_array[j], &vmx_p9_instructions_array[i], sizeof(struct instruction_masks));
 			i++; j++;
 		}
+		sprintf(str, "%sAdded %d VMX P9 instructions\n", str, i);
 
 		i = 0;
 		while(j < MAX_INSTRUCTIONS && vsx_p9_instructions_array[i].op_eop_mask != 0xDEADBEEF ) {
 			memcpy(&master_instructions_array[j], &vsx_p9_instructions_array[i], sizeof(struct instruction_masks));
 			i++; j++;
 		}
+		sprintf(str, "%sAdded %d VSX P9 instructions\n", str, i);
 
 		i = 0;
 		while(j < MAX_INSTRUCTIONS && bfp_p9_instructions_array[i].op_eop_mask != 0xDEADBEEF ) {
 			memcpy(&master_instructions_array[j], &bfp_p9_instructions_array[i], sizeof(struct instruction_masks));
 			i++; j++;
 		}
+		sprintf(str, "%sAdded %d BFP P9 instructions\n", str, i);
 
 		i = 0;
 		while(j < MAX_INSTRUCTIONS && dfp_p9_instructions_array[i].op_eop_mask != 0xDEADBEEF ) {
 			memcpy(&master_instructions_array[j], &dfp_p9_instructions_array[i], sizeof(struct instruction_masks));
 			i++; j++;
 		}
+		sprintf(str, "%sAdded %d DFP P9 instructions\n", str, i);
 	}
 
 	total_num_instructions = j;
@@ -7747,8 +7766,7 @@ merge_instruction_tables()
  * in rule file.
  * copy enabled instruction to per thread enabled instruction table
  */
-void
-filter_masked_instruction_categories(int cno, uint64 mask, struct instruction_masks *table)
+int filter_masked_instruction_categories(int cno, uint64 mask, struct instruction_masks *table)
 {
     int i, j, enabled_instr = 0;
 
@@ -7761,6 +7779,10 @@ filter_masked_instruction_categories(int cno, uint64 mask, struct instruction_ma
     for(i = 0; i < total_num_instructions; i++) {
 		for(j = 0; j < MAX_BIAS_LIST; j++) {
 			uint64 mask = cptr->bias_list[j][0];
+			uint64 sub_mask = (mask & ~(INS_CAT)) & ~(P9_ONLY);
+			if ((mask == 0) || (sub_mask == 0)) {
+				continue;
+			}
 		#ifdef __HTX_LINUX__
 			if ((mask & exclude_cat_mask) == (VMX_MISC_ONLY)) {
                 mask = mask & (~((VMX_MISC_ONLY)&  ~(INS_CAT)));
@@ -7769,9 +7791,10 @@ filter_masked_instruction_categories(int cno, uint64 mask, struct instruction_ma
 		    if ((table[i].ins_cat_mask & INS_CAT) == (mask & INS_CAT) ) {
 		    	if ((table[i].ins_cat_mask & 0x00ffffffffffffffULL) & (mask & 0x00ffffffffffffffULL)) {
 					/* check for P9 only instructions */
+					
 					if (mask & P9_ONLY) {
 						/* only select P9 instructions */
-						if (table[i].ins_cat_mask & P9_ONLY) {
+						if ((table[i].ins_cat_mask & P9_ONLY) && (((table[i].ins_cat_mask & ~(P9_ONLY)) & ~(INS_CAT)) & sub_mask)) {
 		    				memcpy(&enabled_instr_ptr->instr_table, &table[i], sizeof(struct instruction_masks));
 		    				enabled_instr_ptr++;
 		    				enabled_instr++;
@@ -7789,6 +7812,7 @@ filter_masked_instruction_categories(int cno, uint64 mask, struct instruction_ma
     cptr->num_enabled_ins = enabled_instr;
     DPRINT(hlog,"%s: Num of enabled instructions = %d\n", __FUNCTION__, cptr->num_enabled_ins);
 	FFLUSH(hlog);
+	return (cptr->num_enabled_ins);
 }
 /*
  * set_ins_bias_array populates cptr->ins_bias_array according to the bias provided through rule file.
@@ -7850,7 +7874,7 @@ int distribute_vsrs_based_on_ins_bias(int cno)
 	/* Running only a single for loop for all categories as its just initializing to 0.
 	 * Performance wise better than having multiple loops one for each category with specific limits
 	 */
-	for(j = DUMMY ; j < VSR_OP_TYPES; j++) {
+	for(j = DUMMY; j < VSR_OP_TYPES; j++) {
 		vsr_wt_array[j] = bfp_wt_array[j] = vmx_wt_array[j] = dfp_wt_array[j] = total_wt_array[j] = 0;
 	}
 
@@ -7898,20 +7922,6 @@ int distribute_vsrs_based_on_ins_bias(int cno)
 				}
 				j++;
 			}
-				
-#if 0
-			for(j = BFP_SP; j <= BFP_DP; j++) {
-				tmp1 = bfp_ins_masks_array[j] & 0x00ffffffffffffffULL;
-				tmp = ins_cat->mask & 0x00ffffffffffffffULL;
-				DPRINT(cptr->clog, "\n bias num for type: %d is %lld. mask = %llx mask_ary = %llx tmp1 = %llx", j, ins_cat->bias_num, ins_cat->mask, bfp_ins_masks_array[j], tmp1);
-				if(tmp & tmp1) {
-					bfp_wt_array[j] += ins_cat->bias_num;
-					total_wt_array[j] += ins_cat->bias_num;
-					total_cat_wt[BFP] += ins_cat->bias_num;
-					DPRINT(cptr->clog, "BFP: Adding bfp wt: %lld to type %d, total wt = %d\n", ins_cat->bias_num, j, total_wt_array[j]);
-				}
-			}
-#endif
 		}
 		else if(tmp == DFP_ONLY) {
 			for(j = DFP_SHORT; j <= DFP_QUAD; j++) {
@@ -8516,7 +8526,6 @@ int get_bind_cpus_list(void)
 {
 	int i, t;
 	int rc = -1;
-	int rc1 = -1;
 
  	rc = repopulate_syscfg(&hd);
 	if (rc) {
@@ -8549,7 +8558,6 @@ int get_bind_cpus_list(void)
 		if(core_num >= num_cpus)
 			num_cpus_to_test = 0;
 	}
-
 	return 0;
 }
 #endif
@@ -8731,7 +8739,7 @@ int chip_testcase(void)
 		}
 	}
 
-	if(shm_flag_for_malloc == 0){
+	if (shm_flag_for_malloc == 0) {
 		rc = repopulate_syscfg(&hd);
 		if ( rc ) {
 			sprintf(msg,"repopulate_syscfg failed with error code= %d \n",rc);
@@ -8924,7 +8932,7 @@ int node_testcase(void)
 			return(errno);
 		}
 	}
-	if(shm_flag_for_malloc == 0){
+	if (shm_flag_for_malloc == 0) {
 		rc = repopulate_syscfg(&hd);
 		if ( rc ) {
 			sprintf(msg,"repopulate_syscfg failed with error code= %d \n",rc);
@@ -8966,7 +8974,7 @@ int node_testcase(void)
 	} 
 #endif
 	rc1 = pthread_rwlock_rdlock(&(global_ptr->syscfg.rw));
-	if (rc1 !=0  ) {
+	if (rc1 != 0) {
 		sprintf(msg,"lock inside framework.c failed with errno=%d,in function: %s at line :[%d]\n",rc1, __FUNCTION__, __LINE__);
 		hxfmsg(&hd, 0, HTX_HE_INFO, msg);
 	}
@@ -8996,7 +9004,7 @@ int node_testcase(void)
 		}
 	}
 	rc2 = pthread_rwlock_unlock(&(global_ptr->syscfg.rw));
-	if (rc2 !=0  ) {
+	if (rc2 != 0) {
 		sprintf(msg,"unlock inside framework.c failed with errno=%d,in function: %s at line :[%d]\n",rc2, __FUNCTION__, __LINE__);
 		hxfmsg(&hd, 0, HTX_HE_INFO, msg);
 	}

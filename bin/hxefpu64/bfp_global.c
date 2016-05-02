@@ -16,7 +16,8 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-static char sccsid[] = "@(#)93	1.10.3.5  src/htx/usr/lpp/htx/bin/hxefpu64/bfp_global.c, exer_fpu, htxubuntu 1/4/16 02:33:12";
+
+/*static char sccid[] = "%Z%%M% %I%  %W% %G% %U%";*/
 #include "framework.h"
 
 /*
@@ -166,8 +167,8 @@ struct instruction_masks bfp_instructions_array[] = {
 	/* mffs		*/	{0xFC00048E, 0, DUMMY, DUMMY, DUMMY, DUMMY,DUMMY, DUMMY, BFP_DP, 21, 0x14, "mffs", &simulate_mffs, BFP_FPSCR_ONLY, X_FORM_RT_RA_RB_eop_rc},
 	/* mffs.	*/	{0xFC00048F, 0, DUMMY, DUMMY, DUMMY, DUMMY,DUMMY, DUMMY, BFP_DP, 21, 0x14, "mffs.", &simulate_mffs, BFP_FPSCR_ONLY, X_FORM_RT_RA_RB_eop_rc},
 
-	/* mtfsfi(W0)*/	{0xFC00010C, 0xffffffff, DUMMY, DUMMY, DUMMY, 12, DUMMY, DUMMY, CR_T, 23, 0x16, "mtfsfi", &simulate_mtfsfi, BFP_FPSCR_ONLY, X_FORM_BF_W_U_eop_rc},
-	/* mtfsfi.	*/	{0xFC00010D, 0xffffffff, DUMMY, DUMMY, DUMMY, 12, DUMMY, DUMMY, CR_T, 23, 0x16, "mtfsfi.", &simulate_mtfsfi, BFP_FPSCR_ONLY, X_FORM_BF_W_U_eop_rc},
+	/* mtfsfi(W0)*/	{0xFC00010C, 0xffffffff, DUMMY, DUMMY, IMM_DATA_4BIT, 12, DUMMY, DUMMY, CR_T, 23, 0x16, "mtfsfi", &simulate_mtfsfi, BFP_FPSCR_ONLY, X_FORM_BF_W_U_eop_rc},
+	/* mtfsfi.	*/	{0xFC00010D, 0xffffffff, DUMMY, DUMMY, IMM_DATA_4BIT, 12, DUMMY, DUMMY, CR_T, 23, 0x16, "mtfsfi.", &simulate_mtfsfi, BFP_FPSCR_ONLY, X_FORM_BF_W_U_eop_rc},
 
 	/* mtfsf(LW)*/
 	/* mtfsf(00)*/	{0xFC00058E, 0xffffffff, DUMMY, DUMMY, BFP_DP, 11, DUMMY, DUMMY, DUMMY, 17, 0x15, "mtfsf", &simulate_mtfsf, BFP_FPSCR_ONLY, XFL_FORM_L_FLM_W_RB_eop_rc},
@@ -652,6 +653,7 @@ void class_bfp_fpscr_imm_gen(uint32 client_no, uint32 random_no, struct instruct
 	/* completely. Hence this register's content is still dirty.*/
 
 	/* MOVE_VSR_TO_END(temp->op2_dtype); Move this to the end of list */
+	/* two immediate data field, where op1 = W (1b) should always be 0, op2 = U(4b) */
 	op2 = (random_no & 0xf) << (temp->op2_pos);
 
 	vsrs = &cptr->vsrs[temp->tgt_dtype];

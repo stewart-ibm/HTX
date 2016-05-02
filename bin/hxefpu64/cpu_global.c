@@ -16,9 +16,11 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-static char sccid[] = "@(#)63	1.26  src/htx/usr/lpp/htx/bin/hxefpu64/cpu_global.c, exer_fpu, htxubuntu 1/4/16 02:33:21";
+
+/*static char sccid[] = "%Z%%M%	%I%  %W% %G% %U%";*/
 
 #include "framework.h" 
+
 extern uint32 shifted_pvr_os;
 extern struct htx_data hd;
 extern char msg[1000];
@@ -62,9 +64,9 @@ struct instruction_masks cpu_macro_array[]={
 struct instruction_masks cpu_p9_instructions_array[]={
 	/***************************RFC 2485.r3: Load Atomic Near Memory**************************************/
   	/* lwat */ {0x7C00048C, 0, GR, 16, IMM_DATA_5BIT, 11, DUMMY, DUMMY, GR, 21, CLASS_CPU_LOAD_ATOMIC, "lwat",  DUMMY, P9_CPU_ATOMIC_LOAD, X_FORM_RS_RA_NB_eop},
-  	/* stwat*/ {0x7C00058C, 0, GR, 21, GR, 16, IMM_DATA_5BIT, 11, DUMMY, DUMMY, CLASS_CPU_STORE_ATOMIC, "stwat", DUMMY, P9_CPU_ATOMIC_STORE,  X_FORM_RS_RA_FC_eop},
+  	/* stwat*/ {0x7C00058C, 0, GR, 16, IMM_DATA_5BIT, 11, DUMMY, DUMMY, GR, 21, CLASS_CPU_STORE_ATOMIC, "stwat", DUMMY, P9_CPU_ATOMIC_STORE,  X_FORM_RS_RA_FC_eop},
   	/* ldat */ {0x7C0004CC, 0, GR, 16, IMM_DATA_5BIT, 11, DUMMY, DUMMY, GR, 21, CLASS_CPU_LOAD_ATOMIC, "ldat",  DUMMY, P9_CPU_ATOMIC_LOAD, X_FORM_RS_RA_NB_eop},
-  	/* stdat*/ {0x7C0005CC, 0, GR, 21, GR, 16, IMM_DATA_5BIT, 11, DUMMY, DUMMY, CLASS_CPU_STORE_ATOMIC, "stdat", DUMMY, P9_CPU_ATOMIC_STORE, X_FORM_RS_RA_FC_eop},
+  	/* stdat*/ {0x7C0005CC, 0, GR, 16, IMM_DATA_5BIT, 11, DUMMY, DUMMY, GR, 21, CLASS_CPU_STORE_ATOMIC, "stdat", DUMMY, P9_CPU_ATOMIC_STORE, X_FORM_RS_RA_FC_eop},
 	/**************************RFC02461.r3: Hashing Support Operations************************************/
     /* modsw */	{0x7C000616, 0, GR , 16, GR, 11, DUMMY, DUMMY, GR, 21, 0x42, "modsw"  , DUMMY, P9_CPU_FIXED_ARTH, X_FORM_RT_RA_RB_OE_eop_rc},
     /* moduw */	{0x7C000216, 0, GR , 16, GR, 11, DUMMY, DUMMY, GR, 21, 0x42, "moduw"  , DUMMY, P9_CPU_FIXED_ARTH, X_FORM_RT_RA_RB_OE_eop_rc},
@@ -83,9 +85,9 @@ struct instruction_masks cpu_p9_instructions_array[]={
 	/**************************RFC02491 Load Doubleword Monitored Instruction************************************/
 	/* ldmx */{0x7C00026A, 0, GR, 16, GR, 11, DUMMY, DUMMY, GR, 21, 0x40, "ldmx", DUMMY, P9_CPU_FIXED_LOAD, X_FORM_RT_RA_RB_eop_EH},
 	/**************************RFC02494.r1: FXU Multiply-Add Instructions************************************/
-	/* maddhd */ {0x7C0001D2, 0, GR , 16, GR, 11, GR, 5, GR, 21, CLASS_CPU_MUL_ADD_DW, "maddhd" , DUMMY, P9_CPU_FIXED_ARTH, A_FORM_RT_RA_RB_RC_eop_rc},
-	/* maddhdu */{0x7C0001D2, 0, GR , 16, GR, 11, GR, 5, GR, 21, CLASS_CPU_MUL_ADD_DW, "maddhdu", DUMMY, P9_CPU_FIXED_ARTH, A_FORM_RT_RA_RB_RC_eop_rc},
-	/* maddld */ {0x7C0001D2, 0, GR , 16, GR, 11, GR, 5, GR, 21, CLASS_CPU_MUL_ADD_DW, "maddld" , DUMMY, P9_CPU_FIXED_ARTH, A_FORM_RT_RA_RB_RC_eop_rc},
+	/* maddhd */ {0x7C0001D2, 0, GR , 16, GR, 11, GR, 6, GR, 21, CLASS_CPU_MUL_ADD_DW, "maddhd" , DUMMY, P9_CPU_FIXED_ARTH, A_FORM_RT_RA_RB_RC_eop_rc},
+	/* maddhdu */{0x7C0001D2, 0, GR , 16, GR, 11, GR, 6, GR, 21, CLASS_CPU_MUL_ADD_DW, "maddhdu", DUMMY, P9_CPU_FIXED_ARTH, A_FORM_RT_RA_RB_RC_eop_rc},
+	/* maddld */ {0x7C0001D2, 0, GR , 16, GR, 11, GR, 6, GR, 21, CLASS_CPU_MUL_ADD_DW, "maddld" , DUMMY, P9_CPU_FIXED_ARTH, A_FORM_RT_RA_RB_RC_eop_rc},
 	/**************************RFC02497.r1: Array Index Support************************************/
 	/* extswsli  */ {0x7C0006F4, 0, GR, 21, IMM_DATA, 11, IMM_DATA_1BIT, 1, GR, 16, 0x57, "extswsli",  DUMMY, P9_CPU_FIXED_ARTH, MDFORM_RS_RA_SH_MB_rc},
 	/* extswsli. */ {0x7C0006F5, 0, GR, 21, IMM_DATA, 11, IMM_DATA_1BIT, 1, GR, 16, 0x57, "extswsli.", DUMMY, P9_CPU_FIXED_ARTH, MDFORM_RS_RA_SH_MB_rc},
@@ -341,7 +343,7 @@ struct instruction_masks cpu_instructions_array[]={
 	/* xfxForm_RS_spr form of instructions */
 	/* mtspr  */	{0x7C0003A6, 0, GR , 21,DUMMY ,DUMMY ,DUMMY, DUMMY, SPR_REG, 16, 0x52, "mtspr " , DUMMY, CPU_FIXED_SPR , X_FX_FORM_RS_SPR_eop},
 	/* xfxForm_RT_spr form of instructions */
-	/* mfspr  */	{0x7C0002A6, 0, SPR_REG , 16,DUMMY ,DUMMY ,DUMMY, DUMMY, GR, 21, 0x53, "mfspr " , DUMMY, CPU_FIXED_SPR , X_FX_FORM_RT_SPR_eop},
+	/* mfspr  */	{0x7C0002A6, 0, SPR_REG, 11, DUMMY ,DUMMY ,DUMMY, DUMMY, GR, 21, 0x53, "mfspr " , DUMMY, CPU_FIXED_SPR , X_FX_FORM_RT_SPR_eop},
 	/* xfxForm_RS_fxm form of instructions */
 	/* mtcrf  */	{0x7C000120, 0, GR , 21,DUMMY ,DUMMY ,DUMMY, DUMMY, IMM_DATA, 12, 0x54, "mtcrf " , DUMMY, CPU_FIXED_SPR , X_FX_FORM_RS_FXM_eop},
 	/* store instructions X_FORM_RS_RA_RB */                       
@@ -579,7 +581,6 @@ void class_cpu_load_gen(uint32 client_no, uint32 random_no, struct instruction_m
 		case 618:  /* P9:ldmx, EOP 309 */
 		  	gpr_t = get_random_gpr(client_no, temp->tgt_dtype, 1);	/* target register */	
 		  	gpr_s = get_random_gpr(client_no, temp->tgt_dtype, 0);	/* hold EA offset */	
-		  	gpr_e = get_random_gpr(client_no, temp->tgt_dtype, 0);	/* Hold EA base */	
 
 			load_off = init_mem_for_gpr(client_no, 32);
 			load_off &= 0x0000ffff;
@@ -589,18 +590,14 @@ void class_cpu_load_gen(uint32 client_no, uint32 random_no, struct instruction_m
 			tc_memory++;
 			num_ins_built++;
 
-			store_mcode = GEN_ADDI_MCODE(gpr_e, LOAD_RA, 0); /* base of EA as cptr->ls_base[pass] */
-			*tc_memory = store_mcode;
-			cptr->instr_index[prolog_size + num_ins_built] = addi | 0x20000000;
-			tc_memory++;
-			num_ins_built++;
 
             uint32 op1 = (gpr_s << temp->op1_pos);
-            uint32 op2 = (gpr_e << temp->op2_pos);
+            uint32 op2 = (LOAD_RA << temp->op2_pos);
             uint32 tgt = (gpr_t << temp->tgt_pos);
             store_mcode = (temp->op_eop_mask | op1 | op2 | tgt);
             *tc_memory = store_mcode;
             cptr->instr_index[prolog_size + num_ins_built] = index | 0x10000000;
+			cptr->tc_ptr[INITIAL_BUF]->ea_off[prolog_size + num_ins_built] = load_off;
             tc_memory++;
             num_ins_built++;
 			cptr->num_ins_built = num_ins_built;
@@ -1071,7 +1068,7 @@ void class_cpu_rotate_gen(uint32 client_no, uint32 random_no, struct instruction
 void class_cpu_rotate_1_gen(uint32 client_no, uint32 random_no, struct instruction_masks *ins, int index)
 {
 	uint32 op1=0, op2=0, tgt=0,mcode=0,*tc_memory,num_ins_built,prolog_size,RT1=0,RT2=0,RT=0;
-	uint32 MB,ME;
+	uint32 var_mb,ME;
 	struct server_data *sdata = &global_sdata[INITIAL_BUF];
 	struct client_data *cptr = sdata->cdata_ptr[client_no];        
 	prolog_size = cptr->prolog_size;
@@ -1082,15 +1079,15 @@ void class_cpu_rotate_1_gen(uint32 client_no, uint32 random_no, struct instructi
 	op1 = ((RT1 & 0x1f) << (ins->op1_pos));                     
 	RT2 = ((get_random_no_32(client_no)) %32);		  /* SH value */
 	op2 = (RT2) << (ins->op2_pos); 
-	RT2 = ((get_random_no_32(client_no)) %32);		  /* MB value */
-	MB  = (RT2) << (ins->op3_pos); 
+	RT2 = ((get_random_no_32(client_no)) %32);		  /* var_mb value */
+	var_mb  = (RT2) << (ins->op3_pos); 
 	RT2 = ((get_random_no_32(client_no)) %32);		  
 	ME  = (RT2) << 1 ;                        		  /* ME value */
 	RT= get_random_gpr(client_no,ins->tgt_dtype,1);          /* get a register */
 	num_ins_built = cptr->num_ins_built;
 	tc_memory = &(cptr->tc_ptr[INITIAL_BUF]->tc_ins[prolog_size + num_ins_built]);
 	tgt = ((RT & 0x1f) << (ins->tgt_pos));                     
-	mcode = (ins->op_eop_mask | op1 | tgt | op2 | MB  | ME  );        
+	mcode = (ins->op_eop_mask | op1 | tgt | op2 | var_mb  | ME  );        
     *tc_memory = mcode;
 	cptr->instr_index[prolog_size + num_ins_built] = index | 0x10000000;
 	cptr->tc_ptr[INITIAL_BUF]->sim_ptr[prolog_size + num_ins_built] = ins->sim_func;           
@@ -1102,7 +1099,7 @@ void class_cpu_rotate_1_gen(uint32 client_no, uint32 random_no, struct instructi
 void class_cpu_rotate_2_gen(uint32 client_no, uint32 random_no, struct instruction_masks *ins, int index)
 {
 	uint32 op1=0, op2=0, tgt=0,mcode=0,*tc_memory,num_ins_built,prolog_size,RT1=0,RT2=0,RT=0;
-	uint32 MB,MB1;
+	uint32 var_mb,MB1;
 	struct server_data *sdata = &global_sdata[INITIAL_BUF];
 	struct client_data *cptr = sdata->cdata_ptr[client_no];        
 	prolog_size = cptr->prolog_size;
@@ -1113,16 +1110,16 @@ void class_cpu_rotate_2_gen(uint32 client_no, uint32 random_no, struct instructi
 	op1 = ((RT1 & 0x1f) << (ins->op1_pos));                     
 	RT2= get_random_gpr(client_no,ins->op1_dtype,0);          /* get a register */
 	op2 = ((RT2 & 0x1f) << (ins->op2_pos));                     
-	RT2 = ((get_random_no_32(client_no)) %64);		  /* MB value */
-	MB  = RT2 % 32;
-	MB  = (MB) << (ins->op3_pos); 
+	RT2 = ((get_random_no_32(client_no)) %64);		  /* var_mb value */
+	var_mb  = RT2 % 32;
+	var_mb  = (var_mb) << (ins->op3_pos); 
 	MB1 = RT2 /32;
 	MB1 = (MB1) << 1;
 	RT= get_random_gpr(client_no,ins->tgt_dtype,1);          /* get a register */
 	num_ins_built = cptr->num_ins_built;
 	tc_memory = &(cptr->tc_ptr[INITIAL_BUF]->tc_ins[prolog_size + num_ins_built]);
 	tgt = ((RT & 0x1f) << (ins->tgt_pos));                     
-	mcode = (ins->op_eop_mask | op1 | tgt | op2 | MB | MB1  );        
+	mcode = (ins->op_eop_mask | op1 | tgt | op2 | var_mb | MB1  );        
     *tc_memory = mcode;
 	cptr->instr_index[prolog_size + num_ins_built] = index | 0x10000000;
 	cptr->tc_ptr[INITIAL_BUF]->sim_ptr[prolog_size + num_ins_built] = ins->sim_func;           
@@ -1134,7 +1131,7 @@ void class_cpu_rotate_2_gen(uint32 client_no, uint32 random_no, struct instructi
 void class_cpu_rotate_3_gen(uint32 client_no, uint32 random_no, struct instruction_masks *ins, int index)
 {
 	uint32 op1=0, op2=0, tgt=0,mcode=0,*tc_memory,num_ins_built,prolog_size,RT1=0,RT2=0,RT=0;
-	uint32 MB,ME;
+	uint32 var_mb,ME;
 	struct server_data *sdata = &global_sdata[INITIAL_BUF];
 	struct client_data *cptr = sdata->cdata_ptr[client_no];        
 	prolog_size = cptr->prolog_size;
@@ -1145,15 +1142,15 @@ void class_cpu_rotate_3_gen(uint32 client_no, uint32 random_no, struct instructi
 	op1 = ((RT1 & 0x1f) << (ins->op1_pos));                     
 	RT2= get_random_gpr(client_no,ins->op1_dtype,0);          /* get a register */
 	op2 = ((RT2 & 0x1f) << (ins->op2_pos));                     
-	RT2 = ((get_random_no_32(client_no)) %32);		  /* MB value */
-	MB  = RT2  << (ins->op3_pos); 
-	RT2 = ((get_random_no_32(client_no)) %32);		  /* MB value */
+	RT2 = ((get_random_no_32(client_no)) %32);		  /* var_mb value */
+	var_mb  = RT2  << (ins->op3_pos); 
+	RT2 = ((get_random_no_32(client_no)) %32);		  /* var_mb value */
 	ME  = RT2  << 1; 
 	RT= get_random_gpr(client_no,ins->tgt_dtype,1);          /* get a register */
 	num_ins_built = cptr->num_ins_built;
 	tc_memory = &(cptr->tc_ptr[INITIAL_BUF]->tc_ins[prolog_size + num_ins_built]);
 	tgt = ((RT & 0x1f) << (ins->tgt_pos));                     
-	mcode = (ins->op_eop_mask | op1 | tgt | op2 | MB | ME );        
+	mcode = (ins->op_eop_mask | op1 | tgt | op2 | var_mb | ME );        
     *tc_memory = mcode;
 	cptr->instr_index[prolog_size + num_ins_built] = index | 0x10000000;
 	cptr->tc_ptr[INITIAL_BUF]->sim_ptr[prolog_size + num_ins_built] = ins->sim_func;           
@@ -1222,7 +1219,7 @@ void class_cpu_fixed_spr_1_gen(uint32 client_no, uint32 random_no, struct instru
 {
 	uint32 op1=0, tgt=0,mcode=0,*tc_memory,num_ins_built,prolog_size,RT1=0,RT2=0,RT=0;
 	/* allow write only to link,ctr and xer.VRSAVE can not be written from user space */
-	const uint32 sprs[3] = { 1, 8, 9};              
+	const uint32 sprs[3] = {1, 8, 9};              
 	struct server_data *sdata = &global_sdata[INITIAL_BUF];
 	struct client_data *cptr = sdata->cdata_ptr[client_no];        
 	prolog_size = cptr->prolog_size;
@@ -1246,7 +1243,7 @@ void class_cpu_fixed_spr_1_gen(uint32 client_no, uint32 random_no, struct instru
 void class_cpu_fixed_spr_2_gen(uint32 client_no, uint32 random_no, struct instruction_masks *ins, int index)
 {
 	uint32 op1=0, tgt=0,mcode=0,*tc_memory,num_ins_built,prolog_size,RT1=0,RT2=0,RT=0;
-	const uint32 sprs[4] = { 1, 8, 9,256};          
+	const uint32 sprs[4] = {8, 256, 288, 392};          
 	struct server_data *sdata = &global_sdata[INITIAL_BUF];
 	struct client_data *cptr = sdata->cdata_ptr[client_no];        
 	prolog_size = cptr->prolog_size;
@@ -1255,7 +1252,7 @@ void class_cpu_fixed_spr_2_gen(uint32 client_no, uint32 random_no, struct instru
 	/* pick registeres */
 	RT2 = ((get_random_no_32(client_no)) % 4);		  /* SPR register number */
 	RT1 = sprs[RT2];
-	op1 = RT1<< (ins->op1_pos);
+	op1 = RT1 << (ins->op1_pos);
 	/* from now use R6, as R10 is used for cpu_id_mask with THREADS_SYNC enabled */
 	RT = 6;						/* only reg10 for loading values from sprs*/
 	tgt = ((RT & 0x1f) << (ins->tgt_pos));                     
@@ -1277,7 +1274,7 @@ void class_cpu_fixed_spr_3_gen(uint32 client_no, uint32 random_no, struct instru
 	num_ins_built = cptr->num_ins_built;
 	tc_memory = &(cptr->tc_ptr[INITIAL_BUF]->tc_ins[prolog_size + num_ins_built]);
 	/* pick registeres */
-	RT1 = get_random_gpr(client_no,ins->op1_dtype,1);          /* get a register */
+	RT1 = get_random_gpr(client_no,ins->op1_dtype, 1);          /* get a register */
 	num_ins_built = cptr->num_ins_built;
 	tc_memory = &(cptr->tc_ptr[INITIAL_BUF]->tc_ins[prolog_size + num_ins_built]);
 	op1 = ((RT1 & 0x1f) << (ins->op1_pos));                     
@@ -1347,8 +1344,6 @@ void class_cpu_fixed_store_1_gen(uint32 client_no, uint32 random_no, struct inst
 	 	case 0x052A:									    /* stswx */
 			do { 
 				gpr_s = get_random_gpr(client_no,ins->tgt_dtype,1);  		    /* start register*/
-			  	num_ins_built = cptr->num_ins_built;
-				tc_memory = &(cptr->tc_ptr[INITIAL_BUF]->tc_ins[prolog_size + num_ins_built]);
 			}while(RT < gpr_s);
 			/* Load and Store has same build..do not load beyond GPR31 or else it will
 			 * start writing to GPR0 and so on which will corrupt important registers
@@ -1369,13 +1364,10 @@ void class_cpu_fixed_store_1_gen(uint32 client_no, uint32 random_no, struct inst
 				}
 			}
 			break;				
-	 	case 0x03F8:
+	 	case 0x03F8: /* cmpb and bperm */
 	 	case 0x01F8:
-			offset = 0;							/* cmpb and bperm */
+			offset = 0;
 			gpr_s =  get_random_gpr(client_no,ins->op1_dtype,0);  		/* get the register */  
-			/*gpr_e =  get_random_gpr(client_no,ins->op2_dtype,0);*/  		/* get the register */  
-			num_ins_built = cptr->num_ins_built;	/* read num_ins_built and tc_memory */
-			tc_memory = &(cptr->tc_ptr[INITIAL_BUF]->tc_ins[prolog_size + num_ins_built]);
 			tgt = (RT & 0x1f) << (ins->tgt_pos);
 			op1 = (gpr_s & 0x1f) << (ins->op1_pos);
 		 	mcode = ((ins->op_eop_mask) | op1 | op2 | tgt);		
@@ -1395,8 +1387,7 @@ void class_cpu_fixed_store_1_gen(uint32 client_no, uint32 random_no, struct inst
 		offset = cpu_build_module(client_no,FC_ADDI_IMM,store_off,STORE_RB,index);
 		store_off = cpu_build_module(client_no,FC_INST_STORE,store_off,RT,index);
 	}
-	num_ins_built = cptr->num_ins_built;			/* Read and write back before leaving.if not num_ins_built
-								   	will have old value */
+	num_ins_built = cptr->num_ins_built;	/* Read and write back before leaving. if not num_ins_built will have old value */
 	tc_memory = &(cptr->tc_ptr[INITIAL_BUF]->tc_ins[prolog_size + num_ins_built]);
 	cptr->num_ins_built = num_ins_built;			/* Update number of instructions */
 	cptr->bdy_req = 0;							/* Reset boundary required element */
@@ -1463,24 +1454,24 @@ void class_cpu_fixed_store_2_gen(uint32 client_no, uint32 random_no, struct inst
 			if (ins->ins_class == CPU_FIXED_LOAD ) {
 				store_off = init_mem_for_gpr(client_no,offset);				/* get offset */
 				mcode = STMW(RT,STORE_RA,store_off); 
-	        		*tc_memory = mcode;
+	        	*tc_memory = mcode;
 				cptr->tc_ptr[INITIAL_BUF]->ea_off[prolog_size + num_ins_built] = (store_off & 0x0000fffc);
 				cptr->instr_index[prolog_size + num_ins_built] = stmw | 0x20000000;
-       				tc_memory++;
+       			tc_memory++;
 				num_ins_built++;	
 			}
-			for(i=RT;i<=MAX_REG;i++){
+			for(i = RT; i <= MAX_REG; i++){
 				if (ins->ins_class == CPU_FIXED_LOAD ) {
-						vsrs->dirty_mask |= ((0x1ULL << i)); /* lmw,mark it as dirty  */	
+					vsrs->dirty_mask |= ((0x1ULL << i)); /* lmw,mark it as dirty  */	
 				}else {
-						vsrs->dirty_mask &= (~(0x1ULL << i));/* stmw,mark it as clean */
+					vsrs->dirty_mask &= (~(0x1ULL << i));/* stmw,mark it as clean */
 				}
-			}							/* end of for loop */
+			}/* end of for loop */
 			break;
 	 	case 0xE800:
 	 	case 0xF800:
-			opcode_val = (ins->op_eop_mask & 0X0000ffff);		/* stmd and lmd not supported*/
-			if(opcode_val == 3){					/* stmd and lmd*/
+			opcode_val = (ins->op_eop_mask & 0X0000ffff);	/* stmd and lmd not supported*/
+			if (opcode_val == 3) {							/* stmd and lmd*/
 				offset = ((MAX_REG - RT + 1) * 8);
 			}
 			else if (ins->op_eop_mask == 0XE8000002) {		/* lwa */
@@ -1490,7 +1481,7 @@ void class_cpu_fixed_store_2_gen(uint32 client_no, uint32 random_no, struct inst
 				cptr->bdy_req = 16;
 				offset = ALIGN_QW;
 			}
-			else {							/* std and stdu */
+			else {											/* std and stdu */
 				offset = ALIGN_DW;
 			}
 			break;
@@ -1544,14 +1535,29 @@ void class_cpu_fixed_arth_4_gen(uint32 client_no, uint32 random_no, struct instr
 	prolog_size = cptr->prolog_size;
 	num_ins_built = cptr->num_ins_built;
 	tc_memory = &(cptr->tc_ptr[INITIAL_BUF]->tc_ins[prolog_size + num_ins_built]);
-	RT =  get_random_gpr(client_no,ins->tgt_dtype,1);  		/* get the register */  
-	num_ins_built = cptr->num_ins_built;
-	tc_memory = &(cptr->tc_ptr[INITIAL_BUF]->tc_ins[prolog_size + num_ins_built]);
+	RT =  get_random_gpr(client_no,ins->tgt_dtype, 1);  		/* get target register */  
 	tgt = (RT & 0x1f) << (ins->tgt_pos);
-	gpr_s =  get_random_gpr(client_no,ins->op2_dtype,0);  		/* get the register */  
-    op2 = (gpr_s & 0x1f) << (ins->op2_pos);
-    offset = ( (get_random_no_32(client_no)) % (65535));             /* need only 16 bits */	
-	op1 = (offset & 0x0000ffff); 
+	gpr_s =  get_random_gpr(client_no, ins->op2_dtype, 0);  	/* get source register */  
+
+	if (ins->op1_dtype == IMM_DATA) {
+    	offset = ( (get_random_no_32(client_no)) % (65535));    /* need only 16 bits */	
+		op1 = (offset & 0x0000ffff); 
+	}
+	else if (ins->op1_dtype == GR) {
+		op1 = gpr_s & 0x1f;
+	}
+	op1 = op1  << ins->op1_pos;
+
+	if ((ins->op2_dtype == IMM_DATA) && (ins->op3_dtype == IMM_DATA_1BIT)) {
+		op2 = (random_no & 0x0000001f); /* 5 bit sh0:4 */
+		uint32 op3 = (random_no & 0x00000001); /* 1 bit sh5 */
+		op2 = (op3 << 6) | op2;
+	}
+	else if (ins->op2_dtype == GR) {
+    	op2 = (gpr_s & 0x1f); 
+	}
+	op2 = op2 << (ins->op2_pos);
+
     mcode = (ins->op_eop_mask | op1 | op2 | tgt);
     *tc_memory = mcode;
 	cptr->instr_index[prolog_size + num_ins_built] = index | 0x10000000;
@@ -1697,7 +1703,7 @@ void class_cpu_fixed_store_3_gen(uint32 client_no, uint32 random_no, struct inst
 	{
 		case 0x04AA:
 		case 0x05AA:							/* stswi */
-		      		do{
+		      	do{
 				  	gpr_e = get_random_gpr(client_no,ins->tgt_dtype,1);	/* end register */	
 					num_ins_built = cptr->num_ins_built;
 					tc_memory = &(cptr->tc_ptr[INITIAL_BUF]->tc_ins[prolog_size + num_ins_built]);
@@ -1709,66 +1715,66 @@ void class_cpu_fixed_store_3_gen(uint32 client_no, uint32 random_no, struct inst
 				}while(gpr_s == 0x1f);						/* should not be 31st*/
 				gpr_e = gpr_e & 0x1f;
 				gpr_s = gpr_s & 0x1f;
-				if ( gpr_s > gpr_e) {
-				   tgt = gpr_e;
-		   		   gpr_e = gpr_s;
-				   gpr_s = tgt;
-				   }
+				if (gpr_s > gpr_e) {
+				   	tgt = gpr_e;
+		   		   	gpr_e = gpr_s;
+				   	gpr_s = tgt;
+				}
 				/* Idea is to randomly store one to eight register.Registers,starting gpr_e  */
 				/* will be stored.gpr_s will be used to store the offset of load/store area */   
-			        /* calculate the number of bytes which will be stored */ 	
+			    /* calculate the number of bytes which will be stored */ 	
 				/* FOR LSWI,load only from gpr_e till reg31 */
-			       	num_bytes = ( (max_reg - gpr_e) + 1 ) * 4;
-				if(num_bytes >= 32){
+			    num_bytes = ( (max_reg - gpr_e) + 1 ) * 4;
+				if (num_bytes >= 32){
 					num_bytes = 28;
 				}
 				/* now get offset where we need to store the register */
 				offset = init_mem_for_gpr(client_no, num_bytes);
-			        offset = offset & 0x0000ffff;
+			    offset = offset & 0x0000ffff;
 				/* store gpr_s and mark it as clean */
 				addi_mcode = GEN_ADDI_MCODE(gpr_s, LOAD_RA, offset);
-                	        *tc_memory = addi_mcode;
-	                        cptr->instr_index[prolog_size + num_ins_built] = addi | 0x20000000;
-        	                cptr->tc_ptr[INITIAL_BUF]->sim_ptr[prolog_size + num_ins_built] = (sim_fptr)&simulate_addi;
-                	        tc_memory++;
-			        num_ins_built++; 
+                *tc_memory = addi_mcode;
+	            cptr->instr_index[prolog_size + num_ins_built] = addi | 0x20000000;
+        	    cptr->tc_ptr[INITIAL_BUF]->sim_ptr[prolog_size + num_ins_built] = (sim_fptr)&simulate_addi;
+                tc_memory++;
+			    num_ins_built++; 
 				op1 = (num_bytes & 0x1f) << (ins->op1_pos);
-			        op2 = (gpr_s & 0x1f) << (ins->op2_pos); 
-			        tgt = (gpr_e & 0x1f) << (ins->tgt_pos);
-			        if (opcode_val == 0x05AA) {  
-				   mcode = (ins->op_eop_mask | op1 | op2 | tgt);
-			           cptr->instr_index[prolog_size + num_ins_built] = index | 0x10000000;
+			    op2 = (gpr_s & 0x1f) << (ins->op2_pos); 
+			    tgt = (gpr_e & 0x1f) << (ins->tgt_pos);
+			    if (opcode_val == 0x05AA) {  
+				   	mcode = (ins->op_eop_mask | op1 | op2 | tgt);
+			        cptr->instr_index[prolog_size + num_ins_built] = index | 0x10000000;
 				} else if (opcode_val == 0x04AA) {				
-				   mcode = STSWI(num_bytes,gpr_s,gpr_e);
-				   cptr->instr_index[prolog_size + num_ins_built] = stswi | 0x20000000;
+					mcode = STSWI(num_bytes,gpr_s,gpr_e);
+					cptr->instr_index[prolog_size + num_ins_built] = stswi | 0x20000000;
 				}
 				*tc_memory = mcode;
 				cptr->tc_ptr[INITIAL_BUF]->ea_off[prolog_size + num_ins_built] = offset;      
-       			        tc_memory++;
-	                        num_ins_built++;	
-			        /* build the LSWI now */	
-			        if (opcode_val == 0x04AA) {
-					  /* now get another offset from where registers will be loaded */
-			        	offset = init_mem_for_gpr(client_no, num_bytes);
-				        offset = offset & 0x0000ffff;
+       			tc_memory++;
+	            num_ins_built++;	
+			    /* build the LSWI now */	
+			    if (opcode_val == 0x04AA) {
+					/* now get another offset from where registers will be loaded */
+			        offset = init_mem_for_gpr(client_no, num_bytes);
+				    offset = offset & 0x0000ffff;
 					/* store gpr_s and mark it as clean */
 					addi_mcode = GEN_ADDI_MCODE(gpr_s, LOAD_RA, offset);
-                	        	*tc_memory = addi_mcode;
-	                        	cptr->instr_index[prolog_size + num_ins_built] = addi | 0x20000000;
-                	        	tc_memory++;
-			        	num_ins_built++; 
+                	*tc_memory = addi_mcode;
+	                cptr->instr_index[prolog_size + num_ins_built] = addi | 0x20000000;
+                	tc_memory++;
+			        num_ins_built++; 
 					/* now build lswi */
 					op1 = (num_bytes & 0x1f) << (ins->op1_pos);
-			        	op2 = (gpr_s & 0x1f) << (ins->op2_pos); 
-			        	tgt = (gpr_e & 0x1f) << (ins->tgt_pos);
-			        	mcode = (ins->op_eop_mask | op1 | op2 | tgt);
-        		        	*tc_memory = mcode;
+			        op2 = (gpr_s & 0x1f) << (ins->op2_pos); 
+			        tgt = (gpr_e & 0x1f) << (ins->tgt_pos);
+			        mcode = (ins->op_eop_mask | op1 | op2 | tgt);
+        		    *tc_memory = mcode;
 					cptr->tc_ptr[INITIAL_BUF]->ea_off[prolog_size + num_ins_built] = offset;      
-			        	cptr->instr_index[prolog_size + num_ins_built] = index | 0x10000000;
-       			        	tc_memory++;
-	                        	num_ins_built++;	
+			        cptr->instr_index[prolog_size + num_ins_built] = index | 0x10000000;
+       			    tc_memory++;
+	                num_ins_built++;	
 				  	/* mark registers starting gpr_e as dirty */
-					for(i=gpr_e;i<(gpr_e+(num_bytes/4));i++) {
+					for(i = gpr_e; i < (gpr_e + (num_bytes/4)); i++) {
 						vsrs->dirty_mask |= ((0x1ULL << i ));	/* mark it as dirty   */
 					}
 				}	
@@ -1779,11 +1785,11 @@ void class_cpu_fixed_store_3_gen(uint32 client_no, uint32 random_no, struct inst
 					}
 				}
 				/* Cover up the index registers */
-				mcode=OR(gpr_e,gpr_s);
+				mcode = OR(gpr_e,gpr_s);
 				*tc_memory = mcode;
 				cptr->instr_index[prolog_size + num_ins_built] = or | 0x20000000;
 				tc_memory++;
-	                       	num_ins_built++;
+	            num_ins_built++;
 				break;
 
 		    default:    sprintf(msg, "Unknown instruction in fixed_store_3_gen routine ");
@@ -1863,7 +1869,7 @@ void class_cpu_fixed_logic_3_gen(uint32 client_no, uint32 random_no, struct inst
 	/* now get a source register */
     cptr->num_ins_built=num_ins_built;					/* write the data again*/
 	RA = get_random_gpr(client_no,ins->op3_dtype, 0);
-	/* get immediate data for comparison */
+	/* get immediate data for comparision */
 	Imm_data = get_random_no_32(client_no) % 65536;
 	Imm_data = Imm_data & 0x0000ffff;
 	if (ins->op1_dtype == GR ) {
@@ -1990,8 +1996,8 @@ void class_cpu_cache_2_gen(uint32 client_no, uint32 random_no, struct instructio
 	num_ins_built = cptr->num_ins_built;
 	tc_memory = &(cptr->tc_ptr[INITIAL_BUF]->tc_ins[prolog_size + num_ins_built]);
 	prolog_size = cptr->prolog_size;
-    random=rand_offset=mask=0;
-	rand_offset=offset = init_mem_for_gpr(client_no,1);				/* reserve 1 byte */
+    random = rand_offset = mask = 0;
+	rand_offset = offset = init_mem_for_gpr(client_no, 1);		/* reserve 1 byte */
     streamid = offset & 0x0000000f;
     /* based on the POWER version generate TH values */
 	if ( shifted_pvr_os >= SHIFTED_PVR_OS_P8 ) {
@@ -2037,16 +2043,16 @@ void class_cpu_cache_2_gen(uint32 client_no, uint32 random_no, struct instructio
 			 */
 		case 10:
 			/* two cases here : GO = 1 and stop = 10 | 11.For dcbtst GO and STOP is not applicable*/
-		        stop = (get_random_no_32(client_no)%2);	 		/* stop will be zero or one */
+		    stop = (get_random_no_32(client_no)%2);	 		/* stop will be zero or one */
 			/* for dcbtst and TH = 11,go to else part...*/
-			if( ((ins->op_eop_mask) == 0x7C0001EC) || (TH == 11) ){	
+			if (((ins->op_eop_mask) == 0x7C0001EC) || (TH == 11)) {	
 				stop = 0;
 			}
-			if(stop == 1) {					        /* this case is with GO = 0 */
+			if (stop == 1) {					        /* this case is with GO = 0 */
 				random = get_random_no_32(client_no);
 				/* Now set GO to zero, stop to 10 or 11 and insert stream id */
-				random = (random & 0x7fffffff);			/* random no. with GO =0 */
-				random = (random | 0x40000000 );		/* make stop = 10 or 11  */
+				random = (random & 0x7fffffff);		/* random no. with GO =0 */
+				random = (random | 0x40000000);		/* make stop = 10 or 11  */
 				rand_offset = ((random & 0xfffffff0) | streamid); /* insert stream id in the EA*/
 				/* RB = get_random_gpr(client_no,ins->op1_dtype,1); */
 				RC = get_random_gpr(client_no,ins->op1_dtype,1);
@@ -2223,8 +2229,8 @@ void class_cpu_branch_1_gen(uint32 client_no, uint32 random_no, struct instructi
        switch(insttype){
 	       case 0:							/* forward branch with no link */
 		    /* 1) build branch instruction
-			*  2) Fill all the space in between with addi and store instructions/no op
-			*  3) But, these branch instructions should not be executed by the processor.
+			*  2) Fill all the inbetween space with addi and store instructions/no op
+			*  3) But,these branch instructions should not be executed by the processor.
 			*/
 				/* Build actual branch instruction */
  			   	op1 = (distance) << (ins->tgt_pos);
@@ -3298,12 +3304,10 @@ uint32 cpu_build_module(int cno,int FC_CODE,int offset,int gpr_no,int index)
  */
 void class_cpu_load_atomic_gen(uint32 client_no, uint32 random_no, struct instruction_masks *instr_ptr, int index)
 {
-	int i, gpr_num, extra_gpr_count;
+	int gpr_t = 0, gpr_num = 0, extra_gpr_count = 0;
 	uint32 tgt, op1, op2;
- 	uint32 gpr_t, gpr_a;
-    uint32 offset, mcode;
+    uint32 offset = 0, mcode = 0;
     uint32 num_ins_built, prolog_size, *tc_memory;
-    uint64 rand_data = 0;
 	struct vsr_list *vsrs;
 	uint16 backup_bdy;
 
@@ -3323,8 +3327,6 @@ void class_cpu_load_atomic_gen(uint32 client_no, uint32 random_no, struct instru
 	/* select a function code randomely */
 	int index_fc = random_no % NUM_LD_FC;
 
-    /* 2. Would be using RT, RT + 1 and RT + 2 based on function code */
-	gpr_t = get_random_gpr(client_no, GR, 1);
 
 	if (function_code[index_fc] == COMPARE_N_SWAP_NEQ) {
 		extra_gpr_count = 2;
@@ -3335,8 +3337,19 @@ void class_cpu_load_atomic_gen(uint32 client_no, uint32 random_no, struct instru
 	else {
 		extra_gpr_count = 0;
 	}
-	
-    for (gpr_num = gpr_t + 1; gpr_num <= (gpr_t + extra_gpr_count); gpr_num++) { 
+    /* 2. Would be using RT, RT + 1 and RT + 2 based on function code */
+	gpr_t = get_random_gpr(client_no, GR, 1);
+	if (extra_gpr_count == 2) {
+		while ((gpr_t + 2) > 31) {
+			gpr_t = get_random_gpr(client_no, GR, 1);
+		}
+	}
+	else if (extra_gpr_count == 1) {
+		while ((gpr_t + 1) > 31) {
+            gpr_t = get_random_gpr(client_no, GR, 1);
+        }
+	}	
+    for (gpr_num = gpr_t; gpr_num <= (gpr_t + extra_gpr_count); gpr_num++) { 
     	if ((0x1ULL << gpr_num) & vsrs->dirty_mask) {        /* store target register if dirty */
         	offset = init_mem_for_gpr(client_no, 8);
             offset &= 0x0000ffff;
@@ -3346,7 +3359,6 @@ void class_cpu_load_atomic_gen(uint32 client_no, uint32 random_no, struct instru
 	     	cptr->tc_ptr[INITIAL_BUF]->ea_off[prolog_size + num_ins_built] = offset;
 	     	tc_memory++;
 	     	num_ins_built++;
-			
          }
          vsrs->dirty_mask |= ((0x1ULL << gpr_num));        /* mark it as dirty  */
     }
@@ -3354,35 +3366,24 @@ void class_cpu_load_atomic_gen(uint32 client_no, uint32 random_no, struct instru
 
     
 	/* 3. get a register, to be loaded with EA */
-    gpr_a = get_random_gpr(client_no, GR, 1);
 
 	/* using LOAD_RA in place of gpr_a, to allocate 32 byte of memory */
 	backup_bdy = cptr->bdy_req;
 	cptr->bdy_req = ALIGN_2QW; 
-	offset = init_mem_for_gpr(client_no, 32);
+	offset = init_mem_for_gpr(client_no, 8);
 	cptr->bdy_req = backup_bdy;
     offset &= 0x0000ffff;
-	mcode = GEN_ADDI_MCODE(gpr_a, LOAD_RA, offset);
+	mcode = GEN_ADDI_MCODE(LOAD_RB, LOAD_RA, offset);
     *tc_memory = mcode;
     cptr->instr_index[prolog_size + num_ins_built] = addi | 0x20000000;
     tc_memory++;
     num_ins_built++;
 
-    /* 4. Populate memory@(LOAD_RA + offset) with random data
- 	 * skip updating target register with random data, 
- 	 * need to populate 32Byte of memory with random data 
- 	 * Registers are already loaded with random data durimg impart_context
- 	 * */
-	uint64 *memptr = (uint64 *) (cptr->ls_base[INITIAL_BUF] + offset);
-	for (i = 0;  i < 4;  i++) {
-		rand_data = get_random_no_64(client_no);
-		*(memptr + i) = rand_data;
-	}
     
 
     /* 5. Queue atomic instruction */
-    tgt = (gpr_t & 0x1f) << (instr_ptr->tgt_pos);
-    op1 = (gpr_a & 0x1f) << (instr_ptr->op1_pos);
+    tgt = (gpr_t) << (instr_ptr->tgt_pos);
+    op1 = (LOAD_RB) << (instr_ptr->op1_pos);
     op2 = (function_code[index_fc] & 0x1f) << (instr_ptr->op2_pos);
     mcode = (instr_ptr->op_eop_mask | op1 | op2 | tgt);
     *tc_memory = mcode;
@@ -3401,20 +3402,17 @@ void class_cpu_load_atomic_gen(uint32 client_no, uint32 random_no, struct instru
  */
 void class_cpu_store_atomic_gen(uint32 client_no, uint32 random_no, struct instruction_masks *instr_ptr, int index)
 {
-	int i;
-	uint32 op1, op2, op3;
- 	uint32 gpr_s, gpr_a;
-    uint32 offset, mcode;
+	uint32 op1 = 0, op2 = 0, tgt = 0;
+ 	uint32 gpr_s;
+    uint32 offset = 0, mcode = 0;
     uint32 num_ins_built, prolog_size, *tc_memory;
 	uint16 backup_bdy;	
-    uint64 rand_data = 0;
 	struct vsr_list *vsrs;
 
     struct server_data *sdata = &global_sdata[INITIAL_BUF];
     struct client_data *cptr = sdata->cdata_ptr[client_no];
 
 	/*DPRINT(log, "Entry: %s\n", __FUNCTION__);*/
-
     vsrs = &cptr->vsrs[GR];
 	prolog_size = cptr->prolog_size;
     num_ins_built = cptr->num_ins_built;
@@ -3426,39 +3424,29 @@ void class_cpu_store_atomic_gen(uint32 client_no, uint32 random_no, struct instr
 	/* select a function code randomely */
 	int index_fc = random_no % NUM_ST_FC;
 
-	/* get register RA to be loaded with EA */
-    gpr_a = get_random_gpr(client_no, GR, 1);
 
 	backup_bdy = cptr->bdy_req;
 	cptr->bdy_req = ALIGN_2QW; 
 	offset = init_mem_for_gpr(client_no, 32);
 	/* restore bdy */
 	cptr->bdy_req = backup_bdy;
-    offset &= 0x0000ffff;
-	mcode = GEN_ADDI_MCODE(gpr_a, LOAD_RA, offset);
+    offset &= 0xffff;
+	mcode = GEN_ADDI_MCODE(STORE_RB, STORE_RA, offset);
     *tc_memory = mcode;
     cptr->instr_index[prolog_size + num_ins_built] = addi | 0x20000000;
+
     tc_memory++;
     num_ins_built++;
 
-	/* populated 32byte memory block with random data */
-	/* All register are already loaded with random data during impart_context */
-	uint64 *memptr = (uint64 *) (cptr->ls_base[INITIAL_BUF] + offset);
-	for (i = 0;  i < 4;  i++) {
-		rand_data = get_random_no_64(client_no);
-		*(memptr + i) = rand_data;
-	}
-
 	/* get register RS to be source of random data as input to atomic operation*/
-    gpr_s = get_random_gpr(client_no, GR, 0);
-	vsrs->dirty_mask &= (~(0x1ULL << gpr_s));
+    gpr_s = get_random_gpr(client_no, GR, 1);
 
 
     /* 5. Queue atomic store instruction */
-    op1 = (gpr_s & 0x1f) << (instr_ptr->op1_pos);
-    op2 = (gpr_a & 0x1f) << (instr_ptr->op2_pos);
-    op3 = (function_code[index_fc] & 0x1f) << (instr_ptr->op3_pos);
-    mcode = (instr_ptr->op_eop_mask | op1 | op2 | op3);
+    op1 = (LOAD_RB & 0x1f) << (instr_ptr->op1_pos);
+    op2 = (function_code[index_fc] & 0x1f) << (instr_ptr->op2_pos);
+    tgt = (gpr_s & 0x1f) << (instr_ptr->tgt_pos);
+    mcode = (instr_ptr->op_eop_mask | op1 | op2 | tgt);
     *tc_memory = mcode;
     cptr->tc_ptr[INITIAL_BUF]->ea_off[prolog_size + num_ins_built] = offset;
     cptr->instr_index[prolog_size + num_ins_built] = index | 0x10000000;
@@ -3468,10 +3456,10 @@ void class_cpu_store_atomic_gen(uint32 client_no, uint32 random_no, struct instr
 	cptr->num_ins_built = num_ins_built;			/* Update number of instructions */
 	/*DPRINT(log, "Exit: %s, prolog_size: 0x%X, num_ins_built: %d\n", __FUNCTION__, prolog_size, num_ins_built);*/
 }
+
 void class_cpu_load_relative_gen(uint32 client_no, uint32 random_no, struct instruction_masks *ins, int index)
 {
-    uint32 op1=0, op2=0, op3 = 0, tgt=0, mcode=0, *tc_memory, num_ins_built, prolog_size, RT;
-    uint32 offset;
+    uint32 op1=0, op2=0, op3 = 0, tgt=0, mcode=0, *tc_memory, num_ins_built, prolog_size;
 
     struct server_data *sdata = &global_sdata[INITIAL_BUF];
     struct client_data *cptr = sdata->cdata_ptr[client_no];
@@ -3479,13 +3467,12 @@ void class_cpu_load_relative_gen(uint32 client_no, uint32 random_no, struct inst
     num_ins_built = cptr->num_ins_built;
     tc_memory = &(cptr->tc_ptr[INITIAL_BUF]->tc_ins[prolog_size + num_ins_built]);
 
-    RT =  get_random_gpr(client_no,ins->tgt_dtype,1);       /* get the target register */
     op3 = (random_no >> ins->op3_pos) & 0x1;   /* d2 */ 
 	op2 = (random_no >> ins->op2_pos) & 0x3FF; /* d0 */
     op1 = (random_no >> ins->op1_pos) & 0x1F;  /* d1 */
 	
 
-    tgt = (RT & 0x1f) << (ins->tgt_pos);
+    tgt = (STORE_RB & 0x1f) << (ins->tgt_pos);
     op3 = op3 << (ins->op3_pos);
     op2 = op2 << (ins->op2_pos);
     op1 = op1 << (ins->op1_pos);
@@ -3567,17 +3554,20 @@ void class_cpu_string_operations_gen(uint32 client_no, uint32 random_no, struct 
     		cptr->tc_ptr[INITIAL_BUF]->sim_ptr[prolog_size + num_ins_built] = (sim_fptr)&simulate_stwx;
     		tc_memory++;
     		num_ins_built++;
+			RA =  get_random_gpr(client_no,ins->tgt_dtype, 0);       /* get the source register */
+			RB =  get_random_gpr(client_no,ins->tgt_dtype, 0);       /* get the source register */
 			if (ext_op == 384) {
 				imm_data = random_no & 0x1; /* L */
+    			op1 = (imm_data << ins->op1_pos); 
+				op2 = (RA << ins->op2_pos);
+    			op3 = (RB << ins->op3_pos);
 			}
 			else {
 				imm_data = 0;	
+				op3 = 0;
+				op1 = (RA << ins->op1_pos);
+    			op2 = (RB << ins->op2_pos);
 			}
-			RA =  get_random_gpr(client_no,ins->tgt_dtype, 0);       /* get the source register */
-			RB =  get_random_gpr(client_no,ins->tgt_dtype, 0);       /* get the source register */
-    		op3 = (RB << ins->op3_pos);
-			op2 = (RA << ins->op2_pos);
-    		op1 = (imm_data << ins->op1_pos); 
 			tgt = (BFA << ins->tgt_pos);
     		mcode = (ins->op_eop_mask | op1 | op2 | op3 | tgt);
     		*tc_memory = mcode;

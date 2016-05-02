@@ -16,7 +16,9 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-static char sccsid[] = "@(#)82	1.3.3.4  src/htx/usr/lpp/htx/bin/hxefpu64/dfp_global.c, exer_fpu, htxubuntu 1/4/16 02:33:17";
+
+/*static char sccsid[] = "%Z%%M%	%I%  %W% %G% %U%";*/
+
 #include "framework.h"
 
 extern struct server_data global_sdata[];
@@ -538,8 +540,8 @@ void class_dfp_normal_gen(uint32 client_no, uint32 random_no, struct instruction
 void class_dfp_cmp_test_ins_gen(uint32 client_no, uint32 random_no, struct instruction_masks *temp, int index)
 {
         uint32 vsr1, vsr2, vsr4;
-        uint32 op1, op2, tgt, tgt_reg_no, data_cls_grp;
-        uint32 mcode, store_mcode, store_off, addi_mcode;
+        uint32 op1, op2, tgt, tgt_reg_no;
+        uint32 mcode, store_off, addi_mcode;
         uint32 prolog_size, num_ins_built, *tc_memory;
         struct vsr_list *vsrs;
         struct server_data *sdata = &global_sdata[INITIAL_BUF];
@@ -655,7 +657,7 @@ void class_dfp_qua_rmc_gen(uint32 client_no, uint32 random_no, struct instructio
 {
        uint32 vsr1, vsr2, vsr4;
        uint32 op1, op2, tgt, next_tgt, rounding_mode;
-       uint32 mcode, store_mcode, store_off, prolog_size, rand_no, num_ins_built, *tc_memory;
+       uint32 mcode, store_mcode, store_off, prolog_size, num_ins_built, *tc_memory;
        uint64 dirty_reg_mask;
        struct vsr_list *vsrs;
        struct server_data *sdata = &global_sdata[INITIAL_BUF];
@@ -807,8 +809,6 @@ void class_dfp_shift_gen(uint32 client_no, uint32 random_no, struct instruction_
 
 int DFPGENE(unsigned long long *Operand,int class,int Type , int cno)
 {
-	struct server_data *s = &global_sdata[INITIAL_BUF];
-	struct client_data *cptr = s->cdata_ptr[cno];
 	int retc=0,k ;
 	unsigned long long DecodedOp[3], EncodedOp[2];
 

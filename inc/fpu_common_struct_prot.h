@@ -1,12 +1,12 @@
 /* IBM_PROLOG_BEGIN_TAG */
-/* 
+/*
  * Copyright 2003,2016 IBM International Business Machines Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-/* @(#)04	1.1  src/htx/usr/lpp/htx/inc/fpu_common_struct_prot.h, exer_fpu, htxubuntu 1/4/16 03:12:04 */
+
 #ifndef _FPU_COMMON_H
 #define _FPU_COMMON_H
 
@@ -310,7 +310,8 @@ typedef enum
 	FORM_XX2_XT_UIM4_XB,
 	FORM_XX1_IMM8,
 	FORM_X_BF_UIM_FB,
-	FORM_XX2_DX_DC_DM
+	FORM_XX2_DX_DC_DM,
+	XFX_FORM_RT_FXM_EOP_RC
 }instr_form;
 
 /*
@@ -1739,7 +1740,7 @@ enum DFP_OperandConstants {
     CoefDPDgroups64 =   5,
     CoefDPDgroups128 =  11,
 
-    /* Packed format is laid out as: */
+    /* Packed format is layed out as: */
     /* Sign | Combination | Exponent Continuation | Coefficient Continuation */
     SignBits =          1,
 

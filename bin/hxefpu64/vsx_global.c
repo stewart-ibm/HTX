@@ -16,7 +16,9 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-static char sccsid[] = "@(#)96	1.24  src/htx/usr/lpp/htx/bin/hxefpu64/vsx_global.c, exer_fpu, htxubuntu 1/4/16 02:33:14";
+
+/*static char sccsid[] = "%Z%%M%	%I%  %W% %G% %U%";*/
+
 #include "framework.h"
 
 /*
@@ -365,8 +367,8 @@ struct instruction_masks vsx_p9_instructions_array[] = {
 /* stxsd  */  {0xF4000002, 0, GR, 16, IMM_DATA_14BIT, 2, DUMMY, DUMMY, SCALAR_DP, 21, 0xa, "stxsd", (sim_fptr)&simulate_stxsd, VSX_VECTOR_LENGTH_STORE_ONLY,D_FORM_RT_RA_D},
 /* lxssp  */  {0xE4000003, 0, GR, 16, IMM_DATA_14BIT, 2, DUMMY, DUMMY, SCALAR_SP, 21, 0x9, "lxssp",  (sim_fptr)&simulate_lxssp, VSX_VECTOR_LENGTH_LOAD_ONLY, D_FORM_RT_RA_D},
 /* stxssp */  {0xF4000003, 0, GR, 16, IMM_DATA_14BIT, 2, DUMMY, DUMMY, SCALAR_SP, 21, 0xa, "stxssp", (sim_fptr)&simulate_stxssp,VSX_VECTOR_LENGTH_STORE_ONLY,D_FORM_RT_RA_D},
-/* lxv    */  {0xF4000001, 0, GR, 16, IMM_DATA_12BIT, 2, DUMMY, DUMMY, VECTOR_DP, 21, 0x9, "lxv",  (sim_fptr)&simulate_lxv,   VSX_VECTOR_LENGTH_LOAD_ONLY, D_FORM_RT_RA_D},
-/* stxv   */  {0xF4000005, 0, GR, 16, IMM_DATA_12BIT, 2, DUMMY, DUMMY, VECTOR_DP, 21, 0xa, "stxv", (sim_fptr)&simulate_stxv,  VSX_VECTOR_LENGTH_STORE_ONLY,D_FORM_RT_RA_D},
+/* lxv    */  {0xF4000001, 0, GR, 16, IMM_DATA_12BIT, 4, DUMMY, DUMMY, VECTOR_DP, 21, 0x9, "lxv",  (sim_fptr)&simulate_lxv,   VSX_VECTOR_LENGTH_LOAD_ONLY, D_FORM_RT_RA_D},
+/* stxv   */  {0xF4000005, 0, GR, 16, IMM_DATA_12BIT, 4, DUMMY, DUMMY, VECTOR_DP, 21, 0xa, "stxv", (sim_fptr)&simulate_stxv,  VSX_VECTOR_LENGTH_STORE_ONLY,D_FORM_RT_RA_D},
 
 /* last ins indicator */ {0xDEADBEEF, 0, DUMMY, 0, DUMMY, 0, DUMMY, DUMMY, DUMMY, 0, 0x0, "last_instruction", 0, 0, 0}
 
@@ -991,7 +993,7 @@ void class_vsx_imm_gen(uint32 client_no, uint32 random_no, struct instruction_ma
 
 void class_vsx_load_gen2(uint32 client_no, uint32 random_no, struct instruction_masks *temp, int index)
 {
-    uint32 vsr4;
+    uint32 gpr_num, vsr4;
     uint32 op1, op2, tgt;
     uint32 mcode, store_off, load_off, addi_mcode;
     uint32 prolog_size, *tc_memory, num_ins_built;
@@ -1029,14 +1031,17 @@ void class_vsx_load_gen2(uint32 client_no, uint32 random_no, struct instruction_
 	} else {
     	tgt = (vsr4 & 0x1f) << (temp->tgt_pos); /* instruction would use register vsr4 + 32 */
     }
+
     op1 = (LOAD_RA) << (temp->op1_pos);
     
     /* find out load ptr and initialize the data pattern at that address */
     load_off = init_mem_for_vsx_load(client_no, temp->tgt_dtype);    
-	if (temp->op2_dtype == IMM_DATA_12BIT) {
-    	op2 = (store_off & 0xfff) << ((temp->op2_pos) << 3);
-	}else {
-    	op2 = (load_off & 0x3fff) << (temp->op2_pos); /* immidiate data 14 bits */
+	if ((temp->op2_dtype == IMM_DATA_12BIT) || (temp->op2_dtype == IMM_DATA_14BIT)) {
+    	op2 = (load_off & 0xfff) << (temp->op2_pos);
+	}
+	else if (temp->op2_dtype == GR) {
+		 gpr_num = get_random_gpr(client_no, GR, 0);
+		op2 = (gpr_num  & 0x1f) << temp->op2_pos;
 	}
 
     /* Form machine code for load instruction */
