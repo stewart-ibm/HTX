@@ -207,7 +207,7 @@ htx_localtime(const time_t *p_time) {
 	sigemptyset(&oldMask); 
 
 	/*************************************************************************
-	 * Iniialize the newmask to include all of the defined signals. 
+	 * Initialize the newmask to include all of the defined signals. 
 	 *************************************************************************/
 	sigfillset(&newMask); 
 
