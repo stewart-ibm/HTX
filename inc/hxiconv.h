@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
+/* @(#)32	1.3.4.1  src/htx/usr/lpp/htx/inc/hxiconv.h, htx_sup, htxubuntu 9/14/12 03:28:17 */
 
 /*
  *   FUNCTIONS: CLRLIN
@@ -26,11 +27,18 @@
 
 /*
 ****************************************************************************
+*****  I B M   I n t e r n a l   U s e   O n l y  **************************
+****************************************************************************
 *                                                                          *
 *  Module Name: hxiconv.h                                                  *
 *                                                                          *
 *  Description: HTX convenience definitions and declarations.              *
 *                                                                          *
+* CHANGE ACTIVITY =                                                        *
+*    DATE    :LEVEL:PROGRAMMER:DESCRIPTION                                 *
+*    MMMMMMMMNMMMMMNMMMMMMMMMMNMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM*
+*    01/04/00:1.7  :R GEBHARDT:Add enum for Add Device menu.               *
+*            :     :          :                                            *
 ****************************************************************************
 */
 
@@ -145,7 +153,7 @@
 
 
 /*
- * various mneumonics used throughout htx
+ * various mneumonics used thoughout htx
  */
 #define  EXTRA_ENTRIES	(unsigned int) (0)  /* # of spare entries in htx shm */
 #define  PSEUDO_EXTRA_ENTRIES	(unsigned int) (100)
@@ -165,7 +173,7 @@
 #define	KEY_NEWL	'\r'
 
 /*
- * Separate macros defined for Linux. Here, the function keys, and also the
+ * Seperate macros defined for Linux. Here, the function keys, and also the
  * other attributes like the NORMAL, STANDALONE, etc are given new definitions.
  */
 

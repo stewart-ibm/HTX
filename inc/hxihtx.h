@@ -33,6 +33,7 @@
  *
  */
 
+#include <pthread.h>
 #include <sys/types.h>
 
 #define START     'S'
@@ -56,6 +57,7 @@
 #define free(ptr) htx_free(ptr)
 #define localtime(p_time) htx_localtime(p_time)
 #define ctime(p_time) htx_ctime(p_time)
+#define localtime_r(timep,result) htx_localtime_r(timep,result)
 #endif 
 
 /* htx_data data structure "sev_code" enum definition...

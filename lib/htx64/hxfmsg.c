@@ -17,6 +17,8 @@
  */
 /* IBM_PROLOG_END_TAG */
 
+/* @(#)77	1.3.4.3  src/htx/usr/lpp/htx/lib/htx64/hxfmsg.c, htx_libhtx, htxfedora 1/12/16 05:16:25 */
+
 #include <htx_local.h>
 #include <hxihtx64.h>
 #include <stdlib.h>
@@ -74,12 +76,16 @@ int hxfmsg(struct htx_data *p, int err, enum sev_code  sev, char *text)
 	else{
 		p->error_code = err;
 		p->severity_code = sev;
-
 		(void) strncpy(p->msg_text, text, MAX_TEXT_MSG);
 		if (p->msg_text[MAX_TEXT_MSG - 1] != '\0')
 		p->msg_text[MAX_TEXT_MSG -1] = '\0';  /* string MUST end with null char  */
 
-		return(hxfupdate(ERROR, p));
+		if((p->severity_code) >= HTX_SYS_INFO){
+			return(hxfupdate(MESSAGE, p));
+		}
+		else if( (p->severity_code) < HTX_SYS_INFO) {
+			return(hxfupdate(ERROR, p));
+		}
 	}
 
 } /* hxfmsg() */

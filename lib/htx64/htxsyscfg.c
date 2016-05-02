@@ -17,6 +17,10 @@
  */
 /* IBM_PROLOG_END_TAG */
 
+/*  @(#)85        1.15.1.19  src/htx/usr/lpp/htx/lib/htxsyscfg64/htxsyscfg.c, htx_libhtxsyscfg64, htxfedora 5/19/15 01:28:11									
+
+	  */
+
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>

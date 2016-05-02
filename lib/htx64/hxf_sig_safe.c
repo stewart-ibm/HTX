@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-
 /********************************************************************************
  * 	HTX Signal Safe Subroutines. 
  * 	Motive - All libc subroutines are not signal safe, this could lead to 
@@ -330,5 +329,79 @@ htx_ctime(const time_t *p_time) {
 
 	return(ptr); 
 
-} 
+}
+
+
+/******************************************************************************
+ *  Signal safe localtime subroutine .
+ *  Syntax :
+ *      struct tm * htx_localtime_r(const time_t *);
+ *****************************************************************************/
+
+struct tm *
+htx_localtime_r (const time_t *timep, struct tm *result) {
+
+    sigset_t newMask, oldMask;
+    struct tm * ptr;
+    int ret = 0, skip_reset = 0, old_errno;
+
+    /**************************************************************************
+     * Initialize the oldmask to exclude all of the defined signals.
+     *************************************************************************/
+    sigemptyset(&oldMask);
+
+    /*************************************************************************
+     * Initialize the newmask to include all of the defined signals.
+     *************************************************************************/
+    sigfillset(&newMask);
+
+    /*************************************************************************
+     * Block All signals. Save the thread's old signal mask.
+     ************************************************************************/
+    old_errno = errno;
+
+#ifdef _THREAD_SAFE
+    ret = pthread_sigmask(SIG_BLOCK, &newMask, &oldMask);
+#else
+    ret = sigprocmask(SIG_BLOCK, &newMask, &oldMask);
+#endif
+    if(ret == -1) {
+        errno = old_errno;
+        skip_reset = 1;
+    }
+
+    /*************************************************************************
+     * Issue the call now ...
+     ************************************************************************/
+    ptr = localtime_r(timep,result);
+
+    /************************************************************************
+     * Restore the old mask for calling thread.If there are any pending
+     * unblocked signals after the call to pthread_sigmask(), at least one
+     * of those signals shall be delivered before the call to pthread_sigmask()
+     * returns.
+     ***********************************************************************/
+
+    if(skip_reset == 0) {
+        /*******************************************************************
+         * If SIG_BLOCK would have failed then signal mask would remain
+         * unchange, so donot reset here with old mask.
+         ******************************************************************/
+        old_errno = errno;
+    #ifdef _THREAD_SAFE
+        ret = pthread_sigmask(SIG_SETMASK, &oldMask, NULL);
+    #else
+        ret = sigprocmask(SIG_SETMASK, &oldMask, NULL);
+    #endif
+
+        if(ret == -1) {
+            errno = old_errno;
+        }
+    }
+
+    return(ptr);
+
+}
+
+ 
 

@@ -17,6 +17,8 @@
  */
 /* IBM_PROLOG_END_TAG */
 
+/* @(#)92	1.29.6.15  src/htx/usr/lpp/htx/lib/htx64/hxfupdate.c, htx_libhtx, htxubuntu 1/12/16 05:27:10 */
+
 #define addw(msw, lsw, num) \
 { \
     lsw += num; \
@@ -45,10 +47,31 @@
 /* FUNCTION = Updates HE information in the HTX system.                     */
 /*    hxfupdate = updates HE information in HTX system.                     */
 /*    htx_start = establish connections to HTX system data.                 */
-/*    htx_process = update HE information in HTX system data.               */
+/*    htx_update = update HE information in HTX system data.               */
 /*    htx_error = format and issue error messages, update error information.*/
 /*    htx_finish = update end of cycle information.                         */
 /*    sendp = place message on HTX message queue.                           */
+/*                                                                          */
+/* COMPILER OPTIONS =  -I/src/master/htx/common -g -Nn3000 -Nd4000 -Np1200  */
+/*                     -Nt2000                                              */
+/*                                                                          */
+/* CHANGE ACTIVITY =                                                        */
+/*    DATE    :LEVEL:PROGRAMMER:DESCRIPTION                                 */
+/*    MMMMMMMMNMMMMMNMMMMMMMMMMNMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM*/
+/*    04/25/88:1.0  :J FRETER  :INITIAL RELEASE                             */
+/*    09/06/88:2.0  :J BURGESS :Modify to conform to AES Programming Center */
+/*            :     :          :"Software Development Process Guide"        */
+/*    10/13/88:3.0  :T HOMER   :changed message header format               */
+/*    12/14/88:3.1  :J BURGESS :Cleaned up message handling.                */
+/*            :     :          :                                            */
+/*            :     :          :                                            */
+/*            :     :          :                                            */
+/*            :     :          :                                            */
+/*            :     :          :                                            */
+/*            :     :          :                                            */
+/*            :     :          :                                            */
+/*            :     :          :                                            */
+/*            :     :          :                                            */
 /*                                                                          */
 /****************************************************************************/
 
@@ -66,7 +89,7 @@
 #include <hxiconv.h>
 #include <htxlibdef.h>
 #include <scr_info64.h>
-
+#include "hxihtxmp_vars_new.h"
 #ifdef _DR_HTX_
 #include <sys/dr.h> /* DR reconfig changes */
 #include <sys/procfs.h>
@@ -91,6 +114,7 @@ int pseudo_dev_count=0;
 struct  htxshm_hdr      *tmp_p_shm_hdr = 0;
 tmisc_shm *rem_shm_addr;
 int rem_shm_id;
+
 
 #define msqid        (data->msqid)
 #define sem_id       (data->sem_id)
@@ -207,7 +231,7 @@ if (numbytes < 8) {
 /*                                                                          */
 /* DESCRIPTIVE NAME =  Updates HE information in the HTX system.            */
 /*                                                                          */
-/* FUNCTION =          Receive data via the htx_data structure, format that */
+/* FUNCTION =          Recieve data via the htx_data structure, format that */
 /*                     data, and save it in the appropriate HTX system area.*/
 /*                                                                          */
 /* INPUT =             call - the type of update call:                      */
@@ -253,7 +277,7 @@ if (numbytes < 8) {
 /*                                                                          */
 /****************************************************************************/
 
-int hxfupdate(char call, struct htx_data *data)
+int hxfupdate_tunsafe(char call, struct htx_data *data)
      /* call -- call type: START, UPDATE, ERROR, or FINISH                  */
      /* data -- HTX Hardware Exerciser data structure                       */
 {
@@ -274,6 +298,8 @@ int hxfupdate(char call, struct htx_data *data)
   static  unsigned semnum, err_semnum;            /* cont-halt on err sem num */
   static  int     save_time;              /* cycle start time.        */
   int system_halt_status;
+
+	char    msg_send[MSG_TEXT_SIZE];
 
   union semun {
      int val;
@@ -355,8 +381,10 @@ int hxfupdate(char call, struct htx_data *data)
     data->run_type[i] = toupper ((int) data->run_type[i]);
   call = toupper ((int) call);
 
-  if ((strcmp (data->run_type, "REG") != 0) && (strcmp (data->run_type, "EMC") != 0) && (call != 'E')) {
+  if ((strcmp (data->run_type, "REG") != 0) && (strcmp (data->run_type, "EMC") != 0) && (call != 'M') && (call != 'E')) {
 	if ( call == 'S' ) {
+		fprintf(stderr, "%s\n", IBM_copyright_string);
+		fflush(stderr);
 		set_misc_htx_data(data);
 	}
     return (0);
@@ -382,7 +410,7 @@ int hxfupdate(char call, struct htx_data *data)
           exer_halt_sops[0].sem_num = (unsigned short) (((rel_pos - 1) * SEM_PER_EXER) + SEM_GLOBAL);
           wait_err_sops[1].sem_num = exer_halt_sops[0].sem_num;
           semnum = exer_halt_sops[0].sem_num;
-	  err_semnum = exer_halt_sops[0].sem_num + 1;
+          err_semnum = exer_halt_sops[0].sem_num + 1;
           wait_err_sops[3].sem_num = (unsigned short) err_semnum;
 
           rc = 0;                 /* set good return code.    */
@@ -392,49 +420,52 @@ int hxfupdate(char call, struct htx_data *data)
           rc = -1*rel_pos;        /* set bad return code.     */
           exit(rc);               /* RIP                      */
         } /* endif */
-	set_misc_htx_data(data);
+		set_misc_htx_data(data);
       break;
-    case UPDATE:               /*  Update Call  ****************************/
-      htx_process(data);
-      if (p_shm_HE->idle_time > (unsigned int) 0)
-        (void) sleep(p_shm_HE->idle_time);
-      rc = 0;
-      break;
+	case UPDATE:               /*  Update Call  ****************************/
+		htx_update(data);
+		htx_get_msg(data, msg_send);
+		if (p_shm_HE->idle_time > (unsigned int) 0)
+			(void) sleep(p_shm_HE->idle_time);
+		rc = 0;
+		break;
+
     case ERROR:               /*  Error Call  *****************************/
-      if ((exer_halt_sops[0].sem_num > (unsigned int) 0) &&
-          (data->severity_code < HTX_SYS_INFO))
+      if ((exer_halt_sops[0].sem_num > (unsigned int) 0)) 
         p_shm_HE->err_ack = 0;
-    /*  htx_process(data);  */
-      rc = htx_error(data);
-      if (!((strcmp (data->run_type, "REG") != 0) && (strcmp (data->run_type, "EMC") != 0))) {
-      if (p_shm_HE->err_ack == 0) {
-         rem_shm_addr->sock_hdr_addr->bcast_done = FALSE;
-         rem_shm_addr->sock_hdr_addr->error_count++;
-         /*sprintf(cmmd,"echo count = %d: dev= %s>>/tmp/hell",rem_shm_addr->sock_hdr_addr->error_count,p_shm_HE->sdev_id);
-         /system(cmmd);*/
-         strcpy(rem_shm_addr->sock_hdr_addr->system_status,"PARTIALLY RUNNING");
-         strcpy(rem_shm_addr->sock_hdr_addr->error_dev,p_shm_HE->sdev_id);
-         rem_shm_addr->sock_hdr_addr->last_error_time  = time((long *) 0);
-         rem_shm_addr->sock_hdr_addr->last_update_time = time((long *) 0);
-       }
-       }
+
+		htx_update(data);  
+		htx_error(data,msg_send);
+
+		if (!((strcmp (data->run_type, "REG") != 0) && (strcmp (data->run_type, "EMC") != 0))) {
+			if (p_shm_HE->err_ack == 0) {
+				rem_shm_addr->sock_hdr_addr->bcast_done = FALSE;
+				rem_shm_addr->sock_hdr_addr->error_count++;
+				/*sprintf(cmmd,"echo count = %d: dev= %s>>/tmp/hell",rem_shm_addr->sock_hdr_addr->error_count,p_shm_HE->sdev_id);
+				/system(cmmd);*/
+				strcpy(rem_shm_addr->sock_hdr_addr->system_status,"PARTIALLY RUNNING");
+				strcpy(rem_shm_addr->sock_hdr_addr->error_dev,p_shm_HE->sdev_id);
+				rem_shm_addr->sock_hdr_addr->last_error_time  = time((long *) 0);
+				rem_shm_addr->sock_hdr_addr->last_update_time = time((long *) 0);
+			}
+		}
       break;
+
     case MESSAGE:               /*  Mesaage without an update ***************/
-      if ((exer_halt_sops[0].sem_num > (unsigned int) 0) &&
-          (data->severity_code < HTX_SYS_INFO))
-        p_shm_HE->err_ack = 0;
-      rc = htx_error(data);
-      break;
+	    rc = htx_message(data,msg_send);
+		break;
+
 	case RECONFIG:
 		p_shm_HE->DR_term = 1;
 		break;
+
     case FINISH:               /*  Finish Call  ****************************/
-      htx_process(data);
+      htx_update(data);
       rc = htx_finish(data, &save_time);
       if (p_shm_HE->max_cycles !=0) {
         if (p_shm_HE->cycles >= p_shm_HE->max_cycles) {
 		  temp_time = p_shm_HE->tm_last_upd;	/* promote to long */
-          asc_time = localtime_r(&temp_time, &asc_time1);
+          asc_time = htx_localtime_r(&temp_time, &asc_time1);
           (void) strcpy(disp_time, asctime_r(asc_time, disp_time1));
           disp_time[24] = '\0';
           data->error_code = 0;
@@ -479,7 +510,7 @@ Stopped - cycles run (%d) = max_cycles (%d).\n\n",
           }
 
           stop_time = time((time_t *) 0);
-          asc_time = localtime_r(&stop_time, &asc_time1);
+          asc_time = htx_localtime_r(&stop_time, &asc_time1);
           (void) strcpy(disp_time, asctime_r(asc_time, disp_time1));
           disp_time[24] = '\0';
           /*(void) sprintf(data->msg_text,
@@ -610,6 +641,10 @@ int htx_start(struct htx_data *data, int *p_sem_id, int *p_save_time)
 
   time_t  temp_time;
 
+    int lockinit1,lockinit1_1;
+	lockinit1_1 = lockinit1 = 0;
+
+
   /********************************************************************/
   /***  Beginning of executable code.  ********************************/
   /********************************************************************/
@@ -658,7 +693,7 @@ Unable to access HTX message queue.\nerrno = %d",
          data->error_code = errno;
          data->severity_code = HTX_SYS_HARD_ERROR;
          (void) sprintf(data->msg_text,
-                     "%s for %s: Error in hxfupdate function.\nUnable to get HTX shared memory for rem_shm_id.\nerrno = %d\n",
+                     "%s for %s: Error in hxfupdate function.\n\ Unable to get HTX shared memory for rem_shm_id.\nerrno = %d\n",
                      data->HE_name,
                      data->sdev_id,
                      data->error_code);
@@ -676,7 +711,7 @@ Unable to access HTX message queue.\nerrno = %d",
          data->error_code = errno;
          data->severity_code = HTX_SYS_HARD_ERROR;
          (void) sprintf(data->msg_text,
-                     "%s for %s: Error in hxfupdate function.\nUnable to attach to HTX shared memory for rem_shm_addr.\nerrno = %d\n",
+                     "%s for %s: Error in hxfupdate function.\n\ Unable to attach to HTX shared memory for rem_shm_addr.\nerrno = %d\n",
                      data->HE_name,
                      data->sdev_id,
                      data->error_code);
@@ -699,7 +734,7 @@ Unable to access HTX message queue.\nerrno = %d",
          data->error_code = errno;
          data->severity_code = HTX_SYS_HARD_ERROR;
          (void) sprintf(data->msg_text,
-                     "%s for %s: Error in hxfupdate function.\nUnable to get HTX shared memory for exer_info .\nerrno = %d\n",
+                     "%s for %s: Error in hxfupdate function.\n\ Unable to get HTX shared memory for exer_info .\nerrno = %d\n",
                      data->HE_name,
                      data->sdev_id,
                      data->error_code);
@@ -716,7 +751,7 @@ Unable to access HTX message queue.\nerrno = %d",
            data->error_code = errno;
          data->severity_code = HTX_SYS_HARD_ERROR;
          (void) sprintf(data->msg_text,
-                     "%s for %s: Error in hxfupdate function.\nUnable to attach to shared memory.\nerrno = %d\n",
+                     "%s for %s: Error in hxfupdate function.\n Unable to attach to shared memory.\nerrno = %d\n",
                      data->HE_name,
                      data->sdev_id,
                      data->error_code);
@@ -747,7 +782,7 @@ Unable to access HTX message queue.\nerrno = %d",
          data->error_code = errno;
          data->severity_code = HTX_SYS_HARD_ERROR;
          (void) sprintf(data->msg_text,
-                     "%s for %s: Error in hxfupdate function.\nsmkey for exerciser is -1.\n",
+                     "%s for %s: Error in hxfupdate function.\n\ smkey for exerciser is -1.\n",
                      data->HE_name,
                      data->sdev_id);
 
@@ -856,9 +891,9 @@ Unable to get HTX semaphore structure.\nerrno = %d",
   p_shm_HE = (void *) (p_shm_hdr + 1);
   for (i = 0; i < p_shm_hdr->max_entries; i++)
     {
-	strcpy(tmp_sdev_id, p_shm_HE->sdev_id);
-         if ((strcmp(&data->sdev_id[5], strtok(tmp_sdev_id,"(")) == 0) &&
-            (p_shm_HE->PID == getpid()))
+	htx_strcpy(tmp_sdev_id, p_shm_HE->sdev_id);
+
+         if ((htx_strncmp(&data->sdev_id[5], strtok(tmp_sdev_id,"("),sizeof(data->sdev_id[5])) == 0) &&(p_shm_HE->PID == getpid()))
 		       break;
                p_shm_HE++;
 
@@ -955,6 +990,80 @@ Unable to find %s in HTX shared memory structure.\n",
 
   p_shm_HE->tm_last_upd = time((time_t *) 0);
   *p_save_time = p_shm_HE->tm_last_upd;     /* for cycle time calc.     */
+
+    lockinit1 = pthread_rwlockattr_init(&rwlattr_update);
+    if (lockinit1!=0  ) {
+        if ( lockinit1 == (EAGAIN || ENOMEM) ) {
+            usleep(10);
+            lockinit1_1=pthread_rwlockattr_init(&rwlattr_update);
+            if(lockinit1_1 !=0){
+                sprintf(data->msg_text,"rwlock attr initialisation failed with rc=%d\n", lockinit1);
+          if (sendp(data, HTX_SYS_MSG) != 0)       /* send message */
+        {
+          perror(data->msg_text);
+          (void) fflush(stderr);
+        } /* endif */
+
+            }
+        }
+        else{
+        sprintf(data->msg_text,"rwlock attr initialisation failed with rc=%d\n", lockinit1);
+          if (sendp(data, HTX_SYS_MSG) != 0)       /* send message */
+        {
+          perror(data->msg_text);
+          (void) fflush(stderr);
+        } /* endif */
+
+        }
+    }
+
+
+    lockinit1 = pthread_rwlockattr_setpshared(&rwlattr_update, PTHREAD_PROCESS_SHARED);
+    if (lockinit1!=0  ) {
+    sprintf(data->msg_text,"sharing rwlock attr across processes failed with rc=%d\n", lockinit1);
+          if (sendp(data, HTX_SYS_MSG) != 0)       /* send message */
+        {
+          perror(data->msg_text);
+          (void) fflush(stderr);
+        } /* endif */
+
+    }
+    lockinit1=pthread_rwlock_init(&(p_shm_HE->HE_rwlock_hxfupdate),&rwlattr_update);
+    if (lockinit1!=0  ) {
+        if ( lockinit1 == EBUSY ){
+        sprintf(data->msg_text,"p_shm_HE->HE_rwlock_hxfupdate_init()1 failed with rc=%d\n", lockinit1);
+      if (sendp(data, HTX_SYS_MSG) != 0)       /* send message */
+        {
+          perror(data->msg_text);
+          (void) fflush(stderr);
+        } /* endif */
+
+        }
+        else if ( lockinit1 == (EAGAIN || ENOMEM) ) {
+            usleep(10);
+        lockinit1_1=pthread_rwlock_init(&(p_shm_HE->HE_rwlock_hxfupdate),&rwlattr_update);
+            if(lockinit1_1 !=0){
+                    sprintf(data->msg_text,"p_shm_HE->HE_rwlock_hxfupdate_lock() failed in retry with rc=%d\n", lockinit1_1);
+      if (sendp(data, HTX_SYS_MSG) != 0)       /* send message */
+        {
+          perror(data->msg_text);
+          (void) fflush(stderr);
+        } /* endif */
+
+            }
+        }
+        else{
+                sprintf(data->msg_text,"p_shm_HE->HE_rwlock_hxfupdate_lock() failed with rc=%d\n", lockinit1);
+      if (sendp(data, HTX_SYS_MSG) != 0)       /* send message */
+        {
+          perror(data->msg_text);
+          (void) fflush(stderr);
+        } /* endif */
+
+        }
+    }
+
+
   return (rc);
 
 } /* htx_start() */
@@ -963,10 +1072,10 @@ Unable to find %s in HTX shared memory structure.\n",
 
 
 /****************************************************************************/
-/*****  h t x _ p r o c e s s ( )  ******************************************/
+/*****  h t x _ u p d a t e ( )  ********************************************/
 /****************************************************************************/
 /*                                                                          */
-/* FUNCTION NAME =     htx_process()                                        */
+/* FUNCTION NAME =     htx_update()                                        */
 /*                                                                          */
 /* DESCRIPTIVE NAME =  Process HE specific HTX data.                        */
 /*                                                                          */
@@ -987,8 +1096,10 @@ Unable to find %s in HTX shared memory structure.\n",
 /*                                                                          */
 /****************************************************************************/
 
-void htx_process(struct htx_data *data)
+void htx_update(struct htx_data *data)
 {
+	int rc1,rc2;
+	rc1 = rc2 =0;
   int clock;
   /********************************************************************/
   /***  Beginning of executable code.  ********************************/
@@ -997,11 +1108,20 @@ void htx_process(struct htx_data *data)
   if ((strcmp (data->run_type, "REG") == 0) ||
       (strcmp (data->run_type, "EMC") == 0))
     {
-      clock = time((time_t *) 0);
-      if (p_shm_HE->halt_flag == 0)
-	p_shm_HE->run_time += (clock - p_shm_HE->tm_last_upd);
+	rc1 = pthread_rwlock_wrlock(&(p_shm_HE->HE_rwlock_hxfupdate));
+    if (rc1!=0  ) {
+        if ( rc1 == EDEADLK ) {
+				sprintf(data->msg_text,"lock inside htx_update failed with errno=%d for device id %s \n",rc1,data->sdev_id);
+                return(sendp(data, HTX_HE_MSG));
+        }
+    }
 
-    p_shm_HE->tm_last_upd = clock;
+
+	clock = time((time_t *) 0);
+      if (p_shm_HE->halt_flag == 0)
+		p_shm_HE->run_time += (clock - p_shm_HE->tm_last_upd);
+
+	p_shm_HE->tm_last_upd = clock;
 
       /********************************************************************/
       /* Add to statistical accumulators in shared memory, then set       */
@@ -1025,7 +1145,13 @@ void htx_process(struct htx_data *data)
       if ( (p_shm_HE->upd_test_id == 0) && (p_shm_HE->test_id > 0 || p_shm_HE->cycles > 0 ) ) {
          p_shm_HE->upd_test_id = 1;
       } 
+    rc2=pthread_rwlock_unlock(&(p_shm_HE->HE_rwlock_hxfupdate));
+    if (rc2 !=0  ) {
+			sprintf(data->msg_text,"unlock inside htx_update failed with errno=%d for device id %s \n",rc1,data->sdev_id);
+            return(sendp(data, HTX_HE_MSG));
     }
+    }
+
 
   data->bad_others = 0;
   data->bad_reads = 0;
@@ -1039,43 +1165,12 @@ void htx_process(struct htx_data *data)
 
   return;
 
-} /* htx_process() */
+} /* htx_update() */
 
-
-
-/****************************************************************************/
-/*****  h t x _ e r r o r ( )  **********************************************/
-/****************************************************************************/
-/*                                                                          */
-/* FUNCTION NAME =     htx_error()                                          */
-/*                                                                          */
-/* DESCRIPTIVE NAME =  Process HE specific Error/Information data.          */
-/*                                                                          */
-/* FUNCTION =          Updates the HE specific HTX error data and sends     */
-/*                     messages to the hxsmsg HTX message handler program.  */
-/*                                                                          */
-/* INPUT =             data - the htx_data data structure.  Contains a      */
-/*                            variety of HE specific information.           */
-/*                                                                          */
-/* OUTPUT =            Updated HE specific HTX error data, and messages     */
-/*                     queued for the hxsmsg HTX message handler program.   */
-/*                                                                          */
-/* NORMAL RETURN =     0 to indicate successful completion.                 */
-/*                                                                          */
-/* ERROR RETURNS =     -51 Unable to place message on the HTX message queue */
-/*                         (sendp - non fatal).                             */
-/*                                                                          */
-/* EXTERNAL REFERENCES                                                      */
-/*                                                                          */
-/*    NONE.                                                                 */
-/*                                                                          */
-/****************************************************************************/
-
-int htx_error(struct htx_data *data)
+int htx_get_msg(struct htx_data *data, char *msg_send)
 {
   char    disp_time[30], disp_time1[30];
-  char    *libhtx_HOE;		/* pointer to value of env. variable */
-  char    msg_send[MSG_TEXT_SIZE];
+/*  char    msg_send[MSG_TEXT_SIZE];*/
 
   time_t     call_time;
   time_t     temp_time;
@@ -1109,7 +1204,7 @@ int htx_error(struct htx_data *data)
 
 
   call_time = time((time_t *) 0);
-  asc_time = localtime_r(&call_time, &asc_time1);
+  asc_time = htx_localtime_r(&call_time, &asc_time1);
   (void) strcpy(disp_time, asctime_r(asc_time, disp_time1));
   disp_time[24] = '\0';
 
@@ -1248,9 +1343,63 @@ int htx_error(struct htx_data *data)
                         }/* End while fgets */
            pclose(fvp);
         }
+     }
+     else {
+        (void) sprintf(msg_send,
+                       "\n%-18s%-20s err=%-8.8x sev=%-1.1u %-14s\n%-s\n",
+                                data->sdev_id,
+                                &disp_time[4],
+                                data->error_code,
+                                data->severity_code,
+                                data->HE_name,
+                                data->msg_text);
+
+    }
+  }
+	return(0);
+}
+
+void htx_message(struct htx_data *data, char* msg_send){
+
+	/* htx_message for sending messages to the message queue for normal messages or error messages*/
+
+    int rc1,rc2;
+    rc1 = rc2 =0;
+
+
+	size_t str_length;
+	time_t call_time;
+	struct  tm      *asc_time, asc_time1;
+	char    disp_time[30], disp_time1[30];
+	char    error_msg[256];
+	static  struct  htx_msg_buf msgb;
+	static  struct  htx_msg_buf *msgp = &msgb;
+	
+	call_time = time((time_t *) 0);
+	asc_time = htx_localtime_r(&call_time, &asc_time1);
+	(void) strcpy(disp_time, asctime_r(asc_time, disp_time1));
+	disp_time[24] = '\0';
+
+	str_length = strlen(msg_send);
+	if (msg_send[str_length - 2] != '\n'){
+		(void) strcat(msg_send, "\n");
+	}
+
+  if ((strcmp (data->run_type, "REG") != 0) && (strcmp (data->run_type, "EMC") != 0)) {
+        (void) sprintf(msg_send,
+                       "\n%-18s%-20s err=%-8.8x sev=%-1.1u %-14s\n%-s\n",
+                                data->sdev_id,
+                                &disp_time[4],
+                                data->error_code,
+                                data->severity_code,
+                                data->HE_name,
+                                data->msg_text);
+  }
+  else {
+     if (p_shm_HE->log_vpd==1) {
 
         (void) sprintf(msg_send,
-                   	  "\n---------------------------------------------------------------------\
+                      "\n---------------------------------------------------------------------\
                        \nDevice id:%-18s\nTimestamp:%-20s\
                        \nerr=%-8.8x\nsev=%-1.1d\nExerciser Name:%-14s\
                        \nSerial No:%s\nPart No:%s\nLocation:%s\nFRU Number:%s\
@@ -1281,52 +1430,121 @@ int htx_error(struct htx_data *data)
     }
   }
 
-  str_length = strlen(msg_send);
-  if (msg_send[str_length - 2] != '\n')
-    (void) strcat(msg_send, "\n");
 
-  if ((msqid != -1) && ((strcmp (data->run_type, "EMC") == 0) ||
-                        (strcmp (data->run_type, "REG") == 0)))
-    {
-      if (p_shm_HE > (struct htxshm_HE *) 0)
-        {
-          p_shm_HE->tm_last_upd = call_time;
-          if (data->severity_code < HTX_SYS_INFO)
-            p_shm_HE->tm_last_err = call_time;
-        } /* endif */
-      (void) strcpy(data->msg_text, msg_send);
-      return(sendp(data, HTX_HE_MSG));
-    }
-  else
-    {
-      /*  If the severity code is less than HTX_SYS_INFO, it is an err msg. */
-      if (data->severity_code < HTX_SYS_INFO)
-        {
-          (void) fprintf(stderr, "%s", msg_send);
-          fflush(stderr);
+	if ((msqid != -1) && ((strcmp (data->run_type, "EMC") == 0) ||(strcmp (data->run_type, "REG") == 0) ))
+	{
+		if (p_shm_HE > (struct htxshm_HE *) 0)
+		{
+			if (data->severity_code < HTX_SYS_INFO){
+
+				rc1 = pthread_rwlock_wrlock(&(p_shm_HE->HE_rwlock_hxfupdate));
+				if (rc1!=0  ) {
+					if ( rc1 == EDEADLK ) {
+							sprintf(data->msg_text,"lock inside htx_message failed with errno=%d for device id %s \n",rc1,data->sdev_id);
+							return(sendp(data, HTX_HE_MSG));
+					 }
+				}
+
+
+				p_shm_HE->tm_last_upd = call_time;
+				p_shm_HE->tm_last_err = call_time;
+    
+				rc2=pthread_rwlock_unlock(&(p_shm_HE->HE_rwlock_hxfupdate));
+				if (rc2 !=0  ) {
+					sprintf(data->msg_text,"unlock inside htx_message failed with errno=%d for device id %s \n",rc1,data->sdev_id);
+					return(sendp(data, HTX_HE_MSG));
+			    }
+			} /* endif */
+
+			strcpy(msgp->htx_data.msg_text, msg_send);
+			strcpy(msgp->htx_data.sdev_id, data->sdev_id);
+			strcpy(msgp->htx_data.HE_name, data->HE_name);
+			msgp->htx_data.severity_code = data->severity_code;
+			msgp->htx_data.error_code = data->error_code;
+			msgp->mtype = HTX_HE_MSG;
+
+			if (msgsnd(msqid, msgp, (sizeof(msgb) - sizeof(mtyp_t)), 0) != 0)
+			{
+				(void) sprintf(error_msg,
+				"%s for %s: Error in hxfupdate function.\n\
+				Unable to send message.\nerrno = %d",
+                     data->HE_name,
+                     data->sdev_id, errno);
+				perror(error_msg);
+				(void) fflush(stderr);
+				return(51);
+			} /* endif */
+		} /*endif of (p_shm_HE > (struct htxshm_HE *) 0)*/
+    } /* endif of strcmp (data->run_type*/
+	else
+	{
+		if(data->severity_code >= HTX_SYS_INFO){
+			(void) fprintf(stdout, "%s", msg_send);
+			fflush(stdout);
+		} /*endif*/
+	} /*end else */
+
+  return(0);
+} /*htx_message*/
+
+
+/****************************************************************************/
+/*****  h t x _ e r r o r ( )  **********************************************/
+/****************************************************************************/
+/*                                                                          */
+/* FUNCTION NAME =     htx_error()                                          */
+/*                                                                          */
+/* DESCRIPTIVE NAME =  Process HE specific Error/Information data.          */
+/*                                                                          */
+/* FUNCTION =          Updates the HE specific HTX error data and sends     */
+/*                     messages to the hxsmsg HTX message handler program.  */
+/*                                                                          */
+/* INPUT =             data - the htx_data data structure.  Contains a      */
+/*                            variety of HE specific information.           */
+/*                                                                          */
+/* OUTPUT =            Updated HE specific HTX error data, and messages     */
+/*                     queued for the hxsmsg HTX message handler program.   */
+/*                                                                          */
+/* NORMAL RETURN =     0 to indicate successful completion.                 */
+/*                                                                          */
+/* ERROR RETURNS =     -51 Unable to place message on the HTX message queue */
+/*                         (sendp - non fatal).                             */
+/*                                                                          */
+/* EXTERNAL REFERENCES                                                      */
+/*                                                                          */
+/*    NONE.                                                                 */
+/*                                                                          */
+/****************************************************************************/
+
+
+void htx_error(struct htx_data *data, char* msg_send){	
+
+	char    *libhtx_HOE;
+	size_t str_length;
+	str_length = strlen(msg_send);
+	if (msg_send[str_length - 2] != '\n')
+		(void) strcat(msg_send, "\n");
+
+	htx_message(data,msg_send);
+
+	(void) fprintf(stderr, "%s", msg_send);
+	fflush(stderr);
 		           /*
            *  If this is running standalone, then look at the environment
            *  variable LIBHTX_HOE.  If it is set, but is null, kill yourself.
            *  Otherwise treat the returned string like an AIX command and use
            *  system() to run it.  Careful kids, don't try this at home.
            */
-          libhtx_HOE = getenv("LIBHTX_HOE");
-          if ( libhtx_HOE != NULL )
-            if ( *libhtx_HOE == NULL )
-              {
-                (void) kill(getpid(), SIGTERM);
-              }
-            else
-              {
-                (void) system(libhtx_HOE);
-              }
-        }
-      else
+	libhtx_HOE = getenv("LIBHTX_HOE");
+	if (( libhtx_HOE != NULL )&&(strcmp (data->run_type, "REG") != 0) && (strcmp (data->run_type, "EMC") != 0))
+		if ( *libhtx_HOE == NULL )
         {
-          (void) fprintf(stdout, "%s", msg_send);
-          fflush(stdout);
-        }
-    } /* endif */
+			(void) kill(getpid(), SIGTERM);
+		}
+		else
+		{
+			(void) system(libhtx_HOE);
+		}
 
   return(0);
 
@@ -1388,7 +1606,7 @@ int htx_finish(struct htx_data *data, int *p_save_time)
 
   p_shm_HE->cycles++;
   temp_time = p_shm_HE->tm_last_upd;	/* promote to long */
-  asc_time = localtime_r(&temp_time, &asc_time1);
+  asc_time = htx_localtime_r(&temp_time, &asc_time1);
   (void) strcpy(disp_time, asctime_r(asc_time, disp_time1));
   disp_time[24] = '\0';
 

@@ -17,6 +17,7 @@
  */
 /* IBM_PROLOG_END_TAG */
 /* @(#)42  1.6.4.2  src/htx/usr/lpp/htx/inc/htx_local.h, htx_libhtx, htxubuntu 1/7/16 04:26:05 */
+/* Component = htx_libhtx_lx */
 #ifndef HTX_LOCAL_H
 #define HTX_LOCAL_H
 

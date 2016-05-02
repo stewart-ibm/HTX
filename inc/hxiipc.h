@@ -38,6 +38,7 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 
+
 #include <hxihtx.h> 
 #if !defined(__HTX_LINUX__) && !defined(__OS400__)
 #include <mesg.h>
@@ -249,6 +250,7 @@ struct htxshm_HE {
         unsigned long long	 no_of_errs;          /* Number of errors                */
         unsigned long long   cycles;            /* how many times we finished      */
         char           slot_port[20];     /* Slot and Port number            */
+		pthread_rwlock_t HE_rwlock_hxfupdate;
 };
 
 /* shared memory union pointer  *******************************************/
@@ -267,6 +269,7 @@ union semun {
                 ushort * array ;
             };
 #endif
+
 
 
 #endif  /* __HTX_INC_HXIIPC_H__ */

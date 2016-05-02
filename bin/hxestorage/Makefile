@@ -6,9 +6,9 @@ LDFLAGS +=
 
 OBJ_SUFF=.o
 
-CFLAGS += -O2 -D_GNU_SOURCE -D__HTX_LINUX__ -D_target_ppc -DHTXTHREADED -D_FILE_OFFSET_BITS=64
+CFLAGS += -O2 -D_GNU_SOURCE -D__HTX_LINUX__ -D_target_ppc -D_FILE_OFFSET_BITS=64
 
-LIBS += -lhtxmp64 -lhtx64 -lpthread -lrt
+LIBS += -lhtx64 -lpthread -lrt
 
 # Object files to build, of the form objname${OBJ_SUFF}
 OBJECTS = hxestorage_rf${OBJ_SUFF} io_oper${OBJ_SUFF} hxestorage_utils${OBJ_SUFF} hxestorage${OBJ_SUFF} ioctl_linux${OBJ_SUFF} analyze_miscompare${OBJ_SUFF}

@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
+
 /* @(#)86       1.10.1.10  src/htx/usr/lpp/htx/inc/htxsyscfg64_new.h, htx_libhtxsyscfg64, htxfedora 5/19/15 06:49:43  */
 
 /* Name : htxsyscfg64.h                                  *
