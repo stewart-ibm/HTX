@@ -439,7 +439,7 @@ int get_rule(FILE *fd, int *line, struct rule_format * r_ptr)
  		/* that don't specify OPER -- if Master, OPER=RW. if not master, OPER=W.    */
 		/****************************************************************************/
     	if(error == 'n' && (r_ptr->transact & (WRITE_VAL | READ_VAL)) == 0) {
-       		if(r_ptr->transact & MASTER_VAL == 0)
+		if((r_ptr->transact & MASTER_VAL) == 0)
            		r_ptr->transact |= WRITE_VAL;
        		else
            		r_ptr->transact |= (WRITE_VAL | READ_VAL);

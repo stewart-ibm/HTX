@@ -1381,7 +1381,7 @@ static int headerCkFail(char rbuf[], char MsgStr[])
     if(rbuf[TP_SEQ_LEN] != '\0')
         error = 1;
     sum += (unsigned char)rbuf[TP_TIME_POS];
-    if(0xff & sum != (unsigned char)rbuf[TP_HDR_LEN -1])
+    if((0xff & sum) != (unsigned char)rbuf[TP_HDR_LEN -1])
         error = 1;
     if(error) {
         sprintf(MsgStr, "Header Error \"");
