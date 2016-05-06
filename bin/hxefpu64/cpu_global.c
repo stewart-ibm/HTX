@@ -3370,7 +3370,10 @@ void class_cpu_load_atomic_gen(uint32 client_no, uint32 random_no, struct instru
 	/* using LOAD_RA in place of gpr_a, to allocate 32 byte of memory */
 	backup_bdy = cptr->bdy_req;
 	cptr->bdy_req = ALIGN_2QW; 
-	offset = init_mem_for_gpr(client_no, 8);
+	offset = init_mem_for_gpr(client_no, 32);
+	if (index_fc == (NUM_LD_FC - 1)) {
+		offset += 8;
+	}
 	cptr->bdy_req = backup_bdy;
     offset &= 0x0000ffff;
 	mcode = GEN_ADDI_MCODE(LOAD_RB, LOAD_RA, offset);
@@ -3419,7 +3422,10 @@ void class_cpu_store_atomic_gen(uint32 client_no, uint32 random_no, struct instr
 	tc_memory = &(cptr->tc_ptr[INITIAL_BUF]->tc_ins[prolog_size + num_ins_built]);
 
 
-	/* 1. Atomic operation function code as defined in RFC02485.AMO.r5 */
+	/* get register RS to be source of random data as input to atomic operation*/
+    gpr_s = get_random_gpr(client_no, GR, 1);
+
+	/* Atomic operation function code as defined in RFC02485.AMO.r5 */
 	short function_code[NUM_ST_FC] = {ST_ADD, ST_XOR, ST_OR, ST_AND, ST_MAX_UNSIGNED, ST_MAX_SIGNED, ST_MIN_UNSIGNED, ST_MIN_SIGNED, ST_TWIN};
 	/* select a function code randomely */
 	int index_fc = random_no % NUM_ST_FC;
@@ -3438,12 +3444,8 @@ void class_cpu_store_atomic_gen(uint32 client_no, uint32 random_no, struct instr
     tc_memory++;
     num_ins_built++;
 
-	/* get register RS to be source of random data as input to atomic operation*/
-    gpr_s = get_random_gpr(client_no, GR, 1);
-
-
-    /* 5. Queue atomic store instruction */
-    op1 = (LOAD_RB & 0x1f) << (instr_ptr->op1_pos);
+    /* Queue atomic store instruction */
+    op1 = (STORE_RB & 0x1f) << (instr_ptr->op1_pos);
     op2 = (function_code[index_fc] & 0x1f) << (instr_ptr->op2_pos);
     tgt = (gpr_s & 0x1f) << (instr_ptr->tgt_pos);
     mcode = (instr_ptr->op_eop_mask | op1 | op2 | tgt);
