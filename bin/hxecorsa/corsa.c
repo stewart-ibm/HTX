@@ -2192,7 +2192,7 @@ int inflate_buffer(th_context *th_ct)
 int deflate_buffer(th_context *th_ct)
 {
 	z_stream input_stream;
-	int in_buf_len, out_buf_len, rc, temp_retries;
+	int in_buf_len, out_buf_len, rc, temp_retries, prev_errno;
 	char info_msg[1024];
 
 	/* Local variable for EEH retries count */
@@ -2208,12 +2208,20 @@ int deflate_buffer(th_context *th_ct)
 	input_stream.next_out = (unsigned char *)th_ct->o_buf->ea;
 	input_stream.avail_out = th_ct->o_buf->buf_size;
 
+	prev_errno = errno;
+	errno = 0;
 	rc = deflateInit(&input_stream, Z_BEST_COMPRESSION);
 	if ( rc != Z_OK ) {
 		sprintf(info_msg, "deflateInit() failed for deflate_buffer with rc = %d\n", rc);
 		hxfmsg(&stats, 1, HTX_HE_SOFT_ERROR, info_msg);
 	}
+	if ( errno ) {
+		sprintf(info_msg, "deflateInit() sets errno to %d. prev_val = %d\n", errno, prev_errno);
+		hxfmsg(&stats, 1, HTX_HE_SOFT_ERROR, info_msg);
+	}
 
+	prev_errno = errno;
+	errno = 0;
 	while ( input_stream.avail_in != 0 && temp_retries > 0 ) {
 		rc = deflate(&input_stream, Z_NO_FLUSH);
 		if ( rc != Z_OK  && temp_retries ) {
@@ -2222,7 +2230,13 @@ int deflate_buffer(th_context *th_ct)
 			continue;
 		}
 	}
+	if ( errno ) {
+		sprintf(info_msg, "deflate(Z_NO_FLUSH) sets errno to %d. prev_val = %d\n", errno, prev_errno);
+		hxfmsg(&stats, 1, HTX_HE_SOFT_ERROR, info_msg);
+	}
 
+	prev_errno = errno;
+	errno = 0;
 	temp_retries = eeh_retries;
 	while ( temp_retries > 0 ) {
 		rc = deflate(&input_stream, Z_FINISH);
@@ -2234,6 +2248,10 @@ int deflate_buffer(th_context *th_ct)
 			sleep(EEH_SLEEP);
 			continue;
 		}
+	}
+	if ( errno ) {
+		sprintf(info_msg, "deflate(Z_FINISH) sets errno to %d. prev_val = %d\n", errno, prev_errno);
+		hxfmsg(&stats, 1, HTX_HE_SOFT_ERROR, info_msg);
 	}
 
 	if ( rc != Z_STREAM_END && rc != Z_OK ) {
@@ -2250,8 +2268,12 @@ int deflate_buffer(th_context *th_ct)
 
 int corsa_execute_algo(ALGOS algo_name, char oper, th_context *th_ct, int partial, int mode_of_oper)
 {
-	int rc;
+	int rc, prev_errno;
 	char info_msg[1024];
+
+	/* Clear errno after preserving prev value is any */
+	prev_errno = errno;
+	errno = 0;
 
 	if ( algo_name == corsa_deflate || algo_name == corsa_deflate_crc ) {
 		rc = deflate_buffer(th_ct);
@@ -2266,6 +2288,11 @@ int corsa_execute_algo(ALGOS algo_name, char oper, th_context *th_ct, int partia
 		sprintf(info_msg, "Unknown algo_name=%d specified. Please check rulefile settings.\n", algo_name);
 		hxfmsg(&stats, 1, HTX_HE_SOFT_ERROR, info_msg);
 		rc = -1;
+	}
+
+	if ( prev_errno || errno ) {
+		sprintf(info_msg, "Got either non-0 errno. Prev_errno = %d, errno = %d.\n", prev_errno, errno);
+		hxfmsg(&stats, 0, HTX_HE_INFO, info_msg);
 	}
 
 	return(rc);
