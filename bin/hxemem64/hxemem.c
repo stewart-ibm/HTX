@@ -33,6 +33,9 @@
 #include <sys/dr.h>
 #endif
 
+#ifdef __HTX_LINUX__
+#include <sys/sysinfo.h>
+#endif
 /* Macro Definitions */
 
 #define MAX_STANZAS			41	/* Only 40 stanzas can be used */
@@ -78,6 +81,7 @@ char  page_size[MAX_NUM_PAGE_SIZES][4]={"4K","64K","16M","16G"};
 struct rule_format r, stanza[MAX_STANZAS], *stanza_ptr;
 char shm_max[50], shm_all[50];
 unsigned int g_thread_count; /* thread count tracker to make stanza = 1 after mem allocation completion by all threads*/
+int cpu_dr_set = -1;
 pthread_mutex_t g_thread_count_lock;/*mutex lock to guard g_thread_count */
 struct private_data priv;
 struct memory_info mem_info;
@@ -120,12 +124,10 @@ enum lpage_implement {NONE		= 0,
 #endif
 
 int read_cmd_line (int argc,char *argv[]);
-int displaym (int sev, int debug,  const char *format,...);
 void SIGTERM_hdl (int, int, struct sigcontext *);
 #ifdef __HTX_LINUX__
 void SIGUSR2_hdl(int, int, struct sigcontext *);
 #endif
-int do_the_bind_proc (int id, int bind_proc,int pcpu);
 int get_lpage_type (void);
 int get_supported_page_sizes (void);
 int get_mem_config (void);
@@ -153,7 +155,6 @@ int n_stride(int );
 int get_rule (int * line, FILE *fp);
 void * run_test_operation (void *);
 int create_n_run_test_operation (void);
-int get_num_of_proc (void);
 int fill_segment_data (void);
 int allocate_buffers (void);
 int chek_if_ramfs(void);
@@ -161,8 +162,8 @@ int save_buffers (int ti, unsigned long rc, struct segment_detail sd,
                   int main_misc_count, unsigned long *seed_ptr, int pass,
 				  int trap_flag, int pi);
 int detailed_display();
-void alocate_mem_for_mem_info_num_of_threads();
 int check_ame_enabled();
+void test_L4_Rollover();
 
 #ifdef MPSS_EXECUTE
     extern int execute_mpss_testcase ();
@@ -208,7 +209,6 @@ unsigned long pat_operation (int code, unsigned long count, char *buf,
     	struct time_real conv_time;
 	} *thp;
 
-	#pragma mc_func trap { "7c810808" }
 	#pragma reg_killed_by trap
 
 #else
@@ -504,7 +504,7 @@ int execute_stanza_case(void)
 
     res = fill_segment_data();
 	if (res == 1) {
-		stanza_ptr->affinity == FALSE;
+		stanza_ptr->affinity = FALSE;
 		res = 0;
 		}
 
@@ -626,7 +626,7 @@ long long new_seg_size		 = mem_info.total_mem_avail/(32 * KB);
 
     /* Allocate 'mem_info.num_of_threads' number of "struct thread_data " */
 	alocate_mem_for_mem_info_num_of_threads();
-	if((unsigned long)mem_info.tdata_hp == NULL) {
+	if((unsigned long*)mem_info.tdata_hp == NULL) {
         displaym(HTX_HE_HARD_ERROR,DBG_MUST_PRINT,
 				 "fill_segment_data:(malloc failed) Creation of thread data "
 				 "structures failed! errno = %d(%s)\n", errno, strerror(errno));
@@ -722,7 +722,7 @@ long long new_seg_size		 = mem_info.total_mem_avail/(32 * KB);
 				/* Allocate storage for shm size attributes */
 #ifndef MMAP
 				tdata_hp[j].page_wise_t[i].shm_sizes = (unsigned long *) malloc(sizeof(unsigned long)*tdata_hp[j].page_wise_t[i].num_of_segments);
-				if ((unsigned long)tdata_hp[j].page_wise_t[i].shm_sizes == NULL) 
+				if ((unsigned long*)tdata_hp[j].page_wise_t[i].shm_sizes == NULL) 
 #else
 				tdata_hp[j].page_wise_t[i].shm_sizes =(unsigned long *) mmap(NULL,(sizeof(unsigned long)*tdata_hp[j].page_wise_t[i].num_of_segments),PROT_READ | PROT_WRITE | PROT_EXEC,MAP_ANONYMOUS,-1, 0);
 				if ((unsigned long)tdata_hp[j].page_wise_t[i].shm_sizes == -1) 
@@ -996,7 +996,7 @@ long long new_seg_size		 = mem_info.total_mem_avail/(32 * KB);
 					#ifndef MMAP
                          tdata_hp[thr_num].page_wise_t[i].shm_sizes = (unsigned long *)
 				 			malloc(sizeof(unsigned long)*tdata_hp[thr_num].page_wise_t[i].num_of_segments);
-                         if ((unsigned long)tdata_hp[thr_num].page_wise_t[i].shm_sizes == NULL) 
+                         if ((unsigned long*)tdata_hp[thr_num].page_wise_t[i].shm_sizes == NULL) 
 					#else
 						tdata_hp[thr_num].page_wise_t[i].shm_sizes = (unsigned long *)
 						mmap(NULL,(sizeof(unsigned long)*tdata_hp[thr_num].page_wise_t[i].num_of_segments),PROT_READ | PROT_WRITE | PROT_EXEC,MAP_ANONYMOUS,-1, 0);
@@ -1083,7 +1083,7 @@ long long new_seg_size		 = mem_info.total_mem_avail/(32 * KB);
 #ifndef MMAP
                 tdata_hp[j].page_wise_t[i].shm_sizes=(unsigned long *) \
                        malloc(sizeof(unsigned long)*tdata_hp[j].page_wise_t[i].num_of_segments);
-                if ((unsigned long)tdata_hp[j].page_wise_t[i].shm_sizes == NULL) {
+                if ((unsigned long*)tdata_hp[j].page_wise_t[i].shm_sizes == NULL) {
 #else
 				tdata_hp[j].page_wise_t[i].shm_sizes=(unsigned long *) \
 						mmap(NULL,(sizeof(unsigned long)*tdata_hp[j].page_wise_t[i].num_of_segments),PROT_READ | PROT_WRITE | PROT_EXEC,MAP_ANONYMOUS,-1, 0);
@@ -1119,7 +1119,7 @@ long long new_seg_size		 = mem_info.total_mem_avail/(32 * KB);
 				 "popen failed: errno(%d)\n", errno);
 		return(-1);
 	}
-	ret  = fscanf(fp,"%s",&shm_mni);
+	ret  = fscanf(fp,"%s",shm_mni);
 	if (ret == 0 || ret == EOF) {
 		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT,
 				 "Could not read page size config from pipe\n");
@@ -1133,7 +1133,7 @@ long long new_seg_size		 = mem_info.total_mem_avail/(32 * KB);
 						"popen failed for ipcs command: errno(%d)\n", errno);
 		return(-1);
 	}
-	ret  = fscanf(fp,"%s",&oth_exer_segments);
+	ret  = fscanf(fp,"%s",oth_exer_segments);
 	if (ret == 0 || ret == EOF) {
 		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT,
 						"Could not read oth_exer_segments from pipe\n");
@@ -1143,8 +1143,8 @@ long long new_seg_size		 = mem_info.total_mem_avail/(32 * KB);
 
 	if (strtoul(shm_mni,NULL,10) < strtoul(oth_exer_segments, NULL, 10) + total_no_segments) {
 		new_shmmni = strtoul(shm_mni,NULL,10) + strtoul(oth_exer_segments, NULL, 10) + total_no_segments;
-    	displaym(HTX_HE_INFO,DBG_DEBUG_PRINT,"Changing the /proc/sys/kernel/shmmni variable to %d\n",new_shmmni);
-		sprintf(cmd,"echo %d > /proc/sys/kernel/shmmni", new_shmmni);
+    	displaym(HTX_HE_INFO,DBG_DEBUG_PRINT,"Changing the /proc/sys/kernel/shmmni variable to %lu\n",new_shmmni);
+		sprintf(cmd,"echo %lu > /proc/sys/kernel/shmmni", new_shmmni);
     	ret = system (cmd);
     	if (ret < 0){
         	displaym(4,DBG_MUST_PRINT,"unable to change the /proc/sys/kernel/shmmni variable\n");
@@ -1158,12 +1158,15 @@ long long new_seg_size		 = mem_info.total_mem_avail/(32 * KB);
 void * run_test_operation(void *tn)
 {
     int ti= *(int *)tn;
-    int rc,bind_cpu_num;
+    int rc=0,bind_cpu_num;
     int bind_flag = FALSE;
 	int i,j;
     displaym(HTX_HE_INFO,DBG_IMP_PRINT,"Thread(%d):Inside run_test_operation\n",ti);
 	if (stanza_ptr->run_mode == RUN_MODE_CONCURRENT) {
-        do_the_bind_proc(BIND_TO_THREAD,ti,-1);
+#ifndef __HTX_LINUX__
+		if(cpu_dr_set != ti)
+#endif
+       		 do_the_bind_proc(BIND_TO_THREAD,ti,-1);
     }
 
 	for(i = 0; i < MAX_NUM_PAGE_SIZES; i++) {
@@ -1209,12 +1212,18 @@ void * run_test_operation(void *tn)
     }
 
     if (bind_flag) {
-        rc = do_the_bind_proc(BIND_TO_THREAD, bind_cpu_num,-1);
-		if ( rc < 0 && stanza_ptr->affinity == TRUE) {
-			displaym(HTX_HE_INFO,DBG_MUST_PRINT,"Thread:%d failed to bind on lcpu= %d thus exiting in affinity=yes case\n",ti,bind_cpu_num);
-			release_thread_memory(ti);
-            pthread_exit((void *)0);
+#ifndef __HTX_LINUX__
+		if(cpu_dr_set != ti){
+#endif
+	        rc = do_the_bind_proc(BIND_TO_THREAD, bind_cpu_num,-1);
+			if ( rc < 0 && stanza_ptr->affinity == TRUE) {
+				displaym(HTX_HE_INFO,DBG_MUST_PRINT,"Thread:%d failed to bind on lcpu= %d thus exiting in affinity=yes case\n",ti,bind_cpu_num);
+				release_thread_memory(ti);
+            	pthread_exit((void *)0);
+			}
+#ifndef __HTX_LINUX__
 		}
+#endif
     } else {
         mem_info.tdata_hp[ti].bind_proc = UNBIND_ENTITY;
     }
@@ -1275,11 +1284,13 @@ int create_n_run_test_operation(void)
     void *tresult;
     int tnum;
     displaym(HTX_HE_INFO,DBG_IMP_PRINT,"create_n_run_test_operation :num_of_threads = %d\n",mem_info.num_of_threads);
-    for(i=0; i< mem_info.num_of_threads; i++) {
-
+	for(i=0; i< mem_info.num_of_threads ; i++) {
 	    /* In case of affinity = yes check mem_info.tdata_hp for cpu_flag to make sure we are not accessing any holes */
     	if(stanza_ptr->affinity == TRUE) {
         	if(mem_info.tdata_hp[i].cpu_flag != 1){
+				pthread_mutex_lock(&g_thread_count_lock);
+				g_thread_count--;
+				pthread_mutex_unlock(&g_thread_count_lock);
             	continue;
         	}
     	}
@@ -1296,6 +1307,8 @@ int create_n_run_test_operation(void)
             return(res);
         }
     }
+
+
     for(i=0; i< mem_info.num_of_threads; i++) {
 
         /* In case of affinity = yes check mem_info.tdata_hp for cpu_flag to make sure we are not accessing any holes */
@@ -1747,7 +1760,7 @@ int get_rule(int * line, FILE *fp)
                  displaym(HTX_HE_HARD_ERROR,DBG_MUST_PRINT,"line# %d %s =%s " "(must enter hexadecimal (like 0x456) which is less "
                         "or equal to 8 bytes\n",*line,keywd,seed_str);
             }else {
-                (void) sscanf(seed_str,"0X%lu",&r.seed);
+                (void) sscanf(seed_str,"0X%llu",&r.seed);
             }
             display(HTX_HE_INFO,DBG_INFO_PRINT,"seed = 0x%lx\n",r.seed);
         }
@@ -2410,7 +2423,7 @@ int get_rule(int * line, FILE *fp)
 		}
 		else if ((strcasecmp(keywd,"MASK")) == 0)
 		{
-			sscanf(s,"%*s %s",&r.mcs);
+			sscanf(s,"%*s %s",r.mcs);
 		}
 		else if ((strcmp(keywd,"MEM_L4_ROLL")) == 0)
 		{
@@ -2426,7 +2439,7 @@ int get_rule(int * line, FILE *fp)
             sscanf(s,"%*s %u",&r.bm_position);
         }
 		else if ((strcmp(keywd,"TLBIE_TEST_CASE"))==0){
-			sscanf(s,"%*s %s",&r.tlbie_test_case);
+			sscanf(s,"%*s %s",r.tlbie_test_case);
 		}
 		else
         {
@@ -2955,7 +2968,7 @@ int fill_mem_info_data_linux(void)
 				 "popen failed: errno(%d)\n", errno);
 		goto error_exit;
 	}
-	ret  = fscanf(fp,"%s",&shm_max);
+	ret  = fscanf(fp,"%s",shm_max);
 	if (ret == 0 || ret == EOF) {
 		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT,
 				 "Could not read page size config from pipe\n");
@@ -3086,7 +3099,7 @@ int fill_mem_info_data_linux(void)
 	/* Set the shmall to 95% of available memory. /proc/sys/kernel/shmall has memory in terms of 4K pages. */
 	new_shmall = ( mem_info.total_mem_avail * 95 ) / 100;
 	new_shmall_4K = new_shmall / 4;
-	sprintf(cmd_str, "echo %d > /proc/sys/kernel/shmall", new_shmall_4K);
+	sprintf(cmd_str, "echo %lu > /proc/sys/kernel/shmall", new_shmall_4K);
 	ret = system(cmd_str);
 	if (ret < 0) {
 		displaym(4,DBG_MUST_PRINT,"unable to change the /proc/sys/kernel/shmall variable\n");
@@ -5326,6 +5339,7 @@ int n_stride(int ti)
 			} /* end loop for j */
 		} /* end loop for ps */
 	} /* end loop for i */
+	return 0;
 }
 
  /***************************************************************************************
@@ -6332,6 +6346,9 @@ void SIGRECONFIG_handler(int sig, int code, struct sigcontext *scp)
     }
 
     if (dr_info.cpu == 1 && (dr_info.rem || dr_info.add) ) {
+		if(dr_info.rem && dr_info.check){
+			cpu_dr_set = dr_info.bcpu;
+		}
     	sprintf(hndlmsg,"DR: DLPAR details"
 		    "Phase - Check:  %d, Pre: %d, Post: %d, Post Error: %d\n"\
 		    "Type - Cpu add: %d remove: %d, bcpu = %d \n",\
@@ -6403,13 +6420,14 @@ void SIGRECONFIG_handler(int sig, int code, struct sigcontext *scp)
     /* Post/error phase; reset tracker count  */
     if ((dr_info.post || dr_info.posterror) && dr_info.cpu && dr_info.rem) {
 		update_sys_detail_flag = 1;  /*falg is set to recollect cpu details for tlbie test case*/
+		cpu_dr_set = -1;			/*unset global dr lcpu so that thread can bind to respective lcpu*/
         if (cpu_dr_tracker_count > NO_CPU_DR) {
             cpu_dr_tracker_count--;
         }
     }
 
     /* For any other signal check/Pre/Post-phase, respond with DR_RECONFIG_DONE */
-	if (dr_info.check || dr_info.pre || dr_info.post ) {
+	if (dr_info.check || dr_info.pre || dr_info.post || dr_info.posterror) {
 		if (dr_info.mem && dr_info.check) {
 			sprintf(hndlmsg,"DR:Mem DR operation performed,setting  mem_DR_done = 1");
 			hxfmsg(&stats,0,HTX_HE_INFO,hndlmsg);
@@ -6458,7 +6476,7 @@ int detailed_display(){
 				for(i=0; i<MAX_NUM_PAGE_SIZES; i++) {
 					for (k=0; k< mem_info.tdata_hp[thr_num].page_wise_t[i].num_of_segments; k++) {
 
-                     	fprintf(fp," %d \t\t\t %s \t\t\t %d \t\t\t %d \n",\
+                     	fprintf(fp," %d \t\t\t %s \t\t\t %d \t\t\t %lu \n",\
 						 	thr_num,page_size[i], k, mem_info.tdata_hp[thr_num].page_wise_t[i].shm_sizes[k]);
                 	}
 
@@ -6478,7 +6496,7 @@ int detailed_display(){
 
 				for (k=0; k< mem_info.tdata_hp[j].page_wise_t[i].num_of_segments; k++) {
 
-                     fprintf(fp,"\t %d \t\t\t %s \t\t\t %d \t\t\t %d \n",\
+                     fprintf(fp,"\t %d \t\t\t %s \t\t\t %d \t\t\t %lu \n",\
 						 j,page_size[i], k, mem_info.tdata_hp[j].page_wise_t[i].shm_sizes[k]);
                 }
 
@@ -6490,6 +6508,7 @@ int detailed_display(){
 	}
 
 	fclose(fp);
+	return 0;
 }
 
 #ifdef    _DR_HTX_
@@ -6510,7 +6529,7 @@ void NX_SIGRECONFIG_handler(dr_info_t *dr_info_ptr)
 void alocate_mem_for_mem_info_num_of_threads(){
 	int ti =0;
 	mem_info.tdata_hp = (struct thread_data * ) malloc(mem_info.num_of_threads*(sizeof(struct thread_data)));
-	if((unsigned long)mem_info.tdata_hp == NULL) {
+	if((unsigned long*)mem_info.tdata_hp == NULL) {
 		displaym(HTX_HE_HARD_ERROR,DBG_MUST_PRINT,
 			"alocate_mem_for_mem_info_num_of_threads:(malloc failed) Creation of thread data "
 			"structures failed! errno = %d(%s)\n", errno, strerror(errno));
