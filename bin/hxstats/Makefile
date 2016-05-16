@@ -10,7 +10,7 @@ OBJECTS = set_sig${OBJ_SUFF} send_msg${OBJ_SUFF} hxstats${OBJ_SUFF}
 SRCS = $(patsubst %.o, %.c, $(OBJECTS))
 
 CFLAGS += 
-LIBS = -lhtx64 -lcfgc64
+LIBS = -lhtx64 -lpthread -lcfgc64
 
 .PHONY: all clean
 

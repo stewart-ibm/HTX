@@ -10,7 +10,7 @@ OBJECTS = write_log${OBJ_SUFF} upd_ckpt${OBJ_SUFF} sum${OBJ_SUFF} start_hrt${OBJ
 SRCS = $(patsubst %.o, %.c, $(OBJECTS))
 
 CFLAGS += 
-LIBS = -lhtx64
+LIBS = -lhtx64 -lpthread
 
 .PHONY: all clean
 

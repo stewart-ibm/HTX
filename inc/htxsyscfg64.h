@@ -1,21 +1,3 @@
-/* IBM_PROLOG_BEGIN_TAG */
-/* 
- * Copyright 2003,2016 IBM International Business Machines Corp.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-/* IBM_PROLOG_END_TAG */
 
 /* @(#)86       1.10.1.10  src/htx/usr/lpp/htx/inc/htxsyscfg64_new.h, htx_libhtxsyscfg64, htxfedora 5/19/15 06:49:43  */
 
@@ -33,6 +15,28 @@
 #    include <sys/procfs.h>
 #endif
 
+#define P9_NIMBUS_NODE_MASK 0x0000000000007800
+#define P9_NIMBUS_CHIP_MASK 0x0000000000000700
+#define P9_NIMBUS_CORE_MASK 0x000000000000007C
+
+/*
+0111 1000 0000 0000  8 possible nodes   >> 11
+0000 0111 0000 0000  8 possible chips   >> 8
+0000 0000 0111 1100  24 possible cores  >> 2
+0000 0000 0000 0011  4 possible threads
+*/
+
+
+#define P9_CUMULUS_NODE_MASK 0x0000000000007800
+#define P9_CUMULUS_CHIP_MASK 0x0000000000000700
+#define P9_CUMULUS_CORE_MASK 0x0000000000000078
+
+/*
+0111 1000 0000 0000  8 possible nodes   >> 11
+0000 0111 0000 0000  8 possible chips   >> 8
+0000 0000 0111 1000  12 possible core chiplets  >> 3
+0000 0000 0000 0111  8 possible threads
+*/
 #define P8_NODE_MASK 0x00001C00
 #define P8_CHIP_MASK 0x00000380
 #define P8_CORE_MASK 0x00000078
@@ -49,6 +53,15 @@
 #define P6_NODE_MASK 0x000000E0
 #define P6_CHIP_MASK 0x00000018
 #define P6_CORE_MASK 0x00000002
+/* P9 macros for CUMULUS */
+#define P9_CUMULUS_GET_NODE(_PIR_)   ((_PIR_ & P9_CUMULUS_NODE_MASK) >> 11)
+#define P9_CUMULUS_GET_CHIP(_PIR_)   ((_PIR_ & P9_CUMULUS_CHIP_MASK) >> 8)
+#define P9_CUMULUS_GET_CORE(_PIR_)   ((_PIR_ & P9_CUMULUS_CORE_MASK) >> 3)
+
+/* P9 macros for NIMBUS */
+#define P9_NIMBUS_GET_NODE(_PIR_)   ((_PIR_ & P9_NIMBUS_NODE_MASK) >> 11)
+#define P9_NIMBUS_GET_CHIP(_PIR_)   ((_PIR_ & P9_NIMBUS_CHIP_MASK) >> 8)
+#define P9_NIMBUS_GET_CORE(_PIR_)   ((_PIR_ & P9_NIMBUS_CORE_MASK) >> 2)
 
 #define P8_GET_NODE(_PIR_)   ((_PIR_ & P8_NODE_MASK) >> 10)
 #define P8_GET_CHIP(_PIR_)   ((_PIR_ & P8_CHIP_MASK) >> 7)
@@ -225,7 +238,7 @@
 #define MAX_NODE                   8
 #define MAX_NODES                  8
 #define MAX_CHIPS_PER_NODE         8
-#define MAX_CORES_PER_CHIP         16 
+#define MAX_CORES_PER_CHIP         24
 #define MAX_CPUS_PER_CORE          8
 #define MAX_CPUS_PER_CHIP          (MAX_CORES_PER_CHIP * MAX_CPUS_PER_CORE)
 #define MAX_THREADS                (MAX_CPUS_PER_CHIP * MAX_CHIPS_PER_NODE * MAX_NODE)
@@ -262,6 +275,8 @@
 #define PV_POWER8_MURANO		0x4B  /* P8 */	
 #define PV_POWER8_VENICE		0x4D  /* P8 */
 #define PV_POWER8_PRIME			0x4C
+#define PV_POWER9_NIMBUS		0x4E  /* P9 */
+#define PV_POWER9_CUMULUS		0x4F  /* P9 */
 #define PV_CellBE               0x70  /* STI */
 
 /* Possible values of the structure_status member of SYS_CONF structure */
@@ -307,7 +322,7 @@ typedef struct {
 	int duplicate[MAX_THREADS][11];
     int Physical_cores[MAX_CORES];
 	int Physical_cpus[MAX_THREADS];
-	int numberArray[16][3];
+	int numberArray[MAX_CORES_PER_CHIP][3];
 	pthread_rwlock_t rw ;
 } SYS_CONF;
 

@@ -1,21 +1,17 @@
-/* IBM_PROLOG_BEGIN_TAG */
-/* 
- * Copyright 2003,2016 IBM International Business Machines Corp.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-/* IBM_PROLOG_END_TAG */
+/* IBM_PROLOG_BEGIN_TAG                                                   */
+/* This is an automatically generated prolog.                             */
+/*                                                                        */
+/* htxubuntu src/htx/usr/lpp/htx/lib/htx64/htxsyscfg.c 1.15.1.27          */
+/*                                                                        */
+/* Licensed Materials - Property of IBM                                   */
+/*                                                                        */
+/* COPYRIGHT International Business Machines Corp. 2010                   */
+/* All Rights Reserved                                                    */
+/*                                                                        */
+/* US Government Users Restricted Rights - Use, duplication or            */
+/* disclosure restricted by GSA ADP Schedule Contract with IBM Corp.      */
+/*                                                                        */
+/* IBM_PROLOG_END_TAG                                                     */
 
 /*  @(#)85        1.15.1.19  src/htx/usr/lpp/htx/lib/htxsyscfg64/htxsyscfg.c, htx_libhtxsyscfg64, htxfedora 5/19/15 01:28:11									
 
@@ -157,7 +153,7 @@ int init_rwlocks(void){
 
     lockinit1 = pthread_rwlockattr_init(&rwlattr);
 	if (lockinit1!=0  ) {
-        if ((lockinit1 == EAGAIN) || (lockinit1 == ENOMEM)){
+        if ( lockinit1 == (EAGAIN || ENOMEM) ) {
             usleep(10);
             lockinit1_1=pthread_rwlockattr_init(&rwlattr);
             if(lockinit1_1 !=0){
@@ -182,7 +178,7 @@ int init_rwlocks(void){
 		sprintf(msg,"global_ptr->global_lpar.rw_lock_init()1 failed with rc=%d\n", lockinit1);
                 hxfmsg(misc_htx_data, 0, HTX_HE_INFO, msg);
         }
-        else if ((lockinit1 == EAGAIN) || (lockinit1 == ENOMEM)){
+        else if ( lockinit1 == (EAGAIN || ENOMEM) ) {
             usleep(10);
 		lockinit1_1=pthread_rwlock_init(&(global_ptr->global_lpar.rw),&rwlattr);
             if(lockinit1_1 !=0){
@@ -202,7 +198,7 @@ int init_rwlocks(void){
                 sprintf(msg,"global_ptr->global_memory.rw_lock_init() failed with rc=%d\n", lockinit2);
                 hxfmsg(misc_htx_data, 0, HTX_HE_INFO, msg);
         }
-        else if ((lockinit1 == EAGAIN) || (lockinit1 == ENOMEM)){
+        else if ( lockinit1 == (EAGAIN || ENOMEM) ) {
             usleep(10);
 			lockinit1_1=pthread_rwlock_init(&(global_ptr->global_memory.rw),&rwlattr);
             if(lockinit1_1 !=0){
@@ -223,7 +219,7 @@ int init_rwlocks(void){
                 sprintf(msg,"global_ptr->global_cache.rw_lock_init() failed with rc=%d\n", lockinit3);
                 hxfmsg(misc_htx_data, 0, HTX_HE_INFO, msg);
         }
-        else if ((lockinit1 == EAGAIN) || (lockinit1 == ENOMEM)){
+        else if ( lockinit1 == (EAGAIN || ENOMEM) ) {
             usleep(10);
 			lockinit1_1=pthread_rwlock_init(&(global_ptr->global_cache.rw),&rwlattr);
             if(lockinit1_1 !=0){
@@ -243,7 +239,7 @@ int init_rwlocks(void){
                 sprintf(msg,"global_ptr->syscfg.rw_lock_init() failed with rc=%d\n", lockinit4);
                 hxfmsg(misc_htx_data, 0, HTX_HE_INFO, msg);
         }
-        else if ((lockinit1 == EAGAIN) || (lockinit1 == ENOMEM)){
+        else if ( lockinit1 == (EAGAIN || ENOMEM) ) {
             usleep(10);
 			lockinit1_1=pthread_rwlock_init(&(global_ptr->syscfg.rw),&rwlattr);
             if(lockinit1_1 !=0){
@@ -267,7 +263,7 @@ int init_rwlocks(void){
                 sprintf(msg,"global_ptr->system_cpu_map.stat.rw_lock_init() failed with rc=%d\n", lockinit5);
                 hxfmsg(misc_htx_data, 0, HTX_HE_INFO, msg);
         }
-        else if ((lockinit1 == EAGAIN) || (lockinit1 == ENOMEM)){
+        else if ( lockinit1 == (EAGAIN || ENOMEM) ) {
             usleep(10);
 			lockinit1_1=pthread_rwlock_init(&(global_ptr->system_cpu_map.stat.rw),&rwlattr);
             if(lockinit1_1 !=0){
@@ -287,7 +283,7 @@ int init_rwlocks(void){
                 sprintf(msg,"global_ptr->global_core.rw_lock_init() failed with rc=%d\n", lockinit6);
                 hxfmsg(misc_htx_data, 0, HTX_HE_INFO, msg);
         }
-        else if ((lockinit1 == EAGAIN) || (lockinit1 == ENOMEM)){
+        else if ( lockinit1 == (EAGAIN || ENOMEM) ) {
             usleep(10);
 			lockinit1_1=pthread_rwlock_init(&(global_ptr->global_core.rw),&rwlattr);
             if(lockinit1_1 !=0){
@@ -733,6 +729,14 @@ int get_hw_smt(void)
 		global_ptr->global_core.smtdetails.smt_threads= 8;
 		return 0;
 	}	
+	else if (Pvr == PV_POWER9_NIMBUS){
+		global_ptr->global_core.smtdetails.smt_threads = 4;
+		return 0;
+	}
+	else if (Pvr == PV_POWER9_CUMULUS){
+		global_ptr->global_core.smtdetails.smt_threads = 8;
+		return 0;
+	}
 	else {
             sprintf(msg,"syscfg:In get_hw_smt():Unknown Pvr %u\n",Pvr);
             hxfmsg(misc_htx_data, 0, HTX_HE_INFO, msg);
@@ -1202,6 +1206,8 @@ int get_page_size_update(void)
         fp=popen("od -i /proc/device-tree/cpus/PowerPC,POWER7@0/ibm,processor-page-sizes 2> /dev/null | head -1","r");
 	else if (Pvr == PV_POWER8_MURANO || Pvr == PV_POWER8_VENICE || Pvr == PV_POWER8_PRIME)
         fp=popen("od -i /proc/device-tree/cpus/PowerPC,POWER8@0/ibm,processor-page-sizes 2> /dev/null | head -1","r");
+	else if (Pvr == PV_POWER9_NIMBUS || Pvr == PV_POWER9_CUMULUS)
+        fp=popen("od -i /proc/device-tree/cpus/PowerPC,POWER9@0/ibm,processor-page-sizes 2> /dev/null | head -1","r");
 	else
 		return (-1);
 
@@ -1448,6 +1454,12 @@ int L1cache_update(void)
 		t->L1_dline = 128; 
 		t->L1_iline = 128;
 	}
+	else if (Pvr == PV_POWER9_NIMBUS || Pvr == PV_POWER9_CUMULUS){
+        t->L1_dsize = 32*1024;
+		t->L1_isize = 32*1024;
+		t->L1_dline = 128; 
+		t->L1_iline = 128;
+	}
     return ( r1 | r2 | r3 | r4 );
 }
 
@@ -1563,7 +1575,19 @@ int L2L3cache_update(void)
 		t->L3_size = 8*1024*1024;
 		t->L3_asc  = 8;
 		t->L3_line = 128;
-	} else  {
+	}
+   /* For P9 processor */	
+    else if(Pvr == PV_POWER9_NIMBUS || Pvr == PV_POWER9_CUMULUS)
+    {
+        t->L2_size = 512*1024 ;
+        t->L2_asc  = 8 ;
+        t->L2_line = 128 ;
+
+        t->L3_size = 10*1024*1024;
+        t->L3_asc  = 8;
+        t->L3_line = 128;
+    }
+	else  {
         return (-1);
     }
 
@@ -1622,6 +1646,13 @@ int get_node(unsigned int pvr, int pir) {
 		case PV_POWER8_PRIME:
 			rc = P8_GET_NODE(pir);
 			break;
+		case PV_POWER9_NIMBUS:
+			rc = P9_NIMBUS_GET_NODE(pir);
+			break;
+		
+		case PV_POWER9_CUMULUS:
+			rc = P9_CUMULUS_GET_NODE(pir);
+			break;
 
 		default:
 			rc = -1;
@@ -1650,6 +1681,13 @@ int get_chip(unsigned int pvr, int pir) {
 		case PV_POWER8_PRIME:
 			rc = P8_GET_CHIP(pir);
 			break;
+		case PV_POWER9_NIMBUS:
+			rc = P9_NIMBUS_GET_CHIP(pir);
+			break;
+		
+		case PV_POWER9_CUMULUS:
+			rc = P9_CUMULUS_GET_CHIP(pir);
+			break;
 
 		default:
 			rc = -1;
@@ -1677,6 +1715,14 @@ int get_core(unsigned int pvr, int pir) {
 		case PV_POWER8_VENICE:
 		case PV_POWER8_PRIME:
 			rc = P8_GET_CORE(pir);
+			break;
+		
+		case PV_POWER9_NIMBUS:
+			rc = P9_NIMBUS_GET_CORE(pir);
+			break;
+		
+		case PV_POWER9_CUMULUS:
+			rc = P9_CUMULUS_GET_CORE(pir);
 			break;
 
 		default:
@@ -1738,7 +1784,7 @@ int get_env_details_update(void)
 	strcpy(e->virt_typ,"PVM_GUEST");
 	strcpy(e->proc_shared_mode,"no");
 
-	r1 = get_cmd_op(dest,"cat /proc/ppc64/lparcfg 2> /dev/null | grep shared_processor_mode | awk -F= '{print $2}'");
+	r1 = get_cmd_op(dest,"cat /proc/ppc64/lparcfg | grep shared_processor_mode | awk -F= '{print $2}'");
 	temp = atoi(dest);
 	if (temp > 0)
     {
