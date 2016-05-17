@@ -1785,7 +1785,7 @@ int get_env_details_update(void)
 	strcpy(e->virt_typ,"PVM_GUEST");
 	strcpy(e->proc_shared_mode,"no");
 
-	r1 = get_cmd_op(dest,"cat /proc/ppc64/lparcfg | grep shared_processor_mode | awk -F= '{print $2}'");
+	r1 = get_cmd_op(dest,"cat /proc/ppc64/lparcfg 2> /dev/null | grep shared_processor_mode | awk -F= '{print $2}'");
 	temp = atoi(dest);
 	if (temp > 0)
     {
