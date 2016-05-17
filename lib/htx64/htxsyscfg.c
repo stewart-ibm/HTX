@@ -154,7 +154,7 @@ int init_rwlocks(void){
 
     lockinit1 = pthread_rwlockattr_init(&rwlattr);
 	if (lockinit1!=0  ) {
-        if ( lockinit1 == (EAGAIN || ENOMEM) ) {
+        if ((lockinit1 == EAGAIN) || (lockinit1 == ENOMEM)){
             usleep(10);
             lockinit1_1=pthread_rwlockattr_init(&rwlattr);
             if(lockinit1_1 !=0){
@@ -179,7 +179,7 @@ int init_rwlocks(void){
 		sprintf(msg,"global_ptr->global_lpar.rw_lock_init()1 failed with rc=%d\n", lockinit1);
                 hxfmsg(misc_htx_data, 0, HTX_HE_INFO, msg);
         }
-        else if ( lockinit1 == (EAGAIN || ENOMEM) ) {
+        else if ((lockinit1 == EAGAIN) || (lockinit1 == ENOMEM)){
             usleep(10);
 		lockinit1_1=pthread_rwlock_init(&(global_ptr->global_lpar.rw),&rwlattr);
             if(lockinit1_1 !=0){
@@ -199,7 +199,7 @@ int init_rwlocks(void){
                 sprintf(msg,"global_ptr->global_memory.rw_lock_init() failed with rc=%d\n", lockinit2);
                 hxfmsg(misc_htx_data, 0, HTX_HE_INFO, msg);
         }
-        else if ( lockinit1 == (EAGAIN || ENOMEM) ) {
+        else if ((lockinit1 == EAGAIN) || (lockinit1 == ENOMEM)){
             usleep(10);
 			lockinit1_1=pthread_rwlock_init(&(global_ptr->global_memory.rw),&rwlattr);
             if(lockinit1_1 !=0){
@@ -220,7 +220,7 @@ int init_rwlocks(void){
                 sprintf(msg,"global_ptr->global_cache.rw_lock_init() failed with rc=%d\n", lockinit3);
                 hxfmsg(misc_htx_data, 0, HTX_HE_INFO, msg);
         }
-        else if ( lockinit1 == (EAGAIN || ENOMEM) ) {
+        else if ((lockinit1 == EAGAIN) || (lockinit1 == ENOMEM)){
             usleep(10);
 			lockinit1_1=pthread_rwlock_init(&(global_ptr->global_cache.rw),&rwlattr);
             if(lockinit1_1 !=0){
@@ -240,7 +240,7 @@ int init_rwlocks(void){
                 sprintf(msg,"global_ptr->syscfg.rw_lock_init() failed with rc=%d\n", lockinit4);
                 hxfmsg(misc_htx_data, 0, HTX_HE_INFO, msg);
         }
-        else if ( lockinit1 == (EAGAIN || ENOMEM) ) {
+        else if((lockinit1 == EAGAIN) || (lockinit1 == ENOMEM)){
             usleep(10);
 			lockinit1_1=pthread_rwlock_init(&(global_ptr->syscfg.rw),&rwlattr);
             if(lockinit1_1 !=0){
@@ -264,7 +264,7 @@ int init_rwlocks(void){
                 sprintf(msg,"global_ptr->system_cpu_map.stat.rw_lock_init() failed with rc=%d\n", lockinit5);
                 hxfmsg(misc_htx_data, 0, HTX_HE_INFO, msg);
         }
-        else if ( lockinit1 == (EAGAIN || ENOMEM) ) {
+        else if ((lockinit1 == EAGAIN) || (lockinit1 == ENOMEM)){
             usleep(10);
 			lockinit1_1=pthread_rwlock_init(&(global_ptr->system_cpu_map.stat.rw),&rwlattr);
             if(lockinit1_1 !=0){
@@ -284,7 +284,7 @@ int init_rwlocks(void){
                 sprintf(msg,"global_ptr->global_core.rw_lock_init() failed with rc=%d\n", lockinit6);
                 hxfmsg(misc_htx_data, 0, HTX_HE_INFO, msg);
         }
-        else if ( lockinit1 == (EAGAIN || ENOMEM) ) {
+        else if ((lockinit1 == EAGAIN) || (lockinit1 == ENOMEM)){
             usleep(10);
 			lockinit1_1=pthread_rwlock_init(&(global_ptr->global_core.rw),&rwlattr);
             if(lockinit1_1 !=0){
