@@ -1,6 +1,6 @@
 include ../htx.mk
 
-SUBDIRS=cfgc64 gr64 htx64 htxmp64 iomm64 libsimstub
+SUBDIRS=cfgc64 gr64 htx64 iomm64 libsimstub
 SUBDIRS_CLEAN = $(patsubst %,%.clean,$(SUBDIRS))
 
 .PHONY: all ${SUBDIRS} clean ${SUBDIRS_CLEAN}

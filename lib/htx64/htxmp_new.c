@@ -1,56 +1,21 @@
 /* IBM_PROLOG_BEGIN_TAG */
-/* 
- * Copyright 2003,2016 IBM International Business Machines Corp.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-/* IBM_PROLOG_END_TAG */
-/* IBM_PROLOG_BEGIN_TAG */
-/* 
- * Copyright 2003,2016 IBM International Business Machines Corp.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-/* IBM_PROLOG_END_TAG */
-
 /*
- * COMPONENT_NAME: htx_libhtxmp 
+ * Copyright 2003,2016 IBM International Business Machines Corp.
  *
- * FUNCTIONS:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * ORIGINS: 27
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * IBM CONFIDENTIAL -- (IBM Confidential Restricted when
- * combined with the aggregated modules for this product)
- * OBJECT CODE ONLY SOURCE MATERIALS
- * (C) COPYRIGHT International Business Machines Corp. 1988, 1990, 1991
- * All Rights Reserved
- *
- * US Government Users Restricted Rights - Use, duplication or
- * disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+/* IBM_PROLOG_END_TAG */
 
 
 #include <stdio.h>
@@ -103,7 +68,9 @@ char msg[256];
 
 void hxfupdate_once_init()
 {
-  pthread_mutex_init(&hxfupdate_mutex,DEFAULT_ATTR_PTR /*PTHREAD_MUTEX_ERRORCHECK*/);
+	pthread_mutexattr_init(&mta);
+	pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
+	pthread_mutex_init(&hxfupdate_mutex, &mta);
 }
 
 void hxfpat_once_init()
@@ -594,7 +561,7 @@ hxfupdate(char type, struct htx_data * data) {
 	}
 
 	else if (type == START){
-		pthread_once (&hxfupdate_onceblock, hxfupdate_once_init);
+		hxfupdate_once_init();
    		pthread_mutex_lock (&hxfupdate_mutex); 
    		rc=hxfupdate_tunsafe((type), (data)); 
    		pthread_mutex_unlock (&hxfupdate_mutex); 
