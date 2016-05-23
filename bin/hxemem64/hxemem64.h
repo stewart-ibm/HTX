@@ -42,10 +42,10 @@
 #include <string.h>  /* memcpy .. etc */
 #include <sys/shm.h>
 #include "hxihtx64.h"
+#include "htxsyscfg64.h"
 #define BIND_TO_PROCESS     0
 #define BIND_TO_THREAD      1
 #define UNBIND_ENTITY       -1
-#define MAX_THREADS 2048
 
 #define KB                  1024
 #define MB                  ((unsigned long long)(1024*KB))
@@ -94,7 +94,6 @@ typedef unsigned long long       uint64;
 typedef unsigned int             uint32;
 
 #define MAX_NUM_PAGE_SIZES  4   /* 4K, 64K, 16M, 16G */
-#define MAX_STANZA_PATTERNS 10
 #define SW_PAT_OFF			0
 #define SW_PAT_ON			1
 #define SW_PAT_ALL			2
@@ -326,3 +325,10 @@ enum test_type {MEM_DWORD       = 1,
                 READ_DWORD      = 13,
                 READ_WORD       = 14,
                 READ_BYTE       = 15};
+
+
+/*Function prototypes*/
+int do_the_bind_proc (int id, int bind_proc,int pcpu);
+int displaym (int sev, int debug,  const char *format,...);
+void alocate_mem_for_mem_info_num_of_threads();
+int get_num_of_proc (void);

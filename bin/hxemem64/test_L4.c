@@ -18,14 +18,11 @@
 /* IBM_PROLOG_END_TAG */
 
 #include "hxemem64.h"
-#include <htxsyscfg64.h>
 #define PAGE_SIZE 			(16 * MB)
-#define MAX_CPUS_PER_CHIP 	128
 #define MCS_MASK			0
 #define MBA_MASK			1
 #define CC_MASK					2
 #define	MAX_MASKS			5
-#define MAX_THREADS_PER_CHIP	(12 * 8)
 #define CACHE_LINE_SIZE     	128
 #define L3_CACHE_SIZE			(8 * MB)
 #define L3_ASSOCIATIVITY 		8
@@ -68,7 +65,7 @@ struct L4Roll_thread_context {
 #pragma reg_killed_by trap
 #endif
 
-static volatile int cpus_in_instance[MAX_CPUS_PER_CHIP];
+static int cpus_in_instance[MAX_CPUS_PER_CHIP];
 static int instance_number;
 static int num_mcs, num_mba_per_mcs,num_gps, num_threads;
 htxsyscfg_smt_t smt_details;
@@ -136,7 +133,7 @@ void test_L4_Rollover(void)
 
         rc = get_mem_config_l4();
         if (rc != 0) {
-			displaym("HTX_HE_INFO,DBG_MUST_PRINT,get_mem_config failed with rc = %d\n",rc);
+			displaym(HTX_HE_INFO,DBG_MUST_PRINT,"get_mem_config failed with rc = %d\n",rc);
             cleanup_mem(L4_shm_id, start_address);
             exit(1);
         }
@@ -288,7 +285,7 @@ void test_L4_Rollover(void)
 	mem_info.num_of_threads = stanza_ptr->num_threads;
     /* Allocate 'mem_info.num_of_threads' number of "struct thread_data " this is required as memory for mem_info.tdata_hp ptr was allocated later stage*/
     alocate_mem_for_mem_info_num_of_threads();
-    if ((unsigned long)mem_info.tdata_hp== NULL) {
+    if ((unsigned long*)mem_info.tdata_hp== NULL) {
             displaym(HTX_HE_HARD_ERROR,DBG_MUST_PRINT,
                  "test_L4_Rollover:(malloc failed) Creation of thread data "
                  "structures failed! errno = %d(%s)\n", errno, strerror(errno));
@@ -406,14 +403,14 @@ void do_write_and_read_compare_mem(void *th_ctx)
 						cc_temp = (k & 0xff) | cc_temp;
 						temp_mask = (1 << (masks[CC_MASK].bit_mask_length)) - 1;
 						temp_mask = temp_mask << masks[CC_MASK].bm_position;
-						temp  = temp & (~temp_mask) | (cc_temp << masks[CC_MASK].bm_position);
+						temp  = (temp & (~temp_mask)) | (cc_temp << masks[CC_MASK].bm_position);
 						for(mask_iter=0;mask_iter < num_masks;mask_iter++) {
 							bit_mask = th->bit_mask[mask_iter];
 							/*displaym(HTX_HE_INFO,DBG_MUST_PRINT,"write:bit_mask=%x:mask_iter=%d\n",bit_mask,mask_iter);*/
 							temp_mask = (1 << (masks[mask_iter].bit_mask_length)) - 1;
 							temp_mask = temp_mask << masks[mask_iter].bm_position;
 							/*printf("temp_mask=%llx   bit_mask=%lx  temp=%llx th->thread_no=%d\n",temp_mask,bit_mask,temp,th->thread_no);*/
-							temp  = temp & (~temp_mask) | (bit_mask<< masks[mask_iter].bm_position);
+							temp  = (temp & (~temp_mask)) | (bit_mask<< masks[mask_iter].bm_position);
 						}
 						address = (unsigned int*)temp;
 						for(j=0;j<inner_loop_limit;j++){/*to reach all CCs belongs to this thread*/
@@ -421,7 +418,7 @@ void do_write_and_read_compare_mem(void *th_ctx)
 							fprintf(fp,"th:%d,mask=%x,offst=%x writing at adrress:%lx\n",th->thread_no,cc_temp,th->thread_offset,address);
 							fflush(fp);
 							#endif
-							*address = (int *) th->pattern;
+							*address = (unsigned int ) th->pattern;
 							address += (cc_offset/4);/* Jump of 4MB to hit same CC*/
 						}
 						#ifdef debug_l4
@@ -445,14 +442,14 @@ void do_write_and_read_compare_mem(void *th_ctx)
 								cc_temp = (k & 0xff) | cc_temp;
 								temp_mask = (1 << (masks[CC_MASK].bit_mask_length)) - 1;
 								temp_mask = temp_mask << masks[CC_MASK].bm_position;
-								temp  = temp & (~temp_mask) | (cc_temp << masks[CC_MASK].bm_position);
+								temp  = (temp & (~temp_mask)) | (cc_temp << masks[CC_MASK].bm_position);
 								for(mask_iter=0;mask_iter < num_masks;mask_iter++) {
 									bit_mask = th->bit_mask[mask_iter];
 									/*displaym(HTX_HE_INFO,DBG_MUST_PRINT,"write:bit_mask=%x:mask_iter=%d\n",bit_mask,mask_iter);*/
 									temp_mask = (1 << (masks[mask_iter].bit_mask_length)) - 1;
 									temp_mask = temp_mask << masks[mask_iter].bm_position;
 									/*printf("temp_mask=%llx   bit_mask=%lx  temp=%llx th->thread_no=%d\n",temp_mask,bit_mask,temp,th->thread_no);*/
-									temp  = temp & (~temp_mask) | (bit_mask<< masks[mask_iter].bm_position);
+									temp  = (temp & (~temp_mask)) | (bit_mask<< masks[mask_iter].bm_position);
 								}
 								address = (unsigned int*)temp;
 								for(j=0;j<inner_loop_limit;j++){/*to reach all CCs belongs to this thread*/
@@ -532,14 +529,14 @@ void do_write_and_read_compare_mem(void *th_ctx)
 									temp_mask = (1 << (masks[mask_iter].bit_mask_length)) - 1;
 									temp_mask = temp_mask << masks[mask_iter].bm_position;
 									/*printf("temp_mask=%llx   bit_mask=%lx  temp=%llx th->thread_no=%d\n",temp_mask,bit_mask,temp,th->thread_no);*/
-									temp  = temp & (~temp_mask) | (bit_mask<< masks[mask_iter].bm_position);
+									temp  = (temp & (~temp_mask)) | (bit_mask<< masks[mask_iter].bm_position);
 								}
 								address = (unsigned int*)temp;
 								#ifdef debug_l4
 								fprintf(fp,"th:%d,mask=%d,offst=%x writing at adrress:%lx\n",th->thread_no,bit_mask,th->thread_offset,address);
 								fflush(fp);
 								#endif
-								*address = (int *) th->pattern;
+								*address = (unsigned int ) th->pattern;
 								#ifdef PRINT_BITS_DEBUG
 								printf("Thread[%d]", th->thread_no);
 								sprintf(buff,"%x",address);
@@ -576,7 +573,7 @@ void do_write_and_read_compare_mem(void *th_ctx)
 									/*displaym(HTX_HE_INFO,DBG_MUST_PRINT,"read:bit_mask=%x:mask_iter=%d\n",bit_mask,mask_iter);*/
 									temp_mask = (1 << (masks[mask_iter].bit_mask_length)) - 1;
 									temp_mask = temp_mask << masks[mask_iter].bm_position;
-									temp  = temp & (~temp_mask) | (bit_mask<< masks[mask_iter].bm_position);
+									temp  = (temp & (~temp_mask)) | (bit_mask<< masks[mask_iter].bm_position);
 								}
 								address = (unsigned int*)temp;
 								/* printf("in read.......temp_mask=%llx addr=%llx, bit_mask=%lx  temp=%llx th->thread_no=%d, num_oper=%d\n",temp_mask,address, bit_mask,temp,th->thread_no, i); */
