@@ -37,7 +37,7 @@ SRCS = $(patsubst %.o, %.c, $(OBJECTS))
 CFLAGS += -D_GNU_SOURCE
 
 LIBS += -Wl,--start-group
-LIBS += -lrt -lhtx64 -lpthread -lc -lcfgc64 -lncurses -lc
+LIBS += -lrt -lhtx64 -lpthread -lc -lcfgc64 -lncurses -ltinfo -lc
 LIBS += -Wl,--end-group
 
 .PHONY: all clean
