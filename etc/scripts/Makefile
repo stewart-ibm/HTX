@@ -41,7 +41,8 @@ TARGET = \
 	create_my_sctu_stanzas.awk \
 	check_disk \
 	get_mem_pool_details.sh \
-	htx_setup.sh 
+	htx_setup.sh \
+	htx_env.sh
 
 
 all: ${TARGET}
