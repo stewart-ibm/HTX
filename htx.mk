@@ -10,7 +10,7 @@ endif
 MKDIR=/bin/mkdir -p
 AS?=/usr/bin/as
 CC?=/usr/bin/gcc -m64
-CPP?=/usr/bin/g++ -m64
+CXX?=/usr/bin/g++ -m64
 RM=/bin/rm
 CP=/bin/cp
 AR?=/usr/bin/ar

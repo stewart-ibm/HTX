@@ -17,11 +17,11 @@ LIBS =-lpthread -lhtx64
 .PHONY: all clean
 
 all: ${OBJECTS}
-	${CPP} ${LDFLAGS} ${LIBPATH} ${OBJECTS} ${LIBS} -o ${TARGET}
+	${CXX} ${LDFLAGS} ${LIBPATH} ${OBJECTS} ${LIBS} -o ${TARGET}
 	${CP} ${TARGET} ${SHIPBIN}
 
 %.o: %.C
-	${CPP} ${CFLAGS} ${INCLUDES} -c $< -o $@
+	${CXX} ${CFLAGS} ${INCLUDES} -c $< -o $@
 
 clean:
 	${RM} -f *.o ${TARGET} ${SHIPBIN}/${TARGET}
