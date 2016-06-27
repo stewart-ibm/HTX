@@ -1,6 +1,6 @@
 #!/bin/perl
 
-$prof_file = "/tmp/saveprof";    #this is build_net profile created when you
+$prof_file = $ENV{"HTX_LOG_DIR"}."/saveprof";    #this is build_net profile created when you
                                     # run build_net..
 unless (open (PROF_FILE,"$prof_file")) {
     print("Can't open $prof_file file!\n");

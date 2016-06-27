@@ -93,6 +93,7 @@ $use_automation = $ARGV[2];
 # used while executing su - htx. dev config file executes a script which in turn calls
 # buildnet with this argument "build_net help y n /tmp/net_iface". User may execute
 # "build_net bpt y n /tmp/networks" to set test interfaces.
+$net_iface_file=$ENV{"HTX_LOG_DIR"}."/net_iface";
 $run_automate=""; 
 if($ARGV[3]) 
 {
@@ -112,11 +113,11 @@ sub __FUNC__ {
 }
 
 # Build_net debug log file. format: build_net.log.<pid>
-$buildnet_logfile="/tmp/build_net.log." . $$;
+$buildnet_logfile=$ENV{"HTX_LOG_DIR"}."/build_net.log." . $$;
 
 #Opening Build_net debug log file
 unless (open (DEBUG_LOG,">$buildnet_logfile")) {
-    die ("Can't open /tmp/buildnet file!\n");
+    die ("Can't open $buildnet_logfile file!\n");
 }
 
 #you can force build_net to use the default parm values by passing in "y"
@@ -126,6 +127,17 @@ if(!$prof) {
 	print("Runtime build_net setup is no longer supported.\nRun \"build_net help\"\n	to create a profile template called \"bpt\"\n");
 	print("Edit \"bpt\" to specify comnet and test network connections.\n\nThen rerun build_net like this:\n\"build_net bpt\"\n");
 	exit(0);
+}
+
+if(-e "/etc/network/interfaces") {
+	`mkdir -p /etc/config_bk `;
+	$interface_file = "/etc/config_bk/interfaces.bk";
+	if (-e $interface_file) {
+    	&debug_log(__FUNC__,__LINE__," /etc/network/interfaces file backup exists in /etc/config_bk/interfaces.bk\n");
+	}else{
+    	&debug_log(__FUNC__,__LINE__,"Taking /etc/network/interfaces file backup in /etc/config_bk/interfaces.bk\n"); 
+	    `cp /etc/network/interfaces /etc/config_bk/interfaces.bk`;
+	}
 }
 
 `rm /tmp/bndone 2>/dev/null`;
@@ -177,7 +189,8 @@ $ia="";
 # BPT FILE 
 $BPT=$ENV{"HOME"} ."/bpt";
 # Name of mdt to be created 
-$mdtname="/usr/lpp/htx/mdt/net.mdt";
+$mdtname=$ENV{"HTXMDT"}."/net.mdt";
+$ecgname=$ENV{"HTXECG"}."/net.ecg";
 
 @nets_used="";
 %nets="";
@@ -241,7 +254,7 @@ $cleanup_done=0;
 &clean_hosts_nets();
  
 if($prof =~ /help/i) {
-	`rm /tmp/saveprof 2>/dev/null`;
+	`rm $ENV{"HTX_LOG_DIR"}."/saveprof" 2>/dev/null`;
 	if($run_automate) {
             unless (open (TEST_IFACE,">$run_automate")) {
                 die ("Can't open $run_automate file!\n");
@@ -300,7 +313,7 @@ close(IN_FILE);
 #create a new profile based on the info I get from the user. 
 #use 4 profnames in round robin fashen so the user can check back to see
 #what his last seed was if need be.
-$saveprofname = "/tmp/saveprof";
+$saveprofname = $ENV{"HTX_LOG_DIR"}."/saveprof";
 unless (open (PROF_FILE,">$saveprofname")) {
 	die ("Can't open $saveprofname file!\n");
 }
@@ -436,6 +449,9 @@ $savename="$saveprofname" . ".bak";
 `cp $saveprofname $savename`;
 
 $res = `cp /etc/hosts /etc/hosts.htx`;
+if($ecgname) {
+	$res = `cp $mdtname $ecgname`;
+}
 `echo "done" >/tmp/bndone`;
 
 if($opensm_pingum_delay == 1) {
@@ -980,7 +996,7 @@ sub make_rule()
 
 	&debug_log(__FUNC__,__LINE__,"Set up rules file for $dev_name, rule $nets[$this_net]{rule_name}, testcase=$testcase\n");
 
-    $rules_file = "/usr/lpp/htx/rules/reg/hxecom/$nets[$this_net]{rule_name}";
+    $rules_file = $ENV{"HTXREGRULES"}."/hxecom/$nets[$this_net]{rule_name}";
 
     if($rules_file =~ /nets/) {
         $second = 1;
@@ -1239,13 +1255,13 @@ sub merge_pattern {
 
 
 	$pat = "BUILDNET";
-	$patfile = "/usr/lpp/htx/pattern/$pat";
+	$patfile = $ENV{"HTXPATTERNS"}."/$pat";
 	unless (open (OUT_FILE,">$patfile")) {
 		die ("Can't open $patfile file!\n");
 	}
 	foreach $item (@patlist) {
 		chomp($item);
-		$pfile = "/usr/lpp/htx/pattern/$item";
+		$pfile = $ENV{"HTXPATTERNS"}."/$item";
 		unless (open (IN_FILE,"$pfile")) {
 			die ("Can't open $pfile file!\n");
 		}
@@ -1442,7 +1458,7 @@ sub mk_temp_entline {
 	$line="$line " .  " $use_defaults $mtu $jumbo_frames $testcase $loc  ";
 	&debug_log(__FUNC__,__LINE__,"$line\n");
 
-	if($run_automate eq "/tmp/net_iface") 
+	if($run_automate eq $net_iface_file) 
 	{
 		print TEST_IFACE ("$device \n"); 
 	}
@@ -1506,7 +1522,7 @@ sub mk_temp_tmline {
     $line="$line " .  " $use_defaults $mtu $jumbo_frames $testcase $loc  ";
     &debug_log(__FUNC__,__LINE__,"$line\n");
 
-    if($run_automate eq "/tmp/net_iface")
+    if($run_automate eq $net_iface_file)
     {
 		 print TEST_IFACE ("$device \n");
     }
@@ -2471,7 +2487,7 @@ sub trim {
 sub automate_setup { 
 	local($file_name) = @_;
 	$auto_binary_cmd = " "; 
-	$auto_binary='/usr/lpp/htx/bin/auto'; 
+	$auto_binary=$ENV{"HTXBIN"}."/auto"; 
 	#For now automation supported in onesys test. 
 	print("onesys=$onesys\n");	
 	if($onesys eq "n") { 
@@ -2720,7 +2736,7 @@ sub getbcast {
 
 sub setup_ip_crossover {
 	local($kernext_location); 
-	$kernext_location = "/usr/lpp/htx/etc/kernext/ip_crossover/ip_crossover.ko"; 
+	$kernext_location = $ENV{"HTXETC"}."/kernext/ip_crossover/ip_crossover.ko"; 
 	if( -e $kernext_location) { 
 		print("Setting up ip_crossover kernel module load \n");
 	} else { 

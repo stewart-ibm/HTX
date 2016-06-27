@@ -14,7 +14,7 @@ $p7 = $ARGV[7];
 $p8 = $ARGV[8];
 
 # now read in the profile if it exists.
-$prof = "/tmp/mktcp_debug";
+$prof = $ENV{"HTX_LOG_DIR"}."/mktcp_debug";
 unless (open (DEBUG_FILE,">>$prof")) {
 	die ("Can't open $prof file!\n");
 }
@@ -190,7 +190,7 @@ sub configure_network_for_ubuntu {
 	@out_lines=<OUT_FILE>;
     close(OUT_FILE);
 	$found = 0; 
-	$tmp_file="/tmp/interfaces-$iface"; 
+	$tmp_file=$ENV{"HTX_LOG_DIR"}."/interfaces-$iface"; 
 	`rm $tmp_file 2>/dev/null`; 
 	$source_line="\nsource $source_file \n"; 
 	unless (open (TMP_FILE,">$tmp_file\n")) { 
@@ -324,8 +324,13 @@ sub build_ifcfg {
 
 		if($ifname !~ /tm/){
 			#Network Team interface
-	       	print OUT_FILE ("HWADDR=$mac\n");
-    	    print DEBUG_FILE ("HWADDR=$mac\n");
+			if($ifname !~ /ib/){
+				#ifconfig is unable to read all 20 bytes and should never be
+				#used to try and find the correct hardware address for an IPoIB
+				#device.Hence build_net won't populate HWADDR for IPoIB.
+	       		print OUT_FILE ("HWADDR=$mac\n");
+    	    	print DEBUG_FILE ("HWADDR=$mac\n");
+			}
 		}
 		if($ifname =~ /tm/){
 			#Network Team interface
