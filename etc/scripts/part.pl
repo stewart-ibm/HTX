@@ -22,7 +22,7 @@
 
 use Fcntl;
 use File::Basename;
-require "/usr/lpp/htx/etc/scripts/ioctl.ph"; 
+require $ENV{"HTXSCRIPTS"}."/ioctl.ph"; 
 
 # Definition of constants as subroutines 
 
@@ -54,9 +54,9 @@ $KERNEL_26="true";
 #Check for BML 
 $is_bml=0; 
 $is_ubuntu=0;
-$version_file='/usr/lpp/htx/etc/version'; 
+$version_file=$ENV{"HTXETC"}."/version"; 
 if(-e $version_file) { 
-	$htx_release=`cat /usr/lpp/htx/etc/version 2>/dev/null` ;  
+	$htx_release=`cat $version_file 2>/dev/null` ;  
 	chomp($htx_release); 
 	if($htx_release =~ /htxltsbml/) { 
 		$Is_bml=1; 
@@ -102,13 +102,13 @@ if($is_bml){
 } else { 
 	print "\nRunning Distro Version of \'part\' script\n\n" if($debug);
 }
-
-unless (open (RAW_PART,">/tmp/rawpart")) {
-	die "Open failed for file /tmp/rawpart";
+$rawpart_file=$ENV{"HTX_LOG_DIR"}."/rawpart";
+unless (open (RAW_PART,">$rawpart_file")) {
+	die "Open failed for file $rawpart_file";
 }
-
-unless (open (RAW_LINKS,">/tmp/rawlinks")) {
-	die "Open failed for file /tmp/rawlinks";
+$rawlinks_file=$ENV{"HTX_LOG_DIR"}."/rawlinks";
+unless (open (RAW_LINKS,">$rawlinks_file")) {
+	die "Open failed for file $rawlinks_file";
 }
 
 # The links to the raw nodes will be put in /tmp/rawpart    
@@ -216,12 +216,14 @@ if($debug) {
 }
 close(RAW_PART);
 # To enable multipath testing this file should be created 
-`rm -f /tmp/mpath_parts 2 >/dev/null`; 
+$mpath_parts_file=$ENV{"HTX_LOG_DIR"}."/mpath_parts";
+`rm -f $mpath_parts_file 2 >/dev/null`; 
 &get_multipath_info(); 
 
 if($is_ubuntu) { 
 	# sdXX detected could be CAPI Flash, give preference to hxesurelock. 
-	`rm f /tmp/cflash_parts 2>/dev/null`;
+	$cflash_parts_file=$ENV{"HTX_LOG_DIR"}."/cflash_parts";
+	`rm f $cflash_parts_file 2>/dev/null`;
 	&get_cflash_info();
 }
 &get_TD_info();
@@ -244,16 +246,17 @@ sub get_CD_DVD_info
 		print "Collecting SCSI CD, DVD info\n";
 	}
 
-	unless(open(CD_PART,">/tmp/cdpart")) {
-		die("Open failed for file /tmp/cdpart\n");
+	$cdpart_file=$ENV{"HTX_LOG_DIR"}."/cdpart";
+	unless(open(CD_PART,">$cdpart_file")) {
+		die("Open failed for file $cdpart_file\n");
 	}
-	
-	unless(open(DVDR_PART,">/tmp/dvdrpart")) {
-		die("Open failed for file /tmp/dvdrpart\n");
+	$dvdrpart_file=$ENV{"HTX_LOG_DIR"}."/dvdrpart";	
+	unless(open(DVDR_PART,">$dvdrpart_file")) {
+		die("Open failed for file $dvdrpart_file\n");
 	}
-
-	unless(open(DVDW_PART,">/tmp/dvdwpart")){
-		die("Open failed for file /tmp/dvdwpart\n");
+	$dvdwpart_file=$ENV{"HTX_LOG_DIR"}."/dvdwpart";
+	unless(open(DVDW_PART,">$dvdwpart_file")){
+		die("Open failed for file $dvdwpart_file\n");
 	}
 
 	# Look for SCSI CD-ROM's in /proc/sys/dev/cdrom
@@ -280,7 +283,8 @@ sub get_CD_DVD_info
 				next;
 			}
 			
-			$ret=system("/usr/lpp/htx/bin/getDVD /dev/$drive 2>&1");
+			$DVD_binary=$ENV{"HTXBIN"}."/getDVD";	
+			$ret=system("$DVD_binary /dev/$drive 2>&1");
 			
 			$ret=$ret>>8;
 
@@ -332,7 +336,7 @@ sub get_CD_DVD_info
                         print "checking $drive\n";
                 }
 
-		$ret=system("/usr/lpp/htx/bin/getDVD /dev/$drive 2>&1");
+		$ret=system("$DVD_binary /dev/$drive 2>&1");
 
 		$ret=$ret>>8;
 		
@@ -513,8 +517,9 @@ sub get_FD_info
 	if($debug) {
 		print "Collecting Floppy info\n";
 	}
-	unless (open (FD_PART,">/tmp/fdpart")) {
-		die ("Open failed for file /tmp/fdpart\n");
+	$fdpart_file=$ENV{"HTX_LOG_DIR"}."/fdpart";
+	unless (open (FD_PART,">$fdpart_file")) {
+		die ("Open failed for file $fdpart_file\n");
 	}
 	
 	@floppies=`cat /proc/devices | awk '{print \$2}' | grep ^fd` ;
@@ -949,52 +954,55 @@ sub get_parts_to_exclude
        		print("multipathd not running \n");
        		return;
     	}
-		#Get the MPaths configured
-		printf("## Excluding mpaths Here ##\n") if($debug); 
+	#Get the MPaths configured
+	printf("## Excluding mpaths Here ##\n") if($debug); 
     	@mpaths=`dmsetup ls | awk -F '(' '{ print \$1 }'`;
     	foreach $path (@mpaths) {
        		chomp($path);        
        		$path =~ s/\s+$//;
        		# Check for validity of this mpath first ....
-			print(" Checking exclude for mpath = $path \n") if($debug); 
-       		        $abs_path="/dev/mapper/" . $path ;
-			# first of all check if mpath has partitions. exclude mpath itself.
-			# Then check any system partition on it
-			$mpath_partition=`kpartx -l $abs_path 2>/dev/null | wc -l`;
-			if ($mpath_partition >= 1) {
-			    print("mpath $abs_path has partitions. SO, excluding it...\n" ) if ($debug);
-			    $parts_to_exclude[$cnt++]=$path;
-			}
-			#Now check if mpath or any of its partitions has boot disk
-			$res=`parted "$abs_path" print 2>/dev/null | awk  '/PPC/ || /Linux/ || /linux/ || /boot/ || /prep/' | grep -v \"device-mapper\"`;
-#			$res=`fdisk -l "$abs_path"  2>/dev/null | awk  '/PPC/ || /Linux/ '` ; 
-			chomp($res); 
-			if($res) { 
-				print(" Mpath=$path, has valid Volume group \nres=$res \n. Excluding ..... \n") if($debug) ; 
-				$parts_to_exclude[$cnt++]=$path; 			
-				#if it has partition then add them as well. 
-				@mpath_partitions=`kpartx -l $abs_path 2>/dev/null| awk ' { print \$1 }'`;
-				print("path = $abs_path has partitions \n @mpath_partitions \n") if($debug);
-       			foreach $mpath_partition (@mpath_partitions) {
-					chomp($mpath_partition); 
-					if($mpath_partition =~ /failed/) {
-               			last;
-           			}
-					print(" Mpath=$path, partition=$mpath_partition.  Excluding ..... \n") if($debug) ; 
-					$parts_to_exclude[$cnt++]=$mpath_partition; 
-				} 
-				print("Exclude disks behind this partition \n"); 
-				@sd_devices=get_sd_device($path); 
-				$num_devices=@sd_devices; 
-				for($i=0;$i<$num_devices; $i++) { 
-					printf("Excluding $sd_devices[$i] coz its part of $path \n"); 
-					$parts_to_exclude[$cnt++]=$sd_devices[$i]; 
-				} 
-				next; 
-			}
+		print(" Checking exclude for mpath = $path \n") if($debug); 
+       		$abs_path="/dev/mapper/" . $path ;
+		$res=`ls -l /dev/mapper | grep "$abs_path"`;
+		if ($res) {
+		    # first of all check if mpath has partitions. exclude mpath itself.
+		    # Then check any system partition on it
+		    $mpath_partition=`kpartx -l $abs_path 2>/dev/null | wc -l`;
+		    if ($mpath_partition >= 1) {
+		        print("mpath $abs_path has partitions. SO, excluding it...\n" ) if ($debug);
+		        $parts_to_exclude[$cnt++]=$path;
+		    }
+		    #Now check if mpath or any of its partitions has boot disk
+		    $res=`parted "$abs_path" print 2>/dev/null | awk  '/PPC/ || /Linux/ || /linux/ || /boot/ || /prep/' | grep -v \"device-mapper\"`;
+#		    $res=`fdisk -l "$abs_path"  2>/dev/null | awk  '/PPC/ || /Linux/ '` ; 
+		    chomp($res); 
+		    if($res) { 
+			print(" Mpath=$path, has valid Volume group \nres=$res \n. Excluding ..... \n") if($debug) ; 
+			$parts_to_exclude[$cnt++]=$path; 			
+			#if it has partition then add them as well. 
+			@mpath_partitions=`kpartx -l $abs_path 2>/dev/null| awk ' { print \$1 }'`;
+			print("path = $abs_path has partitions \n @mpath_partitions \n") if($debug);
+       		        foreach $mpath_partition (@mpath_partitions) {
+			    chomp($mpath_partition); 
+			    if($mpath_partition =~ /failed/) {
+               		        last;
+           		    }
+			    print(" Mpath=$path, partition=$mpath_partition.  Excluding ..... \n") if($debug) ; 
+			    $parts_to_exclude[$cnt++]=$mpath_partition; 
+			} 
+			print("Exclude disks behind this partition \n"); 
+			@sd_devices=get_sd_device($path); 
+			$num_devices=@sd_devices; 
+			for($i=0;$i<$num_devices; $i++) { 
+				printf("Excluding $sd_devices[$i] coz its part of $path \n"); 
+				$parts_to_exclude[$cnt++]=$sd_devices[$i]; 
+			} 
+			next; 
+		    }
 		}
+	}
 
-		# This check should always be at the end. 
+	# This check should always be at the end. 
         # Now if we need to do exclude partitions also present in disks
         # excluded as part of parts_to_exclude.
         @partitions="";
@@ -1129,7 +1137,7 @@ sub get_parts
 	@partition_info="";
 	$file_name="/tmp/$name"."_partitions";
 	`rm $file_name 2>/dev/null`;
-	$rc=`lsblk -inr -o name,type $devname 1>$file_name`;
+	$rc=`lsblk -inr -o name,type $devname 1>$file_name 2> /dev/null`;
 	unless (open (IN_FILE,"$file_name")) {
 	    die ("Can't open $file_name file!\n");
 	}
@@ -1192,8 +1200,9 @@ sub get_TD_info
 	if($debug) {
 		print "Collecting Tape info\n";
 	}
-	unless(open(TD_PART,">/tmp/tdpart")) {
-		die("Open failed for file /tmp/tdpart\n");
+	$tdpart_file=$ENV{"HTX_LOG_DIR"}."/tdpart";
+	unless(open(TD_PART,">$tdpart_file")) {
+		die("Open failed for file $tdpart_file\n");
 	}
       # $no_tape_drives=`lsscsi | awk '(\$2 ~/tape/)' | wc -l`;
 	$no_tape_drives=`cat /proc/scsi/scsi 2>/dev/null | grep Sequential-Access | wc -l`; 
@@ -1283,11 +1292,11 @@ sub get_multipath_info
 		return; 
 	}
 	# All the commands below works only if multipath-tools is installed. 
-	unless(open(MPATH_PART, ">/tmp/mpath_parts")) {
-		die("Open failed for file $/tmp/mpath_parts \n"); 
+	unless(open(MPATH_PART, ">$mpath_parts_file")) {
+		die("Open failed for file $mpath_parts_file \n"); 
 	}
-	unless(open(RAWPART, "</tmp/rawpart")) { 
-		die("Open failed for file $/tmp/rawpart \n"); 
+	unless(open(RAWPART, "<$rawpart_file")) { 
+		die("Open failed for file $rawpart_file \n"); 
 	} 
 	@raw_parts = <RAWPART>;
 	close(RAWPART); 
@@ -1426,7 +1435,7 @@ close(MPATH_PART);
     for($i = 0; $i < $num_devs; $i++) { 
 		for($j = $i + 1; $j < $num_devs; $j++) { 
 			if($mpath_dev[$i] eq $mpath_dev[$j]) { 
-				$res = `rm -f /tmp/mpath_parts`;
+				$res = `rm -f $mpath_parts_file`;
 				return; 
 			} 
 		} 
@@ -1462,10 +1471,11 @@ close(MPATH_PART);
 			$i++; 
 		} 			
 	}
-    unless(open(RAWPART, ">/tmp/rawpart")) {
-        die("Open failed for file $/tmp/rawpart \n");
+    unless(open(RAWPART, ">$rawpart_file")) {
+        die("Open failed for file $rawpart_file \n");
     }
 	foreach $dev (@raw_parts) { 
+		chomp($dev);
 		print RAWPART ("$dev \n");
 	}
 	close(RAWPART); 	 
@@ -1481,14 +1491,14 @@ get_cflash_info () {
 	%surelock_dev=""; 
 
 	# if these files exits then read hxestorage candidate devices
-	unless(open(RAWPART, "</tmp/rawpart")) {
-        die("Open failed for file $/tmp/rawpart \n");
+	unless(open(RAWPART, "<$rawpart_file")) {
+        die("Open failed for file $rawpart_file \n");
     }
     @raw_parts = <RAWPART>;
     close(RAWPART);
 	$num_rawparts = @raw_parts;
 
-    $mpath_fname="/tmp/mpath_parts";
+    $mpath_fname="$mpath_parts_file";
 	$mpaths_exists=0;
     if(-e $mpath_fname) {
 
@@ -1505,11 +1515,11 @@ get_cflash_info () {
 	}
 		
 	# Open files for writing .... 
-	unless(open(RAWPART, ">/tmp/rawpart")) {
-		die("Open failed for file >/tmp/rawpart \n"); 
+	unless(open(RAWPART, ">$rawpart_file")) {
+		die("Open failed for file $rawpart_file \n"); 
 	}
-    unless(open(CFLASH_PART, ">/tmp/cflash_parts")) {
-         die("Open failed for file /tmp/cflash_parts \n");
+    unless(open(CFLASH_PART, ">$cflash_parts_file")) {
+         die("Open failed for file $cflash_parts_file \n");
     }
 	if($mpaths_exists) { 
         unless(open(MPATH_PART, ">$mpath_fname")) {
@@ -1668,7 +1678,7 @@ get_disk_info_parted() {
 	$num_partitions=0;
 
 	print("Collecting Disk Information from GNU parted command \n") if($debug);  
-	@input=`parted -msl`;
+	@input=`parted -msl 2> /dev/null`;
 	foreach $line (@input) {
 
         chomp($line);

@@ -6,11 +6,11 @@
 #Stores auto command
 $auto_binary_cmd = " ";
 #Stores auto exe path
-$auto_binary='/usr/lpp/htx/bin/auto';
+$auto_binary=$ENV{"HTXBIN"}."/auto";
 #File that holds available test interfaces
-$iface_file_name = "/tmp/net_iface";
+$iface_file_name = $ENV{"HTX_LOG_DIR"}."/net_iface";
 #File that holds list of loopback devices
-$net_file_name = "/tmp/networks";
+$net_file_name = $ENV{"HTX_LOG_DIR"}."/networks";
 
 if ( -e $auto_binary) {
 	print"Discovering test network...\n";
