@@ -34,13 +34,25 @@ building HTX source for. Possible values are:
  * htxfedora
  * htxfedorale
 
-Run `make all` to build.
-
-Note that HTX assumes you are building on a PowerPC distribution.
+Build instructions:  
+  
+In Debian/Ubuntu  
+  1. install git to download source code  
+apt-get install git  
+  2. download HTX source code  
+git clone https://www.github.com/open-power/HTX  
+  3. install other packages needed to compile HTX  
+apt-get install gcc make libncurses5 g++ libdapl-dev  
+    3. for Ubuntu 14.04 there is no libdapl-dev package, so have to download and compile dapl separately from https://www.openfabrics.org/downloads/dapl/  
+    3. install following packages needed to compile dapl  
+      apt-get install libibverbs-dev librdmacm-dev  
+    3. cd into dapl directory and "./configure" "make" and then "make install"  
+  4. back in HTX directory do a "make all" and then after compiling do a "make deb" which will create a htxubuntu.deb package  
+  
+Note that HTX assumes you are building on a PowerPC distribution.  
 
 Other targets:
 
- * To make deb package: make deb
  * To clean: make clean
  * To make rpm package: work in progress
 
