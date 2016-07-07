@@ -1,12 +1,12 @@
 /* IBM_PROLOG_BEGIN_TAG */
-/* 
+/*
  * Copyright 2003,2016 IBM International Business Machines Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-/* @(#)01       1.36  src/htx/usr/lpp/htx/bin/hxecache/hxecache.c, exer_cache, htx71L 4/1/13 01:06:13  */
 
 #include "hxecache.h"
 
@@ -117,7 +116,8 @@ int main(int argc, char **argv) {
 	}
 
 
-	sprintf(log_file_name,"/tmp/hxecache%d.runlog",get_device_instance(argv[1]));
+	strcpy(log_file_name,getenv("HTX_LOG_DIR"));
+	sprintf(log_file_name,"%s/hxecache%d.runlog",log_file_name,get_device_instance(argv[1]));
 	run_log_fp = fopen(log_file_name,"w");
 
 	if ( run_log_fp == NULL ) {
@@ -389,6 +389,13 @@ int get_system_hardware_details(void) {
 	htxsyscfg_smt_t  	system_smt_information;
 	htxsyscfg_cpus_t 	system_cpu_information;
 
+
+    char *env_var;
+
+	env_var = getenv("EQUALISER_FLAG");
+	if ( env_var != NULL ) {
+		gang_size = 1;
+	}
 	/* Ask for the library to update its info */
     rc = repopulate_syscfg(&h_d);
     if( rc != 0) {
@@ -488,21 +495,6 @@ int get_system_hardware_details(void) {
 	/*sprintf(msg,"[%d]#####total_cpus = %d\n",__LINE__,total_cpus);
 	hxfmsg(&h_d,0,HTX_HE_INFO, msg);*/
 
-	if (total_cpus == 0) {
-		cleanup_done = 0;
-		rc = memory_set_cleanup();
-		if ( rc != SUCCESS ) {
-     	   sprintf(msg,"[%d]: Error while releasing memory. Exitting !!\n",__LINE__);
-        	hxfmsg(&h_d, 0, HTX_HE_HARD_ERROR, msg);
-        	return ( rc);
-    	}
-#ifdef __HTX_LINUX__
-		hxfupdate(RECONFIG, &h_d);
-#endif
-		sprintf(msg,"[%d]:No cpus in this instance, thus exiting... \n",__LINE__);
-        hxfmsg(&h_d, 0, HTX_HE_INFO, msg);
-        exit(0);
-	}
 
 	system_information.num_cores				= num_cores;	/* Number of cores in this instance.	*/
 	system_information.number_of_logical_cpus 	= total_cpus;	/* Number of CPUs in this instance.		*/
@@ -510,6 +502,21 @@ int get_system_hardware_details(void) {
 	if(gang_size > 1) {
 		system_information.start_cpu_number = instance_number * total_cpus;
 		system_information.end_cpu_number   = system_information.start_cpu_number + total_cpus - 1;
+		if (total_cpus == 0 ) {
+			cleanup_done = 0;
+			rc = memory_set_cleanup();
+			if ( rc != SUCCESS ) {
+				sprintf(msg,"[%d]: Error while releasing memory. Exitting !!\n",__LINE__);
+				hxfmsg(&h_d, 0, HTX_HE_HARD_ERROR, msg);
+				return ( rc);
+			}
+			#ifdef __HTX_LINUX__
+				hxfupdate(RECONFIG, &h_d);
+			#endif
+				sprintf(msg,"[%d]:No cpus in this instance, thus exiting... \n",__LINE__);
+				hxfmsg(&h_d, 0, HTX_HE_INFO, msg);
+				exit(0);
+		}
 	}
 	else { /* If gang size = 1, For Equaliser support */
 		system_information.start_cpu_number = instance_number;
@@ -2905,6 +2912,18 @@ void DR_handler(int sig, int code, struct sigcontext *scp) {
 
  	   } /* rem / add cpu */
 	}
+
+	/* For any other signal check/Pre/Post/posterror-phase, respond with DR_RECONFIG_DONE */
+	if (DRinfo.check || DRinfo.pre || DRinfo.post || DRinfo.posterror){
+		if(dr_reconfig(DR_RECONFIG_DONE,&DRinfo)) {
+			sprintf(msg,"dr_reconfig(DR_RECONFIG_DONE) failed for check=%d,pre=%d,post=%d,posterr=%d.error no %d \n",DRinfo.check,DRinfo.pre,DRinfo.post,DRinfo.posterror,errno);
+			hxfmsg(&h_d, 0, HTX_HE_INFO, msg);
+			return;
+		} else {
+			sprintf(msg,"DR: DR_RECONFIG_DONE Success!!\n");
+			hxfmsg(&h_d, 0, HTX_HE_INFO, msg);
+		}
+	}
 	return;
 }
 #endif
@@ -4099,7 +4118,8 @@ int dump_miscompare_data(int thread_index, void *addr) {
 	int page_found = FALSE;
 	int i;
 	
-	sprintf(dump_file_name,"/tmp/hxecache_miscompare.%d.%d.%lx",instance_number,thread_index,th_array[thread_index].seedval);
+	strcpy(dump_file_name,getenv("HTX_LOG_DIR"));
+	sprintf(dump_file_name,"%s/hxecache_miscompare.%d.%d.%lx",dump_file_name,instance_number,thread_index,th_array[thread_index].seedval);
 	dump_fp = fopen(dump_file_name,"w");
 	
 	if ( dump_fp == NULL ) {
