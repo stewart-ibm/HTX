@@ -1,12 +1,12 @@
 /* IBM_PROLOG_BEGIN_TAG */
-/* 
+/*
  * Copyright 2003,2016 IBM International Business Machines Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-static char sccsid[] = "@(#)07	1.23  src/htx/usr/lpp/htx/bin/hxefabricbus/main.c, exer_ablink, htxubuntu 1/5/16 00:32:32";
 
 #include "fabricbus.h"
 
@@ -39,7 +38,7 @@ int crash_on_misc_global, errno;
 char * htxkdblevel;
 
 /*
- * For P8 we don't need 16M pages, as prefetching is now done on EA. 
+ * For P8 we dont need 16M pages, as prefetching is now done on EA. 
  * For older Power releases, keep it enabled. 
  * 0 - disabled, use base page size.  
  * 1 - Enabled - Use large pages.   
@@ -174,7 +173,7 @@ main(int argc, char *argv[]) {
     }
 	/* Configure which page size we are going to use */ 
 	if(pvr == PVR_POWER8_MURANO || pvr == PVR_POWER8_VENICE || pvr == PVR_POWERP8P_GARRISION) { /* Use 4 K */  
-		SET_PAGESIZE= 0;	 /* We don't need to configure 16M pages, as its default */  
+		SET_PAGESIZE= 0;	 /* We dont need to configure 16M pages, as its default */  
 	} else { /* Use 16M pages */ 
 		SET_PAGESIZE = 1; 
 	}
@@ -291,10 +290,10 @@ main(int argc, char *argv[]) {
         exit(1);
     }
 
-    /* Initialize the htxmp library datastructures */
+    /* Intialize the htxmp library datastructures */
     rc = mp_initialize(tot_cpus, &htx_d);
     if(rc == -1) {
-       sprintf(msg_buf, "\n %s : Fabricbus failed to initialize htxmp datastructures, errno = %d \n",errno);
+       sprintf(msg_buf, "\n %s : Fabricbus failed to intialize htxmp datastructures, errno = %d \n",errno);
        hxfmsg(&htx_d, rc, HTX_HE_HARD_ERROR, msg_buf);
        exit(1);
     }
@@ -326,7 +325,7 @@ main(int argc, char *argv[]) {
                  * override the previously detected system configuration.
                  */
                  int j, k = 0, procs = 0;
-                 /* Systems usually don't have symmetric distribution. So in these cases use these rules parm to
+                 /* Systems usually dont have symetric distribution. So in these cases use these rules parm to
                   * depict nearest possible system configuration.
                   */
                  if((current_stanza->cec_nodes * current_stanza->chips_per_node * current_stanza->cores_per_chip * smt_threads) > tot_cpus) {
@@ -367,10 +366,10 @@ main(int argc, char *argv[]) {
    		 	printf( "****************************************************************************************\n");
 
 			if(query_sysconf)
-				continue;  /* If user specify diff sys configuration through multiple stanzas in rule, then display sys config for each of them */
+				continue;  /* If user specify diff sys configuration thru multiple stanzas in rule, then display sys config for each of them */
 
             /* If rules file parm memory_configure = 0 then use predefined algos to decide memory mapping,
-             * else use had specified memory mapping through file read from there
+             * else use had specified memory mapping thru file read from there
              */
             num_cpus_mapped = 0;
             for(i = 0; i < MAX_CPUS; i++) {
@@ -423,7 +422,8 @@ main(int argc, char *argv[]) {
 					num_pages_available = (unsigned long long)(pages_available * 0.90); 	
 				#endif 
                     /* Next lets find out what was our requirement */
-                    sprintf(fname, "/tmp/fabricbus_mem_req_%d", mem_alloc);
+					strcpy(fname,getenv("HTX_LOG_DIR"));
+                    sprintf(fname, "%s/fabricbus_mem_req_%d",fname, mem_alloc);
                     if((fp=fopen(fname,"r")) == NULL){
                         sprintf(msg_buf, "fopen of file %s failed with errno=%d",fname,errno);
                         hxfmsg(&htx_d, rc, HTX_HE_HARD_ERROR, msg_buf);
@@ -474,7 +474,8 @@ main(int argc, char *argv[]) {
                      */
                    	FILE * memfptr ;
                     char file_mem[50];
-                    sprintf(file_mem, "/tmp/fabricbus_mem_config_%d", mem_alloc);
+					strcpy(file_mem,getenv("HTX_LOG_DIR"));
+                    sprintf(file_mem, "%s/fabricbus_mem_config_%d",file_mem, mem_alloc);
                     memfptr = fopen(file_mem,"w");
                     if(memfptr == NULL)  {
                     	printf("Error opening file - %s",file_mem);
@@ -493,12 +494,12 @@ main(int argc, char *argv[]) {
                  */
                 rc = user_def_memory_mapping(mem_alloc, &num_cpus_mapped, memory_mapping);
                 if(rc == -1 ) {
-                    sprintf(msg_buf,"Unable to read from /tmp/fabricbus_mem_configure file errno =%d \n",errno);
+                    sprintf(msg_buf,"user_def_memory_mapping() fun failed, Unable to read from /tmp/fabricbus_mem_config  file errno =%d \n",errno);
                     hxfmsg(&htx_d, 0, HTX_HE_HARD_ERROR, msg_buf);
 					return(-1);
                 }
             }
-			/* Initialize the mask structure */ 
+			/* Intialize the mask structure */ 
 			for(i = 0; i < num_cpus_mapped; i++) { 
 				masks[i].host_cpu = memory_mapping[i][HOST_CPU]; 
 				masks[i].dest_cpu = memory_mapping[i][DEST_CPU];
@@ -513,7 +514,8 @@ main(int argc, char *argv[]) {
 				char file_masks[50];
 				int j = 0, host_rad, dest_rad[MAX_NODES],  cnt = 0, found = 0 ;  
 				FILE * mfptr ;  
-				sprintf(file_masks, "/tmp/fabricbus_masks_%d", mem_alloc); 
+				strcpy(file_masks,getenv("HTX_LOG_DIR"));
+				sprintf(file_masks, "%s/fabricbus_masks_%d",file_masks, mem_alloc); 
 	
 				mfptr = fopen(file_masks, "w"); 
 				if(mfptr == NULL ) {
@@ -580,7 +582,7 @@ main(int argc, char *argv[]) {
                  */
                 rc = user_def_mask_mapping(mem_alloc, num_cpus_mapped, pvr, masks);
                 if(rc == -1) {
-                    sprintf(msg_buf,"Unable to read from /tmp/fabricbus_masks_%d, errno = %d \n", mem_alloc, errno);
+                    sprintf(msg_buf,"user_def_mask_mapping() fun failed with rc =%d,Unable to read from /tmp/fabricbus_masks , errno = %d \n",rc, errno);
                     hxfmsg(&htx_d, 0, HTX_HE_HARD_ERROR, msg_buf);
                     return(-1);
                 }
@@ -638,7 +640,8 @@ main(int argc, char *argv[]) {
 						mem_page_req += 0; 
 					}
 				} 
-            	sprintf(file_pages, "/tmp/fabricbus_mem_req_%d", mem_alloc);
+				strcpy(file_pages,getenv("HTX_LOG_DIR"));
+            	sprintf(file_pages, "%s/fabricbus_mem_req_%d",file_pages, mem_alloc);
             	qfptr = fopen(file_pages, "w");
             	if(qfptr == NULL ) {
                 	sprintf(msg_buf,"\n Error opening file - %s", file_pages);
@@ -812,8 +815,8 @@ main(int argc, char *argv[]) {
 
         } /* Off num_stanza loop */
       	if(query_pages || query_sysconf) {
-			/* We are here, we have scanned through all stanzas and calculated memory_allocation
-			 * for each memory_allocation defined in rules file
+			/* We are here, we have scanned thru all stanzas and calculated memory_allocation
+			 * for eahc memory_allocation defined in rules file
 			 */
 			exit(0);
 		}

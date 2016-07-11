@@ -1,12 +1,12 @@
 /* IBM_PROLOG_BEGIN_TAG */
-/* 
+/*
  * Copyright 2003,2016 IBM International Business Machines Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-static char sccsid[] = "@(#)08	1.6  src/htx/usr/lpp/htx/bin/hxefabricbus/rf_parser.c, exer_ablink, htxubuntu 4/16/15 07:17:47";
 
 #include "fabricbus.h"
 
@@ -218,7 +217,7 @@ fill_pattern_details(int pi, PATTERN * pattern, char * input_pattern) {
                 return(1);
             }
 
-            strcpy(buff,"/usr/lpp/htx/pattern/");
+            strcpy(buff,getenv("HTXPATTERNS"));
             strcat(buff,pattern->pattern_name);
             DEBUGON("#fill_pattern_details:In (pattern name = %s) size = %d\n",buff, pattern->pattern_size);
             if ((strcmp(pattern->pattern_name,"RANDOM")!=0 )&& (strcmp(pattern->pattern_name,"ADDRESS")!=0)) {
@@ -589,7 +588,7 @@ rf_read_rules(const char rf_name[], struct rf_stanza rf_info[], unsigned int * n
 			sscanf(line, "%*s %d", &current_ruleptr->randbuf_size); 
 			DEBUGON("\n Random Buffer Size - %d \n", current_ruleptr->randbuf_size); 
 			if(current_ruleptr->randbuf_size < 0) { 
-				sprintf(msg, "\n Random Buffer Size must be greater than 0, %d \n", current_ruleptr->randbuf_size);
+				sprintf(msg, "\n Random Buffer Size must be greater thn 0, %d \n", current_ruleptr->randbuf_size);
 				hxfmsg(&htx_d, 0, HTX_HE_HARD_ERROR, msg);
 				return(-1);
 			}
@@ -657,7 +656,8 @@ user_def_memory_mapping(int mem_alloc, unsigned int * num_cpus_mapped, unsigned 
     int node, host_cpu= -1, dest_cpu = -1, cpus_mapped = 0;
     int cpu_index[MAX_CHIPS] ={0};
 
-    sprintf(file_mem,"/tmp/fabricbus_mem_config_%d",mem_alloc);
+	strcpy(file_mem,getenv("HTX_LOG_DIR"));
+    sprintf(file_mem,"%s/fabricbus_mem_config_%d",file_mem,mem_alloc);
     if ((fptr = fopen(file_mem,"r" )) == NULL) {
         sprintf(msg,"error open %s ",file_mem );
         hxfmsg(&htx_d, errno, HTX_HE_HARD_ERROR, msg);
@@ -765,8 +765,8 @@ user_def_mask_mapping(unsigned int mem_alloc, unsigned int num_cpus_mapped, unsi
 	unsigned long long and_mask[4], or_mask[4];
 	char * temp = NULL; 
 
-
-	sprintf(file_mask,"/tmp/fabricbus_masks_%d",mem_alloc);
+	strcpy(file_mask,getenv("HTX_LOG_DIR"));
+	sprintf(file_mask,"%s/fabricbus_masks_%d",file_mask,mem_alloc);
 	
 	if ((fptr = fopen(file_mask, "r" )) == NULL) {
         sprintf(msg,"error open %s ",file_mask );

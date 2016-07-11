@@ -1,12 +1,12 @@
 /* IBM_PROLOG_BEGIN_TAG */
-/* 
+/*
  * Copyright 2003,2016 IBM International Business Machines Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -781,7 +781,6 @@ long long new_seg_size		 = mem_info.total_mem_avail/(32 * KB);
 	    /*  This means  stanza_ptr->affinity == TRUE */
             displaym(HTX_HE_INFO,DBG_IMP_PRINT,"Am inside affinity condition \n");
 #ifndef __HTX_LINUX__
-#ifdef NOT_HTX53X
 
 	    rc1 = system("vmo -o enhanced_affinity_vmpool_limit=-1");
 	    if(rc1 < 0){
@@ -805,88 +804,10 @@ long long new_seg_size		 = mem_info.total_mem_avail/(32 * KB);
         	return(-1) ;
     	}
 
-        if(i ==  base_pg_idx){
 
-#if 0
-			struct vminfo vmi;
-	        rc1 = vmgetinfo(&vmi, VMINFO, sizeof(struct vminfo));
-                if(rc1 != 0) {
-              	    displaym(HTX_HE_HARD_ERROR,DBG_MUST_PRINT,"fill_segment_data:vmgetinfo failed:rc= %d\t"
-		    "errno= %d\n",rc1,errno);
-		    return(-1);
-        	}
-	        free_4k_64k = vmi.true_numfrb*(4*KB);
-	        displaym(HTX_HE_INFO,DBG_IMP_PRINT,"fill_segment_data:4k_64k mem pool free_4k_64k = %ld \n",free_4k_64k);
-
-	        free_4k_64k = free_4k_64k * (0.9);
-	        displaym(HTX_HE_INFO,DBG_IMP_PRINT,"fill_segment_data:90percent of mem pool free_4k_64k= %ld\n",free_4k_64k);
-			th_free_4k_64k = free_4k_64k / mem_info.num_of_threads;
-			displaym(HTX_HE_INFO,DBG_IMP_PRINT,"fill_segment_data: th_free_4k_64k per thread free_4k_64k = %ld\n",
-				th_free_4k_64k);
-
-			read_real_time(&(thp[0].conv_time.start), TIMEBASE_SZ);
-			for(n = 0; n < mem_info.num_of_threads; n++){
-				thp[n].sz = th_free_4k_64k;
-				thp[n].thn = n;
-				tresult=(void *)&n;
-		        displaym(HTX_HE_INFO,DBG_IMP_PRINT,"convert_64k Creating thread %d\n",thp[n].thn);
-
-        		rc1=pthread_create((pthread_t *)&thp[n].tid,NULL,convert_64k,&thp[n].thn);
-        		if ( rc1 != 0) {
-            		displaym(HTX_HE_HARD_ERROR,DBG_MUST_PRINT,"pthread_create "
-               		"failed(errno %d):(%s): tnum=%d\n",errno,strerror(errno),i);
-            		return(rc1);
-        		}
-				displaym(HTX_HE_INFO,DBG_IMP_PRINT," after create tid = %d\n",thp[n].tid);
-
-			}
-			for(n = 0; n < mem_info.num_of_threads; n++){
-
-				 displaym(HTX_HE_INFO,DBG_IMP_PRINT," b4 join tid = %d\n",thp[n].tid);
-		        rc1=pthread_join(thp[n].tid,&tresult);
-       		 	if ( rc1 != 0) {
-           		 	displaym(HTX_HE_HARD_ERROR,DBG_MUST_PRINT,"pthread_join "
-                	"failed(errno %d):(%s): tnum=%d \t rc1 = %d \n",errno,strerror(errno),n,rc1);
-            		return(rc1);
-        		}
-        		displaym(HTX_HE_INFO,DBG_IMP_PRINT,"Thread %d Just Joined\n" ,n);
-			}
-			read_real_time(&(thp[0].conv_time.finish), TIMEBASE_SZ);
-
-
-		    rc1 = time_base_to_time(&(thp[0].conv_time.start), TIMEBASE_SZ);
-    		rc1 = time_base_to_time(&(thp[0].conv_time.finish), TIMEBASE_SZ);
-		    if(rc1 != 0){
-     		   displaym(HTX_HE_HARD_ERROR,DBG_MUST_PRINT," time_base_to_time failed \n");
-        		return -1;
-    		 }
-		    secs = thp[0].conv_time.finish.tb_high - thp[0].conv_time.start.tb_high;
-    		n_secs = thp[0].conv_time.finish.tb_low - thp[0].conv_time.start.tb_low;
-    		if (n_secs < 0)  {
-        		secs--;
-        		n_secs += 1000000000;
-    		}
-
-			thp[0].conv_time.latency = (double)secs  + (double)n_secs *(double)0.000000001;
-
-			displaym(HTX_HE_INFO,DBG_INFO_PRINT,"\n secs = %u \t nsecs = %u \t latency = %.10f \n",\
-        		secs, n_secs, thp[0].conv_time.latency);
-
-
-/*	        rc2 =  convert_64k(free_4k_64k);
-	        if(rc2 !=0){
-		    displaym(HTX_HE_HARD_ERROR,DBG_MUST_PRINT,"fill_segment_data:convert_64k fail:rc= %d,errno =%d\n",\
-		    rc2,errno);
-		    return (-1);
-	        }
-*/
-#endif
-#endif
 #endif
 
-#ifdef __HTX_LINUX__
 	if (i == base_pg_idx) {
-#endif
 		/* Here we are marking which cpu's are actually have the memory in their SRAD */
 		thr_num=0;
 		for(n = 0; n < num_of_srads; n++){
@@ -1307,8 +1228,6 @@ int create_n_run_test_operation(void)
             return(res);
         }
     }
-
-
     for(i=0; i< mem_info.num_of_threads; i++) {
 
         /* In case of affinity = yes check mem_info.tdata_hp for cpu_flag to make sure we are not accessing any holes */
@@ -1582,7 +1501,9 @@ int fill_pattern_details(int pi, char *str, int *line)
                         "error - %d (%s)\n",*line, str, errno, strerror(errno));
             }
 
-            strcpy(buff,"/usr/lpp/htx/pattern/");
+		    if (!(strlen ((char*)strcpy(buff,getenv("HTXPATTERNS"))))){
+        		strcpy(buff,"/usr/lpp/htx/pattern/");
+    		}
             strcat(buff,r.pattern_name[pi]);
             display(HTX_HE_INFO, DBG_INFO_PRINT,
                      "#fill_pattern_details:In (pattern name = %s) size = %d\n",
@@ -2522,8 +2443,8 @@ void set_defaults(void)
 	r.i_side_test = 0;
 	r.d_side_test = 0;
 	r.addnl_i_side_test = 0;
-	r.base_pg_sz = 4*1024;
-	r.base_sg_sz = 256*1024*1024;
+	r.base_pg_sz = 4*KB;
+	r.base_sg_sz = 256*MB;
 	r.nx_rem_th_flag = 1;
 	r.nx_perf_flag = 0;
 	r.nx_async_flag = 0;
@@ -2811,15 +2732,22 @@ mem_info.pdata[2].free);
     char tmpstr[500];
     FILE *fp;
     unsigned long avail_16m,avail_16g,free_16m,free_16g,file_exists=0;
-    if ((fp=fopen("/tmp/freepages","r"))==NULL) {
-         displaym(HTX_HE_INFO,DBG_MUST_PRINT, "fopen of memory free pages (/tmp/freepages) failed with errno:%d\n",errno);
+	char log_dir[40];
+	if (!(strlen ((char*)strcpy(log_dir,getenv("HTX_LOG_DIR"))))){
+		strcpy(log_dir,"/tmp/");
+	}
+
+	strcat(log_dir,"/freepages");
+    /*if ((fp=fopen("/tmp/freepages","r"))==NULL) {*/
+    if ((fp=fopen(log_dir,"r"))==NULL) {
+         displaym(HTX_HE_INFO,DBG_MUST_PRINT, "fopen of memory free pages (%s) failed with errno:%d\n",log_dir,errno);
     }
     else {
         ret=fscanf(fp,"avail_16M=%lu,avail_16G=%lu,free_16M=%lu,free_16G=%lu",&avail_16m,\
                     &avail_16g,&free_16m,&free_16g);
 
         if (ret == 0 || ret == EOF) {
-            displaym(HTX_HE_INFO,DBG_MUST_PRINT, "Error while reading file (/tmp/freepages) \n");
+            displaym(HTX_HE_INFO,DBG_MUST_PRINT, "Error while reading file (%s) \n",log_dir);
             file_exists=0;
         }
         else {
@@ -3218,14 +3146,19 @@ int fill_mem_info_data_linux(void)
 	}
 	pclose(fp);
 
-	if ((fp=fopen("/tmp/freepages","r"))==NULL) {
-		displaym(HTX_HE_INFO,DBG_MUST_PRINT, "fopen of memory free pages (/tmp/freepages) failed with errno:%d\n",errno);
+	char log_dir[40];
+    if (!(strlen ((char*)strcpy(log_dir,getenv("HTX_LOG_DIR"))))){
+        strcpy(log_dir,"/tmp/");
+    }
+	strcat(log_dir,"/freepages");
+	if ((fp=fopen(log_dir,"r"))==NULL) {
+		displaym(HTX_HE_INFO,DBG_MUST_PRINT, "fopen of memory free pages (%s) failed with errno:%d\n",errno,log_dir);
 	}
 	else {
 		ret=fscanf(fp,"avail_16M=%lu,avail_16G=%lu,free_16M=%lu,free_16G=%lu",&avail_16m,\
 				&avail_16g,&free_16m,&free_16g);
 		if (ret == 0 || ret == EOF) {
-			displaym(HTX_HE_INFO,DBG_MUST_PRINT, "Error while reading file (/tmp/freepages) \n");
+			displaym(HTX_HE_INFO,DBG_MUST_PRINT, "Error while reading file (%s) \n");
 			file_exists=0;
 		}
 		else {
@@ -3233,8 +3166,8 @@ int fill_mem_info_data_linux(void)
 		}
 		fclose(fp);
 	}
-	displaym(HTX_HE_INFO,DBG_IMP_PRINT,"/tmp/freepages free_16M = %lu \t avail_16M = %lu \n"
-						,free_16m,avail_16m);
+	displaym(HTX_HE_INFO,DBG_IMP_PRINT,"%s  free_16M = %lu \t avail_16M = %lu \n"
+						,log_dir,free_16m,avail_16m);
 
 	} /* if ! vrm_enabled */
 	else {
@@ -3353,7 +3286,9 @@ int read_cmd_line(int argc,char *argv[]) {
         strcpy (priv.rules_file_name, argv[3]);
     }
     else { /*Default value */
-        strcpy(priv.rules_file_name,"/usr/lpp/htx/rules/reg/hxemem64/maxmem");
+        /*strcpy(priv.rules_file_name,"/usr/lpp/htx/rules/reg/hxemem64/maxmem");*/
+		strcpy(priv.rules_file_name,getenv("HTXREGRULES"));
+		strcat(priv.rules_file_name,"/hxemem64/maxmem");
     }
 
     if (argc > 4) {
@@ -4075,7 +4010,9 @@ int fill_buffers(int ti)
     struct stat fstat;
     int nr=0,nw=0,nc=0;
 
-    strcpy(pattern_nm,"/usr/lpp/htx/pattern/");
+    if (!(strlen ((char*)strcpy(pattern_nm,getenv("HTXPATTERNS"))))){
+        strcpy(pattern_nm,"/usr/lpp/htx/pattern/");
+    }
     strcat(pattern_nm,stanza_ptr->pattern_name[0]);
     pat_size = stanza_ptr->pattern_size[0];
     unsigned int * seed1,* seed2;
@@ -5840,19 +5777,24 @@ int save_buffers(int ti, unsigned long rc, struct segment_detail sd, \
             displaym(HTX_HE_SOFT_ERROR, DBG_MUST_PRINT, "#3.save_buffers\n");
 
             /* Size of the page=4096. If it is last page, it can be less */
+			char log_dir[40];
+		    if (!(strlen ((char*)strcpy(log_dir,getenv("HTX_LOG_DIR"))))){
+     		   strcpy(log_dir,"/tmp/");
+    		}
+			strcat(log_dir,"/hxemem");
             buffer_size = (tmp_shm_size>=(4*KB)) ? (4*KB):tmp_shm_size;
-            sprintf(fname,"/tmp/hxemem.%s.shmem.%d.%d_addr_0x%016lx_offset_%d",stanza_ptr->rule_id,\
+            sprintf(fname,"%s.%s.shmem.%d.%d_addr_0x%016lx_offset_%d",log_dir,stanza_ptr->rule_id,\
                         main_misc_count,miscompare_count, (unsigned long)(shr_mem_ptr[j]+new_offset), page_offset);
             displaym(HTX_HE_SOFT_ERROR, DBG_MUST_PRINT, "miscompare file name = %s\n",fname);
 
               if( (main_misc_count<11) && (miscompare_count < 10))    /* Number of miscompares to be saved is 10 */
               {
-                sprintf(fname,"/tmp/hxemem.%s.shmem.%d.%d_addr_0x%016lx_offset_%d",stanza_ptr->rule_id,\
+                sprintf(fname,"%s.%s.shmem.%d.%d_addr_0x%016lx_offset_%d",log_dir,stanza_ptr->rule_id,\
                         main_misc_count,miscompare_count, (unsigned long )(shr_mem_ptr[j]+new_offset), page_offset);
                 hxfsbuf((shr_mem_ptr[j]+new_offset),buffer_size, fname, &stats);
                 sprintf(msg_txt,"The miscomparing data in data buffer segment is in the file %s.\n",fname);
                 strcat(msg_text,msg_txt);
-                sprintf(fname,"/tmp/hxemem.%s.pat.%d.%d_addr_0x%016lx_offset_%d",stanza_ptr->rule_id,\
+                sprintf(fname,"%s.%s.pat.%d.%d_addr_0x%016lx_offset_%d",log_dir,stanza_ptr->rule_id,\
                         main_misc_count,miscompare_count, (unsigned long )(shr_mem_ptr[j]+new_offset),page_offset);
                 sprintf(msg_txt,"The pattern data which is expected is in the file %s.\n",fname);
                 strcat(msg_text,msg_txt);
@@ -6030,7 +5972,11 @@ int chek_if_ramfs(void)
     int filedes=0;
     unsigned int mode_flag;
     char pattern_nm[256];
-    strcpy(pattern_nm,"/usr/lpp/htx/pattern/HEXFF");
+    if (!(strlen ((char*)strcpy(pattern_nm,getenv("HTXPATTERNS"))))){
+        strcpy(pattern_nm,"/usr/lpp/htx/pattern/");
+    }
+    strcat(pattern_nm,"/HEXFF");
+
     mode_flag = S_IWUSR | S_IWGRP | S_IWOTH;
     errno = 0 ;
 
@@ -6054,7 +6000,6 @@ return(0);
 }
 
 #ifndef __HTX_LINUX__
-#ifdef NOT_HTX53X
 
 int check_ame_enabled()
 {
@@ -6139,7 +6084,6 @@ int  convert_64k(void *tnum)
         /* return 0; */
 }
 #endif
-#endif
 
 /*The function fill_srad_data Fills the all SRAD data to the structure srad_info
  * RETURN VALUE:
@@ -6210,11 +6154,20 @@ int fill_srad_data()
 #else
 	FILE *fp;
 	char command[200],fname[100];
+	char log_dir[40];
 	int cur_node, num_procs, lcpu;
 	int srad_mem_avail, srad_mem_free;
 
-	sprintf(fname,"/tmp/mem_node_details");
-	sprintf(command,"/usr/lpp/htx/etc/scripts/get_mem_node_details.sh > %s",fname);
+    if (!(strlen ((char*)strcpy(fname,getenv("HTX_LOG_DIR"))))){
+        strcpy(fname,"/tmp/");
+    }
+	strcat(fname,"/mem_node_details");
+	/*sprintf(command,"/usr/lpp/htx/etc/scripts/get_mem_node_details.sh > %s",fname);*/
+    if (!(strlen ((char*)strcpy(command,getenv("HTXSCRIPTS"))))){
+        strcpy(log_dir,"/usr/lpp/htx/etc/scripts/");
+    }
+	sprintf(command, "%s/get_mem_node_details.sh > %s", command, fname);
+	
 	if ( (rc = system(command)) == -1 ) {
 		displaym(HTX_HE_HARD_ERROR, DBG_MUST_PRINT, "system command to get_node_details failed with %d", rc);
 		return(-1);
@@ -6455,12 +6408,15 @@ int detailed_display(){
     char dump_file[100],msg[1000];
     FILE *fp;
 
-    sprintf(dump_file, "/tmp/htx_mem_detail");
+    if (!(strlen ((char*)strcpy(dump_file,getenv("HTX_LOG_DIR"))))){
+        strcpy(dump_file,"/tmp/");
+    }
+	strcat(dump_file,"/htx_mem_detail");
 
 
     fp = fopen(dump_file, "w");
     if ( fp == NULL) {
-        sprintf(msg, "Error opening nx_mem_log file,errno:%d \n",errno);
+        sprintf(msg, "Error opening %s file,errno:%d \n",dump_file,errno);
         hxfmsg(&stats, -1, HTX_HE_HARD_ERROR, msg);
         exit(-1);
     }

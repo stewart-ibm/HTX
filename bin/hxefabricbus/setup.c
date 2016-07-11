@@ -1,12 +1,12 @@
 /* IBM_PROLOG_BEGIN_TAG */
-/* 
+/*
  * Copyright 2003,2016 IBM International Business Machines Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 		 http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-
 
 #include "fabricbus.h"
 
@@ -84,11 +83,15 @@ read_hardware_config(SYS_CONF_TYP * scfg, unsigned int tot_cpus, unsigned int pv
 	char command[200],fname[100];
 	int rad, lcpu, nrads, num_procs;
 
-	sprintf(fname,"/tmp/node_details.%d",getpid());
-    sprintf(command,"/usr/lpp/htx/etc/scripts/get_node_details.sh "
-            "> %s\n",fname);
+	strcpy(fname,getenv("HTX_LOG_DIR"));
+	sprintf(fname,"%s/node_details.%d",fname,getpid());
+    /*sprintf(command,"/usr/lpp/htx/etc/scripts/get_node_details.sh "
+            "> %s\n",fname);*/
+    strcpy(command,getenv("HTXSCRIPTS"));
+    sprintf(command, "%s/get_node_details.sh > %s\n", command, fname);
+
     if ( (rc = system(command)) == -1 ) {
-            sprintf(msg, "system command to get_node_details failed with %d",rc);
+            sprintf(msg, "sytem command to get_node_details failed with %d",rc);
             hxfmsg(&htx_d, rc, HTX_HE_HARD_ERROR, msg);
         	return(-1);
     }
@@ -168,7 +171,7 @@ read_hardware_config(SYS_CONF_TYP * scfg, unsigned int tot_cpus, unsigned int pv
      }
 
 #endif
-	/* Initialize the sysconf data structure */
+	/* Intialize the sysconf data structure */
 	for(node = 0; node < MAX_NODES; node++) {
 		for(chip = 0; chip < MAX_CHIPS_PER_NODE; chip ++) {
 			for(proc = 0; proc < MAX_CPUS_PER_CHIP; proc ++) {
@@ -291,6 +294,7 @@ configure_memory_allocation(SYS_CONF_TYP * scfg, unsigned int mem_alloc, unsigne
      * This is filled by reading PIR register of each physical processor.
      * -1 indicates no logical cpu on that place.
      */
+	 int cpu_sys[MAX_NODES][MAX_CHIPS][MAX_CPUS_PER_CHIP];
      int cpu_node[MAX_NODES][MAX_CPUS_PER_NODE];
      int cpu_chip[MAX_CHIPS][MAX_CPUS_PER_CHIP];
 
@@ -298,7 +302,7 @@ configure_memory_allocation(SYS_CONF_TYP * scfg, unsigned int mem_alloc, unsigne
      * scfg_node maintains no of logical cpus on every node.
      * scfg_chip maintains no of logical cpus on every chip.
      */
-     int scfg_node[MAX_NODES], scfg_chip[MAX_CHIPS];
+     int scfg_sys[MAX_NODES][MAX_CHIPS],scfg_node[MAX_NODES], scfg_chip[MAX_CHIPS];
 
     /*
      * num_nodes : total number of nodes in system.
@@ -307,14 +311,23 @@ configure_memory_allocation(SYS_CONF_TYP * scfg, unsigned int mem_alloc, unsigne
      */
      int num_nodes, num_chips;
      int chips_per_node[MAX_NODES] = {0};
-     unsigned int i, j;
+     unsigned int i, j,k;
      int node, cpu, pjmp, chip, cpus_mapped = 0;
 
-    /* Initialize local variables */
+    /* Intialize local variables */
     num_nodes = num_chips = 0;
     memset(scfg_node, 0, MAX_NODES * sizeof(unsigned int));
     memset(chips_per_node, 0, MAX_NODES * sizeof(unsigned int));
     memset(scfg_chip, 0, MAX_CHIPS * sizeof(unsigned int));
+	memset(scfg_sys,0,(MAX_NODES * MAX_CHIPS * sizeof(unsigned int)));
+
+	for(i = 0; i < MAX_NODES; i++) {
+		for(j = 0; j < MAX_CHIPS; j++) {
+			for(k = 0; k<MAX_CPUS_PER_CHIP;k++) {
+				cpu_sys[i][j][k] = NO_CPU_DEFINED;
+			}
+		}
+	}
     for(i = 0; i < MAX_NODES; i++) {
         for(j = 0; j < MAX_CPUS_PER_NODE; j++) {
             cpu_node[i][j] = NO_CPU_DEFINED;
@@ -334,9 +347,11 @@ configure_memory_allocation(SYS_CONF_TYP * scfg, unsigned int mem_alloc, unsigne
         chips_per_node[node] = scfg->node[node].num_chips;
         for(chip = 0; chip < chips_per_node[node]; chip++) {
             scfg_chip[num_chips] = scfg->node[node].chip[chip].num_procs;
+			scfg_sys[node][chip] = scfg->node[node].chip[chip].num_procs;
             for(cpu = 0; cpu < scfg_chip[num_chips]; cpu ++) {
                 cpu_chip[num_chips][cpu] = scfg->node[node].chip[chip].lprocs[cpu];
                 cpu_node[node][scfg_node[node]] = scfg->node[node].chip[chip].lprocs[cpu];
+				cpu_sys[node][chip][cpu]	= scfg->node[node].chip[chip].lprocs[cpu];
                 scfg_node[node]++;
             }
             num_chips++;
@@ -411,7 +426,7 @@ configure_memory_allocation(SYS_CONF_TYP * scfg, unsigned int mem_alloc, unsigne
         	}
         }
         break;
-        case 2 : { /* Remote Spread */
+        case 2 : { /* Remote Spreaded */
             for(node = 0; node < num_nodes; node++) {
                 int x, y = 0, exhausted = -1;
                 int cnt_thrds = 0 ;
@@ -442,29 +457,39 @@ configure_memory_allocation(SYS_CONF_TYP * scfg, unsigned int mem_alloc, unsigne
             }
         }
         break;
-        case 3: { /* Remote Spread  - all */
-           for(node = 0; node < num_nodes; node++) {
-                int remote_node, remote_cpu = 0;
-                remote_node = node;
-                for(cpu = 0; cpu < ((scfg_node[node] < threads_per_node) ? scfg_node[node] : threads_per_node); cpu++) {
-                    remote_node = (remote_node + 1) % num_nodes;
-                    if(remote_node == node) {
-                        remote_node = (remote_node + 1) % num_nodes;
-                        remote_cpu++;
-                    }
-                    if(remote_cpu >= threads_per_node) {
-                        continue;
+        case 3: { /* Remote Spreaded  - all */
+			for(node = 0; node < num_nodes; node++) {
+				int remote_node, remote_cpu = 0,remote_chip=0;
+				int thread_per_chip = threads_per_node/chips_per_node[node];
+				for(chip = 0; chip<chips_per_node[node];chip++,remote_chip++){
+					remote_cpu  = 0;
+					remote_node = node;
+					for(cpu=0;cpu < ((scfg_sys[node][chip] < thread_per_chip)? scfg_sys[node][chip]:thread_per_chip);cpu++){
+						remote_node = (remote_node + 1) % num_nodes;
+						if(remote_node == node) {
+							remote_node = (remote_node + 1) % num_nodes;
+							remote_cpu++;
+						}			
+						
+						if(chip > chips_per_node[remote_node]){
+							remote_chip = (chips_per_node[remote_node] - 1);	
+						}
+							
+						if(remote_cpu >= thread_per_chip){
+							continue;
+						}
+						if(remote_cpu >= scfg_sys[remote_node][remote_chip]){
+							memory_mapping[cpus_mapped][HOST_CPU] = cpu_sys[node][chip][cpu];
+							memory_mapping[cpus_mapped][DEST_CPU] = cpu_sys[remote_node][remote_chip][scfg_sys[remote_node][remote_chip]-1];
+						}else {
+							
+							memory_mapping[cpus_mapped][HOST_CPU] = cpu_sys[node][chip][cpu];
+							memory_mapping[cpus_mapped][DEST_CPU] = cpu_sys[remote_node][remote_chip][remote_cpu];
+						}
+						cpus_mapped++;
 					}
-                    if(remote_cpu >= scfg_node[remote_node]) {
-                        memory_mapping[cpus_mapped][HOST_CPU] = cpu_node[node][cpu];
-                    	memory_mapping[cpus_mapped][DEST_CPU] = cpu_node[remote_node][scfg_node[remote_node] - 1];
-                    } else {
-                    	memory_mapping[cpus_mapped][HOST_CPU] = cpu_node[node][cpu];
-                    	memory_mapping[cpus_mapped][DEST_CPU] = cpu_node[remote_node][remote_cpu];
-					}
-                    cpus_mapped++;
-                }
-            }
+				}
+			}
         }
         break;
         case 4 : { /* Intra Node memory mapping */
