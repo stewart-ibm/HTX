@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *              http://www.apache.org/licenses/LICENSE-2.0
+ *               http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,8 +16,6 @@
  * limitations under the License.
  */
 /* IBM_PROLOG_END_TAG */
-
-/* @(#)09	1.2  src/htx/usr/lpp/htx/bin/hxestorage/devinfo.h, exer_storage, htxubuntu 2/15/16 22:55:05 */
 
 #ifndef _H_DEVINFO
 #define _H_DEVINFO
@@ -56,7 +54,7 @@ struct devinfo {
 /* device types */
 /*
  * These two are used for SCSI and IDE devices, and also optical devices
- * and are the only ones referred to in the HTX-AIX code.
+ * and are the only ones refered to in the HTX-AIX code.
  */
 #define DD_SCDISK  'r'          /* SCSI disk */
 #define DD_SCRWOPT 'w'          /* SCSI R/W optical */
@@ -85,6 +83,7 @@ struct devinfo {
 
 #define IOCINFO            0x1
 #define CHECK_WRITE_CACHE  0x2
+#define DISCARD            0x3
 
 extern  int htx_ioctl(struct htx_data *data, int d, int request, void *ptr);
 

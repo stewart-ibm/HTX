@@ -17,8 +17,6 @@
  */
 /* IBM_PROLOG_END_TAG */
 
-/* @(#)98	1.3  src/htx/usr/lpp/htx/bin/hxestorage/analyze_miscompare.c, exer_storage, htxubuntu 8/7/15 05:25:08 */
-
 #include "hxestorage_utils.h"
 
 /* Macros for miscompare type */

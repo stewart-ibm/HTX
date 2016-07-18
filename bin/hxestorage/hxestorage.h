@@ -17,8 +17,6 @@
  */
 /* IBM_PROLOG_END_TAG */
 
-/* @(#)98	1.8  src/htx/usr/lpp/htx/bin/hxestorage/hxestorage.h, exer_storage, htxubuntu, htxubuntu_349 8/10/15 05:30:11 */
-
 /********************************************************************/
 /* File name - hxestorage.h                                         */
 /* Header file to include all the strcuture/variables/functions     */
@@ -47,9 +45,7 @@
 #include <sys/types.h>
 #include <sys/signal.h>
 #include <stdint.h>
-#ifdef __CAPI_FLASH__
-    #include <capiblock.h>
-#else
+#ifndef __CAPI_FLASH__
     #include <aio.h>
 #endif
 
@@ -66,13 +62,13 @@
     #include <sys/mdio.h>
 #endif
 
-
 #define MAX_OPER_COUNT      6
 #define NOP					-1
 #define R                   0
 #define W                   1
 #define C                   2
 #define V                   2
+#define D                   3
 
 #define R_CACHE             0
 #define W_CACHE             1
@@ -115,12 +111,25 @@
 
 #define MIS_LOG_SIZE                50 * KB
 
-#define RETURN(retcod, sev) \
+#define MISCOM_ERR                  -1
+#define NO_IO_ERR                   0
+#define OPEN_ERR                    1
+#define CLOSE_ERR                   2
+#define READ_ERR                    3
+#define WRITE_ERR                   4
+#define IOCTL_ERR                   5
+#define SEEK_ERR                    6
+#define FSYNC_ERR                   7
+
+#define RETURN(retcod, err_flag) \
     { \
-        if ((dev_info.cont_on_err == YES && sev >= IO_HARD) || \
-            (dev_info.cont_on_misc == YES && sev == MISCOM)) { \
+        if ((dev_info.cont_on_err == YES && err_flag > NO_IO_ERR) || \
+            (dev_info.cont_on_err == DATACHECK && err_flag == READ_ERR) || \
+            (dev_info.cont_on_misc == YES && err_flag == MISCOM_ERR)) { \
+            err_flag = NO_IO_ERR; \
             return (0); \
         } else { \
+            err_flag = NO_IO_ERR; \
             return (retcod); \
         } \
     }
@@ -174,6 +183,7 @@
 #define NUM_BLKS_VAR_LEN                10
 #define BLK_HOP_VAR_LEN                 9
 #define SAVED_DLEN_VAR_LEN              12
+#define NUM_DISCARDS_VAR_LEN            14
 #define NUM_WRITES_VAR_LEN              12
 #define NUM_READS_VAR_LEN               11
 #define NUM_WRITES_REMAINING_VAR_LEN    22
@@ -213,9 +223,9 @@
 #define AIO_REQ_QUEUE_VAR_LEN           14
 #define FLAG_VAR_LEN					5
 
-#define AIO_MAX_OUTSTANDING_VAR_LEN     16
+#define NUM_ASYNC_IO_VAR_LEN            13
 #define MIS_DETAIL_VAR_LEN              11
-#define AIO_NUM_OUTSTANDING_VAR_LEN     17
+#define CUR_ASYNC_IO_VAR_LEN            13
 #define OPEN_FLAG_VAR_LEN				10
 #define MIS_LOG_BUF_VAR_LEN             12
 #define LUN_TYPE_VAR_LEN				9
@@ -348,6 +358,8 @@ struct thread_context {
     long long starting_block;                           /* For Seq. oper only - N, TOP, BOT, MID */
     char saved_dlen_var[SAVED_DLEN_VAR_LEN];
     unsigned long long saved_dlen;                      /* original transfer size to be saved. Needed in case of partial transfer */
+    char num_discards_var[NUM_DISCARDS_VAR_LEN];
+    unsigned int num_discards;                          /* no. of discards based on operation defined */
     char num_writes_var[NUM_WRITES_VAR_LEN];
     unsigned int num_writes;                            /* no. of writes based on operation defined */
     char num_reads_var[NUM_READS_VAR_LEN];
@@ -359,7 +371,7 @@ struct thread_context {
     char first_blk_var[FIRST_BLK_VAR_LEN];
     unsigned long long first_blk;                       /* first block set based on starting block */
     char cur_blkno_var[CUR_BLKNO_VAR_LEN];
-    unsigned long long blkno[3];                        /* Explained at the beginning of this file */
+    unsigned long long blkno[3];                        /* Explained at the begining of this file */
     char align_var[ALIGN_VAR_LEN];
     int align;                                          /* Alignment for IO buffers requested */
     char lba_align_var[LBA_ALIGN_VAR_LEN];
@@ -421,17 +433,18 @@ struct thread_context {
     char rand_index_var[RAND_INDEX_VAR_LEN];
     unsigned long long rand_index;                      /* random index into rand_buf */
     char begin_dword_var[BEGIN_DWORD_VAR_LEN];
-    unsigned int begin_dword;                           /* beginning dword */
+    unsigned int begin_dword;                           /* begining dword */
     char trailing_dword_var[TRAILING_DWORD_VAR_LEN];
     signed long long trailing_dword;                    /* Trailing dword where to write pattern  */
 	char aio_req_queue_var[AIO_REQ_QUEUE_VAR_LEN];
 	struct aio_ops *aio_req_queue;                       /* Request queue for aysnc IO */
-	char max_outstanding_var[AIO_MAX_OUTSTANDING_VAR_LEN];
-	int max_outstanding;	                     	     /* max number of asyns IO that can be kept in-flight */
-	char num_outstandings_var[AIO_NUM_OUTSTANDING_VAR_LEN];
-	volatile int num_outstandings;                       /* current num of asyns IO in progress */
+	char num_async_io_var[NUM_ASYNC_IO_VAR_LEN];
+	int num_async_io;	                     	         /* max number of asyns IO that can be kept in-flight */
+	char cur_async_io_var[CUR_ASYNC_IO_VAR_LEN];
+	volatile int cur_async_io;                           /* current num of asyns IO in progress */
 	char flag_var[FLAG_VAR_LEN];
 	int flag;
+	int io_err_flag;                                     /* Flag used to find if read/write/open/close/ioctl error */
 	char force_op_var[LUN_TYPE_VAR_LEN];
 	int force_op;
 #ifdef __CAPI_FLASH__

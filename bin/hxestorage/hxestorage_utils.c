@@ -17,8 +17,6 @@
  */
 /* IBM_PROLOG_END_TAG */
 
-/* @(#)11	1.19  src/htx/usr/lpp/htx/bin/hxestorage/hxestorage_utils.c, exer_storage, htxubuntu 3/16/16 00:05:21 */
-
 /****************************************************************/
 /*	Filename: 	hxestorage_utils.c                              */
 /*	contains all the helper functions needed in exercising		*/
@@ -59,12 +57,12 @@ unsigned long long set_first_blk (struct htx_data *htx_ds, struct thread_context
 		if (tctx->direction == UP) {
 			sprintf(msg, "For thread with thread_id: %s, first_blk defined is less than min_blkno."
 						"Setting it to min_blkno(0x%llx).\n", tctx->id, tctx->min_blkno);
-			user_msg(htx_ds, 0, INFO, msg);
+			user_msg(htx_ds, 0, 0, INFO, msg);
 			first_blk = tctx->min_blkno;
 		} else {
 			sprintf(msg, "For thread with thread_id: %s, first_blk defined is less than min_blkno."
 						"Will not run the test.", tctx->id);
-			user_msg(htx_ds, -1, HARD, msg);
+			user_msg(htx_ds, -1, 0, HARD, msg);
 			return (-1);
 		}
 	}
@@ -218,7 +216,8 @@ void random_blkno (struct htx_data *htx_ds, struct thread_context *tctx, unsigne
 	/* In case of "restore_seed", we will get min_blkno and max_blkno seved previously	 */
 	/* by save_seeds stanza and generate random_blkno between them.						 */
 	/*********************************************************************************** */
-	if ((total_BWRC_threads == 0) || (tctx->compare_enabled == 'n') || (tctx->rule_option & RESTORE_SEEDS_FLAG) || (tctx->num_writes != 0)) {
+	if ((strcasecmp(tctx->oper, "wrc") == 0) || (total_BWRC_threads == 0) ||
+	    (tctx->rule_option & RESTORE_SEEDS_FLAG) || (tctx->rule_option & SAVE_SEEDS_FLAG)) {  /* See defect SW352431 for detail on various conditions */
 		(void) nrand48_r(tctx->seed.xsubi, &(tctx->seed.drand_struct), &tmp1);
 		(void) nrand48_r(tctx->seed.xsubi, &(tctx->seed.drand_struct), &tmp2);
 		rand_no = (unsigned long long)((unsigned long long)tmp1 << 32 | ((unsigned long long)tmp2 & 0xffffffffULL));
@@ -373,14 +372,14 @@ void init_seed (struct htx_data *htx_ds, struct random_seed_t *seed)
 	rc = pthread_mutex_lock(&cache_mutex);
 	if (rc) {
 		sprintf(msg, "Mutex lock failed in process INIT_SEED, rc = %d\n", rc);
-		user_msg(htx_ds, rc, SYS_HARD, msg);
+		user_msg(htx_ds, rc, 0, HARD, msg);
 		exit(rc);
 	}
 	seed->xsubi[1] = invocation_count++;
 	rc = pthread_mutex_unlock(&cache_mutex);
 	if (rc) {
 		sprintf(msg, "Mutex unlock failed in process INIT_SEED, rc = %d\n", rc);
-		user_msg(htx_ds, rc, SYS_HARD, msg);
+		user_msg(htx_ds, rc, 0, HARD, msg);
 		exit(rc);
 	}
 	memset(&(seed->drand_struct), 0, sizeof(struct drand48_data));
@@ -592,7 +591,7 @@ int allocate_buffers (struct htx_data *htx_ds, struct thread_context *tctx, unsi
 			strerror_r(err_no, err_str, ERR_STR_SZ);
 			sprintf(msg, "Thread_id = %s, Malloc error - %d(%s), size - %llx, count - %d\n",
 			tctx->id, err_no, err_str, size, count);
-			user_msg(htx_ds, err_no, SYS_HARD, msg);
+			user_msg(htx_ds, err_no, 0, HARD, msg);
 			return count;
 		} else {
 			malloc_count = malloc_count + 1;
@@ -802,7 +801,7 @@ int bld_buf (struct htx_data *htx_ds, struct thread_context *tctx, unsigned shor
 					default:
 						strcpy( msg, "Exerciser internal error - default switch taken in\n" );
 						sprintf( msg + strlen( msg ), "bldbuf: pattern_id = '%s'.", tctx->pattern_id);
-						user_msg(htx_ds, -1, HARD, msg);
+						user_msg(htx_ds, -1, 0, HARD, msg);
 						memset( wbuf, '?', tctx->dlen );
 						break;
 				} /* end switch */
@@ -877,7 +876,7 @@ void generate_pattern5 (unsigned short *buf, int bufsize)
 void generate_pattern7 (char *buf, int bufsize, unsigned int line_length)
 {
 	/*********************************************************
-	 * algorithm 7 chosen. This algorithm will generate the buffer depending
+	 * algorithm 7 choosen. This algorithm will generate the buffer depending
 	 * on the width of the scsi bus. Say the width is 16 bits so the data
 	 * transfer should be ffff 0000 ffff 0000 ... This will generate the
  	 * highest electrical stress on the scsi bus.
@@ -944,13 +943,13 @@ int generate_pattern8 (struct htx_data *htx_ds, struct thread_context *tctx, cha
 	num_dwords = line_length / dword_size;
 	if(line_length % dword_size) {
 		sprintf(msg, "generate_pattern8: Error : line_length = %d not multiple of dwords=%d \n", line_length, dword_size);
-		hxfmsg(htx_ds, 0, HTX_HE_SOFT_ERROR, msg);
+		user_msg(htx_ds, 0, 0, SOFT, msg);
 		return(-1);
 	}
 	strt_pattern = (unsigned long long *) malloc(dword_size * num_dwords);
 	if(strt_pattern == (unsigned long long *)NULL) {
 		sprintf(msg, "unable to get strt_pattern, errno = %d \n", errno);
-		hxfmsg(htx_ds, 0, HTX_HE_SOFT_ERROR, msg);
+		user_msg(htx_ds, 0, 0, SOFT, msg);
 		return(-1);
 	}
 	if(num_lines) {
@@ -1044,13 +1043,13 @@ int generate_pattern9 (struct htx_data *htx_ds, struct thread_context *tctx, cha
 	num_dwords = line_length / dword_size;
 	if(line_length % dword_size) {
 		sprintf(msg, "generate_pattern9: Error : line_length = %d not multiple of dwords=%d \n", line_length, dword_size);
-		hxfmsg(htx_ds, 0, HTX_HE_SOFT_ERROR, msg);
+		user_msg(htx_ds, 0, 0, SOFT, msg);
 		return(-1);
 	}
 	strt_pattern = (unsigned long long *) malloc(dword_size * num_dwords);
 	if(strt_pattern == (unsigned long long *)NULL) {
 		sprintf(msg, "unable to get strt_pattern, errno = %d \n", errno);
-		hxfmsg(htx_ds, 0, HTX_HE_SOFT_ERROR, msg);
+		user_msg(htx_ds, 0, 0, SOFT, msg);
 		return(-1);
 	}
 	if(num_lines) {
@@ -1132,13 +1131,13 @@ int generate_patternA(struct htx_data *htx_ds, struct thread_context *tctx, char
 	num_dwords = line_length / dword_size;
 	if(line_length % dword_size) {
 		sprintf(msg, "generate_patternA: Error : line_length = %d not multiple of dwords=%d \n", line_length, dword_size);
-		hxfmsg(htx_ds, 0, HTX_HE_SOFT_ERROR, msg);
+		user_msg(htx_ds, 0, 0, SOFT, msg);
 		return(-1);
 	}
 	strt_pattern = (unsigned long long *) malloc(dword_size * num_dwords);
 	if(strt_pattern == (unsigned long long *)NULL) {
 		sprintf(msg, "unable to get strt_pattern, errno = %d \n", errno);
-		hxfmsg(htx_ds, 0, HTX_HE_SOFT_ERROR, msg);
+		user_msg(htx_ds, 0, 0, SOFT, msg);
 		return(-1);
 	}
 	if(num_lines) {
@@ -1256,13 +1255,12 @@ void prt_msg(struct htx_data *htx_ds, struct thread_context *tctx, int loop,
 	char err_str[ERR_STR_SZ];
     int rc = 0;
 
-	/* If continue on err is set to yes means continue on MISCOMAPRE as well as IO error (Only
-     * stop on SYS_HARD err).
-     * if set to MISCOMP, continue only for MISCOMPARE and stop for any other type of error
-     * (i.e. IO error as well as SYS_HARD err).
+	/* If continue on err is set to yes means continue on all IO error.
+     * if set to DATACHECK, continue only for READ and stop for any other type of error.
      */
-    if (dev_info.cont_on_err == YES && sev >= IO_HARD) {
-        sev = INFO;
+     if ((dev_info.cont_on_err == YES && sev == HARD && tctx->io_err_flag > NO_IO_ERR) ||
+        (dev_info.cont_on_err == DATACHECK && sev == HARD && tctx->io_err_flag == READ_ERR)) {
+        sev = SOFT;
     } else {
         if ( dev_info.crash_on_anyerr ) {
 	    #ifdef __HTX_LINUX__
@@ -1279,41 +1277,40 @@ void prt_msg(struct htx_data *htx_ds, struct thread_context *tctx, int loop,
 		sprintf(msg1, "errno: %d(%s)\n", err, err_str);
 		strcat(msg, msg1);
 	}
-    rc = pthread_mutex_lock(&log_mutex);
-    if (rc) {
+	rc = pthread_mutex_lock(&log_mutex);
+	if (rc) {
         strerror_r(rc, err_str, ERR_STR_SZ);
         sprintf(msg, "Mutex lock failed in function prt_msg, rc %d (%s)", rc, err_str);
-        user_msg(htx_ds, rc, SYS_HARD, msg);
+        user_msg(htx_ds, rc, 0, HARD, msg);
         exit(1);
     }
     hxfmsg(htx_ds, err, sev, msg);
-    rc = pthread_mutex_unlock(&log_mutex);
-    if (rc) {
+	rc = pthread_mutex_unlock(&log_mutex);
+	if (rc) {
         strerror_r(rc, err_str, ERR_STR_SZ);
         sprintf(msg, "Mutex unlock failed in function prt_msg, rc %d (%s)", rc, err_str);
-        user_msg(htx_ds, rc, SYS_HARD, msg);
+        user_msg(htx_ds, rc, 0, HARD, msg);
         exit(1);
     }
-	return;
+    return;
 }
 
 /**************************************************************************/
 /* send a user defined message to HTX                                     */
 /**************************************************************************/
-void user_msg(struct htx_data *htx_ds, int err, int sev, char *text)
+void user_msg(struct htx_data *htx_ds, int err, int io_err_flag, int sev, char *text)
 {
 	char msg[MSG_TEXT_SIZE], err_str[ERR_STR_SZ];
     int rc = 0;
 
-	/* If continue on err is set to yes means continue on MISCOMAPRE as well as IO error (Only
-	 * stop on SYS_HARD err).
-	 * if set to MISCOMP, continue only for MISCOMPARE and stop for any other type of error
-	 * (i.e. IO error as well as SYS_HARD err).
+	/* If continue on err is set to yes means continue on all IO error
+	 * if set to DATACHECK, continue only for READ and stop for any other type of error.
 	 */
-	if (dev_info.cont_on_err == YES && sev >= IO_HARD) {
-	    sev = INFO;
+	if ((dev_info.cont_on_err == YES && sev == HARD && io_err_flag > NO_IO_ERR) ||
+	     (dev_info.cont_on_err == DATACHECK && sev == HARD && io_err_flag == READ_ERR)) {
+	    sev = SOFT;
     } else {
-        if ((sev == HARD) && (dev_info.crash_on_anyerr) ) {
+        if ((sev == HARD) && (dev_info.crash_on_anyerr)) {
 	        #ifdef __HTX_LINUX__
 	        do_trap_htx64(0xDEADDEED, htx_ds);
 	        #else
@@ -1327,19 +1324,19 @@ void user_msg(struct htx_data *htx_ds, int err, int sev, char *text)
 		strcat(msg, err_str);
 		strcat(msg, "\n");
 	}
-    rc = pthread_mutex_lock(&log_mutex);
-    if (rc) {
+	rc = pthread_mutex_lock(&log_mutex);
+	if (rc) {
         strerror_r(rc, err_str, ERR_STR_SZ);
         sprintf(msg, "Mutex lock failed in function user_msg, rc %d (%s)", rc, err_str);
-        user_msg(htx_ds, rc, SYS_HARD, msg);
+        hxfmsg(htx_ds, rc, HARD, msg);
         exit(1);
     }
   	hxfmsg(htx_ds, err, sev, msg);
-    rc = pthread_mutex_unlock(&log_mutex);
-    if (rc) {
+	rc = pthread_mutex_unlock(&log_mutex);
+	if (rc) {
         strerror_r(rc, err_str, ERR_STR_SZ);
         sprintf(msg, "Mutex unlock failed in function user_msg, rc %d (%s)", rc, err_str);
-        user_msg(htx_ds, rc, SYS_HARD, msg);
+        hxfmsg(htx_ds, rc, HARD, msg);
         exit(1);
     }
 }
@@ -1511,44 +1508,44 @@ void dump_iocmd(struct htx_data *htx_ds, struct sc_passthru *s)
 	char msg[512];
 
 	sprintf(msg, "\nDump of the struct sc_passthru about to be sent:\n\n");
-	user_msg(htx_ds, 0, INFO, msg);
+	user_msg(htx_ds, 0, 0, INFO, msg);
 
 	sprintf(msg, "Version     = %d", s->version);
-	user_msg(htx_ds, 0, INFO, msg);
+	user_msg(htx_ds, 0, 0, INFO, msg);
 
 	sprintf(msg, "data_length    = %llu (0x%llx); ", s->data_length, s->data_length);
-	user_msg(htx_ds, 0, INFO, msg);
+	user_msg(htx_ds, 0, 0, INFO, msg);
 
 	sprintf(msg, "buffer = 0x%lx\n", s->buffer);
-	user_msg(htx_ds, 0, INFO, msg);
+	user_msg(htx_ds, 0, 0, INFO, msg);
 
 	sprintf(msg, "timeout_value = %u (0x%x); ", s->timeout_value, s->timeout_value);
-	user_msg(htx_ds, 0, INFO, msg);
+	user_msg(htx_ds, 0, 0, INFO, msg);
 
 	sprintf(msg, "status_validity = %u (0x%02x)\n", s->status_validity, s->status_validity);
-	user_msg(htx_ds, 0, INFO, msg);
+	user_msg(htx_ds, 0, 0, INFO, msg);
 
 	sprintf(msg, "scsi_bus_status= %u (0x%02x); ", s->scsi_bus_status, s->scsi_bus_status);
-	user_msg(htx_ds, 0, INFO, msg);
+	user_msg(htx_ds, 0, 0, INFO, msg);
 
 	sprintf(msg, "adapter_status = %u (0x%02x)\n", s->adapter_status, s->adapter_status);
-	user_msg(htx_ds, 0, INFO, msg);
+	user_msg(htx_ds, 0, 0, INFO, msg);
 
 	sprintf(msg, "adap_q_status  = %u (0x%02x); ", s->adap_q_status, s->adap_q_status);
-	user_msg(htx_ds, 0, INFO, msg);
+	user_msg(htx_ds, 0, 0, INFO, msg);
 
 	sprintf(msg, "q_tag_msg = %u (0x%02x)\n", s->q_tag_msg, s->q_tag_msg);
-	user_msg(htx_ds, 0, INFO, msg);
+	user_msg(htx_ds, 0, 0, INFO, msg);
 
 	sprintf(msg, "flags          = %u (0x%02x); ", s->flags, s->flags);
-	user_msg(htx_ds, 0, INFO, msg);
+	user_msg(htx_ds, 0, 0, INFO, msg);
 
 	sprintf(msg, "command_length = %u (0x%02x)\n", s->command_length, s->command_length);
-	user_msg(htx_ds, 0, INFO, msg);
+	user_msg(htx_ds, 0, 0, INFO, msg);
 
 	for (i = 0; i < 10; i++) {
 		sprintf(msg, "scsi_cdb[%2d] = 0x%02x\n", i, s->scsi_cdb[i]);
-		user_msg(htx_ds, 0, INFO, msg);
+		user_msg(htx_ds, 0, 0, INFO, msg);
 	}
 }
 #endif
@@ -1574,7 +1571,7 @@ void seg_lock(struct htx_data *htx_ds, struct thread_context *tctx, unsigned lon
 	if (rc) {
 		strerror_r(rc, err_str, ERR_STR_SZ);
 		sprintf(msg, "Mutex lock failed in process SEG_LOCK, rc %d (%s)", rc, err_str);
-		user_msg(htx_ds, rc, SYS_HARD, msg);
+		user_msg(htx_ds, rc, 0, HARD, msg);
 		exit(1);
 	}
 
@@ -1604,7 +1601,7 @@ void seg_lock(struct htx_data *htx_ds, struct thread_context *tctx, unsigned lon
 					seg_table_entries++;
 				} else {
 					sprintf(msg, "All segment table entries are used.\n");
-					user_msg(htx_ds, -1, HARD, msg);
+					user_msg(htx_ds, -1, 0, HARD, msg);
                     exit(1);
 				}
 			}
@@ -1644,7 +1641,7 @@ void seg_lock(struct htx_data *htx_ds, struct thread_context *tctx, unsigned lon
             if (rc) {
                 strerror_r(rc, err_str, ERR_STR_SZ);
 				sprintf(msg, "Cond_wait failed in process SEG_LOCK, rc %d (%s)", rc, err_str);
-                user_msg(htx_ds, rc, SYS_HARD, msg);
+                user_msg(htx_ds, rc, 0, HARD, msg);
                 exit(1);
             }
         }
@@ -1654,7 +1651,7 @@ void seg_lock(struct htx_data *htx_ds, struct thread_context *tctx, unsigned lon
 	if (rc) {
 		strerror_r(rc, err_str, ERR_STR_SZ);
 		sprintf(msg, "Mutex unlock failed in process SEG_LOCK, rc %d (%s)", rc, err_str);
-		user_msg(htx_ds, rc, SYS_HARD, msg);
+		user_msg(htx_ds, rc, 0, HARD, msg);
 		exit(1);
 	}
 }
@@ -1677,7 +1674,7 @@ void seg_unlock(struct htx_data *htx_ds, struct thread_context *tctx, unsigned l
 	if (rc) {
 		strerror_r(rc, err_str, ERR_STR_SZ);
 		sprintf(msg, "Mutex lock failed in process SEG_UNLOCK, rc %d (%s)", rc, err_str);
-		user_msg(htx_ds, rc, SYS_HARD, msg);
+		user_msg(htx_ds, rc, 0, HARD, msg);
 		exit(1);
 	}
 
@@ -1690,7 +1687,7 @@ void seg_unlock(struct htx_data *htx_ds, struct thread_context *tctx, unsigned l
 		/* Something's gone seriously wrong - couldn't find the segment */
 		sprintf(msg, "seg_unlock(): can't find segment! seg_table index at exit: %d\n" "flba=0x%llx, llba=0x%llx, tid=0x%llx,\n",
 				tctx->seg_table_index, flba, llba, (unsigned long long)tid);
-		user_msg(htx_ds, -1, HARD, msg);
+		user_msg(htx_ds, -1, 0, HARD, msg);
 		exit(1);
 	}
 
@@ -1709,7 +1706,7 @@ void seg_unlock(struct htx_data *htx_ds, struct thread_context *tctx, unsigned l
 	if (rc) {
 		strerror_r(rc, err_str, ERR_STR_SZ);
 		sprintf(msg, "Broadcast failed in process SEG_UNLOCK, rc = %d (%s)", rc, err_str);
-		user_msg(htx_ds, rc, SYS_HARD, msg);
+		user_msg(htx_ds, rc, 0, HARD, msg);
 		exit(1);
 	}
 
@@ -1717,7 +1714,7 @@ void seg_unlock(struct htx_data *htx_ds, struct thread_context *tctx, unsigned l
 	if (rc) {
 		strerror_r(rc, err_str, ERR_STR_SZ);
 		sprintf(msg, "Mutex unlock failed in process SEG_UNLOCK, rc %d (%s)", rc, err_str);
-		user_msg(htx_ds, rc, SYS_HARD, msg);
+		user_msg(htx_ds, rc, 0, HARD, msg);
 		exit(1);
 	}
 }
@@ -1733,7 +1730,7 @@ void check_alignment(struct htx_data *htx_ds, struct thread_context *tctx)
 	if (tctx->lba_align > 0 && tctx->num_blks % tctx->lba_align != 0) {
 		sprintf(msg, "For thread with thread_id: %s, lba_align specified is not multiple of num_blks. "
 					"Setting it to multiple of num_blks", tctx->id);
-		user_msg(htx_ds, 0, INFO, msg);
+		user_msg(htx_ds, 0, 0, INFO, msg);
 		if (tctx->lba_align < tctx->num_blks) {
 			tctx->lba_align = tctx->num_blks;
 		} else {
@@ -1797,7 +1794,7 @@ void hang_monitor (struct htx_data *htx_ds)
 			sprintf(msg, "Mutex lock failed in hang_monitor(), rc %d (%s)\n"
 						"Hung I/O monitor for disk exerciser terminating.",
 						err_level, err_str);
-			user_msg(htx_ds, err_level, SYS_HARD, msg);
+			user_msg(htx_ds, err_level, 0, HARD, msg);
 			return;
 		}
 		/**************************************************************************/
@@ -1871,7 +1868,7 @@ void hang_monitor (struct htx_data *htx_ds)
 				trap(0xBEEFDEAD, seg_table, seg_table_entries, pid, msg1, htx_ds);
 			#endif
 			}
-			user_msg (htx_ds, -1, err_level, msg1);
+			user_msg (htx_ds, -1, 0, err_level, msg1);
 		}
 
 		/* Release the segment table mutex. */
@@ -1879,7 +1876,7 @@ void hang_monitor (struct htx_data *htx_ds)
 			strerror_r(err_level, err_str, ERR_STR_SZ);
 			sprintf(msg, "Mutex unlock failed in hang_monitor(), rc %d (%s), Hung I/O monitor for disk exerciser terminating.",
 						err_level, err_str);
-			user_msg (htx_ds, err_level, SYS_HARD, msg);
+			user_msg (htx_ds, err_level, 0, HARD, msg);
 			return;
 		}
 		/* Sleep until time to check again... */
@@ -1957,7 +1954,7 @@ void wait_for_cache_threads_completion(struct htx_data *htx_ds, struct thread_co
     if (rc) {
         strerror_r(rc, err_str, ERR_STR_SZ);
         sprintf(msg, "Mutex lock failed in function wait_for_cache_threads_completion, rc %d (%s)", rc, err_str);
-        user_msg(htx_ds, rc, SYS_HARD, msg);
+        user_msg(htx_ds, rc, 0, HARD, msg);
         exit(1);
 
     }
@@ -1965,14 +1962,14 @@ void wait_for_cache_threads_completion(struct htx_data *htx_ds, struct thread_co
     if (rc) {
         strerror_r(rc, err_str, ERR_STR_SZ);
         sprintf(msg, "pthread_cond_broadcast failed in function wait_for_cache_threads_completion, rc %d (%s)", rc, err_str);
-        user_msg(htx_ds, rc, SYS_HARD, msg);
+        user_msg(htx_ds, rc, 0, HARD, msg);
         exit(1);
     }
     rc = pthread_mutex_unlock(&c_th_info[tctx->th_num].cache_mutex);
     if (rc) {
         strerror_r(rc, err_str, ERR_STR_SZ);
         sprintf(msg, "Mutex unlock failed in function wait_for_cache_threads_completion, rc %d (%s)", rc, err_str);
-        user_msg(htx_ds, rc, SYS_HARD, msg);
+        user_msg(htx_ds, rc, 0, HARD, msg);
         exit(1);
     }
     while (c_th_info[tctx->th_num].cache_threads_created > 0) {
@@ -2023,6 +2020,7 @@ void update_state_table (unsigned long long block_num, int num_blks)
         block_num++;
     }
 }
+
 #ifndef __CAPI_FLASH__
 void update_aio_req_queue(int index, struct thread_context *tctx, char *buf)
 {
@@ -2040,15 +2038,15 @@ int wait_for_aio_completion(struct htx_data *htx_ds, struct thread_context *tctx
     int i, err_no;
     char got_index = 'N', msg[256];
 
-    if (tctx->num_outstandings < tctx->max_outstanding) {
-        index = tctx->num_outstandings;
+    if (tctx->cur_async_io < tctx->num_async_io) {
+        index = tctx->cur_async_io;
     } else {
-        while (tctx->num_outstandings) {
-            for (i = 0; i < tctx->max_outstanding; i++) {
+        while (tctx->cur_async_io) {
+            for (i = 0; i < tctx->num_async_io; i++) {
                 if (tctx->aio_req_queue[i].status == AIO_INPROGRESS) {
                     rc = aio_error(&tctx->aio_req_queue[i].aio_req);
                     if (rc != AIO_INPROGRESS) {
-                        tctx->num_outstandings--;
+                        tctx->cur_async_io--;
                         if (rc > 0) {
                             err_no = errno;
                             tctx->aio_req_queue[i].status = AIO_ERROR;
@@ -2058,7 +2056,7 @@ int wait_for_aio_completion(struct htx_data *htx_ds, struct thread_context *tctx
                                 htx_ds->bad_writes++;
                             }
                             sprintf(msg, "error in aio_error(), errno: %d\n", errno);
-                            user_msg(htx_ds, err_no, HARD, msg);
+                            user_msg(htx_ds, err_no, 0, HARD, msg);
                             index = -1;
                             return index;
                         } else if (rc == 0) { /* means IO completed */
@@ -2072,12 +2070,12 @@ int wait_for_aio_completion(struct htx_data *htx_ds, struct thread_context *tctx
                                     htx_ds->bad_writes++;
                                 }
                                 sprintf(msg, "error in aio_return, errno: %d\n", err_no);
-                                user_msg(htx_ds, err_no, HARD, msg);
+                                user_msg(htx_ds, err_no, 0, HARD, msg);
                                 index = -1;
                                 return index;
                             } else if (rc != tctx->aio_req_queue[i].aio_req.aio_nbytes) {
                                 sprintf(msg, "Attempted bytes is not equal to actual bytes\n");
-                                user_msg(htx_ds, err_no, HARD, msg);
+                                user_msg(htx_ds, err_no, 0, HARD, msg);
                                 index = -1;
                                 return index;
                             } else {

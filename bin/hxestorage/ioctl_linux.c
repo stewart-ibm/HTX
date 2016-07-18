@@ -17,8 +17,6 @@
  */
 /* IBM_PROLOG_END_TAG */
 
-/* @(#)73	1.2  src/htx/usr/lpp/htx/bin/hxestorage/ioctl_linux.c, exer_storage, htxubuntu 2/15/16 22:55:03 */
-
 #include <stdio.h>
 #include <string.h>
 #include <scsi/sg.h>
@@ -130,11 +128,25 @@ int htx_ioctl(struct htx_data *data, int d, int request, void *ptr)
             break;
 	    }
 
-            default:
-                return -1;
-                break;
+        case DISCARD:
+        {
+            unsigned long long *range;
+
+            range = (unsigned long long *) ptr;
+            retval = ioctl (d, BLKDISCARD, range);
+            if (retval < 0) {
+                sprintf(msg, "BLKDISCARD ioctl failed with errno: %d\n", errno);
+                hxfmsg(data, errno, HTX_HE_INFO, msg);
+                return retval;
+            }
+            break;
         }
 
-        return 0;
+        default:
+            return -1;
+            break;
+    }
+
+    return 0;
 }
 
