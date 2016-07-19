@@ -54,7 +54,7 @@ struct devinfo {
 /* device types */
 /*
  * These two are used for SCSI and IDE devices, and also optical devices
- * and are the only ones refered to in the HTX-AIX code.
+ * and are the only ones referred to in the HTX-AIX code.
  */
 #define DD_SCDISK  'r'          /* SCSI disk */
 #define DD_SCRWOPT 'w'          /* SCSI R/W optical */
