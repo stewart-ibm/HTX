@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
             eeh_retries = atoi(getenv("HTXEEHRETRIES"));
         } else if((strcmp(data.run_type, "REG") == 0) && data.p_shm_HE->cont_on_err) {
             /* If User specifies COE in mdt file, then need to make sure all
-             * read/write call are successful. If we see occasional error, retry.
+             * read/write calls are successful. If we see occasional error, retry.
              */
             eeh_retries = DEFAULT_EEH_RETRIES;
         }
