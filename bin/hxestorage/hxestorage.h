@@ -433,7 +433,7 @@ struct thread_context {
     char rand_index_var[RAND_INDEX_VAR_LEN];
     unsigned long long rand_index;                      /* random index into rand_buf */
     char begin_dword_var[BEGIN_DWORD_VAR_LEN];
-    unsigned int begin_dword;                           /* begining dword */
+    unsigned int begin_dword;                           /* beginning dword */
     char trailing_dword_var[TRAILING_DWORD_VAR_LEN];
     signed long long trailing_dword;                    /* Trailing dword where to write pattern  */
 	char aio_req_queue_var[AIO_REQ_QUEUE_VAR_LEN];
