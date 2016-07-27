@@ -17,8 +17,6 @@
  */
 /* IBM_PROLOG_END_TAG */
 
-/* @(#)21	1.11  src/htx/usr/lpp/htx/bin/hxestorage/hxestorage_rf.h, exer_storage, htxubuntu 2/18/16 04:51:12 */
-
 /********************************************************************/
 /* File name - hxestorage_rf.h                                      */
 /* Header file to include all the strcuture/variables/functions     */
@@ -43,7 +41,7 @@
 #endif
 
 #ifdef __CAPI_FLASH__
-	#include <capiblock.h>
+	#include <sys/capiblock.h>
 #endif
 
 #define MAX_THREADS             4096
@@ -62,9 +60,10 @@
 #define MB                      1024*1024
 #define GB                      1024*1024*1024
 #define TB						(1024 * GB)
+
 #define NO                      0
 #define YES                     1
-#define MISCOMP                 2
+#define DATACHECK               2
 
 #define SEQ         0
 #define RANDOM      1
@@ -105,9 +104,7 @@
 #define TEMPLATE_STANZA         0
 #define RULE_STANZA             1
 
-#define SYS_HARD    HTX_SYS_HARD_ERROR
-#define HARD        HTX_SYS_SOFT_ERROR
-#define IO_HARD     HTX_HE_HARD_ERROR
+#define HARD        HTX_HE_HARD_ERROR
 #define MISCOM      HTX_HE_MISCOMPARE
 #define SOFT        HTX_HE_SOFT_ERROR
 #define INFO        HTX_HE_INFO
@@ -198,7 +195,7 @@ struct ruleinfo {
     rule_line num_mallocs;                          /* Number of mallocs before freeing */
     rule_line hotness;                              /* Number of IO to be done to make a band HOT */
     rule_line loop_on_offset;                       /* YES or NO */
-    int max_outstanding;                        	/* queue depth in cas eof ASYNC IO */
+    int num_async_io;                            	/* queue depth in case of ASYNC IO */
     unsigned short section;                         /* Make section of disk(equal to num_threads defined) - YES or NO */
     unsigned int sleep;                             /* Number of micro seconds to sleep */
     char run_reread;                                /* if need to do re-read in case of miscompare 0 YES or NO */

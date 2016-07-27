@@ -17,8 +17,6 @@
  */
 /* IBM_PROLOG_END_TAG */
 
-/* @(#)10	1.22  src/htx/usr/lpp/htx/bin/hxestorage/hxestorage.c, exer_storage, htxubuntu 2/18/16 04:51:24 */
-
 /************************************************************/
 /*  Filename:   hxestorage.c                                */
 /*  contains main and other functions of the program        */
@@ -39,7 +37,8 @@ struct device_info dev_info;
 int total_BWRC_threads, num_non_BWRC_threads;
 int free_BWRC_th_mem_index = 0;
 int threshold = DEFAULT_THRESHOLD, hang_time = DEFAULT_HANG_TIME;
-int sync_cache_flag = 0, randomize_sync_cache = 1, enable_state_table = NO;
+int sync_cache_flag = 0, randomize_sync_cache = 1;
+int discard_enabled = 0, enable_state_table = NO;
 int eeh_retries = 1, turn_attention_on = 0, read_rules_file_count;
 volatile char exit_flag = 'N', signal_flag = 'N', int_signal_flag = 'N';
 char misc_run_cmd[100], run_on_misc = 'N';
@@ -54,7 +53,7 @@ int 	lun_type = UNDEFINED;
 char	capi_device[MAX_STR_SZ];
 size_t 	chunk_size = 256 * KB;
 #else
-oper_fptr oper_list[TESTCASE_TYPES][MAX_OPER_COUNT] = {{&read_disk, &write_disk, &compare_buffers, NULL,NULL, NULL},
+oper_fptr oper_list[TESTCASE_TYPES][MAX_OPER_COUNT] = {{&read_disk, &write_disk, &compare_buffers, &discard, NULL, NULL},
                                                       {&read_async_disk, &write_async_disk, &cmp_async_disk, NULL, NULL, NULL},
                                                       {&read_passth_disk, &write_passth_disk, &verify_passth_disk, NULL, NULL, NULL},
                                                       {&read_cache, &write_cache, &compare_cache, NULL, NULL, NULL}
@@ -69,7 +68,7 @@ int main(int argc, char *argv[])
 {
     int i, err_no, rule_no, rc = 0;
     int wait_count = DEFAULT_WAIT_COUNT, skip_flag;
-    char *kdblevel = NULL, *eeh_env = NULL;
+    char *kdblevel = NULL, *eeh_env = NULL, *ptr = NULL;
     struct ruleinfo *current_ruleptr;
     char msg_str[100], msg[MAX_TEXT_MSG], script_path[64], cmd_str[128];
     struct thread_context *current_tctx;
@@ -105,7 +104,7 @@ int main(int argc, char *argv[])
     pthread_mutex_init(&thread_create_mutex, DEFAULT_MUTEX_ATTR_PTR);
     pthread_mutex_init(&cache_mutex, DEFAULT_MUTEX_ATTR_PTR);
     pthread_mutex_init(&segment_mutex, DEFAULT_MUTEX_ATTR_PTR);
-    rc = pthread_mutex_init(&log_mutex, DEFAULT_MUTEX_ATTR_PTR);
+    pthread_mutex_init(&log_mutex, DEFAULT_MUTEX_ATTR_PTR);
 
     pthread_cond_init(&create_thread_cond_var, DEFAULT_COND_ATTR_PTR);
     pthread_cond_init(&do_oper_cond_var, DEFAULT_COND_ATTR_PTR);
@@ -127,7 +126,7 @@ int main(int argc, char *argv[])
 
     hxfupdate(START, &data);
     sprintf(msg, "%s %s %s %s \n", data.HE_name, data.sdev_id, data.run_type, dev_info.rules_file_name);
-    user_msg(&data, 0, INFO, msg);
+    user_msg(&data, 0, 0, INFO, msg);
 
     /*************************************************************************/
     /* Sanity check:                                                         */
@@ -140,15 +139,18 @@ int main(int argc, char *argv[])
 
 #ifndef __HTX_LINUX__
     if ( (rc = check_disk(data.sdev_id, msg_str, sizeof(msg_str))) == 0) {
-        user_msg(&data, 0, HARD, msg_str);
+        user_msg(&data, 0, 0, HARD, msg_str);
         exit(126);
     } else if (rc > 0 ) {
         sprintf(msg, "ODM or LVM error in check_disk, rc = %d\n%s", rc, msg_str);
-        user_msg(&data, 0, HARD, msg);
+        user_msg(&data, 0, 0, HARD, msg);
         exit(1);
     }
 #else
-    if (strlen (strcpy(script_path, getenv("HTXSCRIPTS"))) == 0) {
+    ptr = getenv("HTXSCRIPTS");
+    if (ptr != NULL) {
+		strcpy(script_path, ptr);
+    } else {
         strcpy(script_path, "/usr/lpp/htx/etc/scripts/");
     }
     sprintf(cmd_str, "%scheck_disk %s", script_path, data.sdev_id);
@@ -156,12 +158,12 @@ int main(int argc, char *argv[])
     if (WIFEXITED(rc)) {
         if (WEXITSTATUS(rc) == 1) {
             sprintf(msg, "Disk either has partitions OR is used by the system. So, can not run exerciser on it. Hence exiting.");
-            user_msg(&data, 0, INFO, msg);
+            user_msg(&data, 0, 0, INFO, msg);
             exit(1);
         }
     } else {
         sprintf(msg, "command did not completed properly. Hence exiting.");
-        user_msg(&data, 0, INFO, msg);
+        user_msg(&data, 0, 0, INFO, msg);
         exit(1);
     }
 #endif
@@ -172,7 +174,7 @@ int main(int argc, char *argv[])
     rc = gethostname(dev_info.hostname, 16);
     if ( rc != 0 ) {
         sprintf(msg, "Unable to get hostname for this run!, errno = %d \n", errno);
-        user_msg(&data, 0, INFO, msg);
+        user_msg(&data, 0, 0, INFO, msg);
     }
 
     /*****************************************************/
@@ -243,7 +245,7 @@ int main(int argc, char *argv[])
 	rc = access(file, F_OK);
     if(rc == -1 ) {
 		sprintf(msg, "File: %s, doesnot exists!! this exerciser should not have been envoked. \n", file);
-		user_msg(&data, 0, HARD, msg);
+		user_msg(&data, 0, 0, HARD, msg);
 		return(rc);
 	}
 
@@ -254,12 +256,12 @@ int main(int argc, char *argv[])
     fp = popen(cmd_str, "r");
     if (fp == NULL) {
         sprintf(msg, "popen failed while reading file=%s with errno=%d. Setting Virtual LUN mode. \n", file, errno);
-        user_msg(&data, 0, INFO, msg);
+        user_msg(&data, 0, 0, INFO, msg);
 		num_instance = 2;
     } else {
         if (fgets(buf, 128, fp) == NULL) {
             sprintf(msg, "fgets failed while reading from file = %s, errno=%d. Setting Virtual LUN mode. \n \n", file, errno);
-            user_msg(&data, 0, INFO, msg);
+            user_msg(&data, 0, 0, INFO, msg);
             pclose(fp);
 			num_instance = 2;
         } else {
@@ -270,7 +272,7 @@ int main(int argc, char *argv[])
 
 	if(num_instance == 0) {
 		sprintf(msg, "File: %s, exists but value = %d, this exerciser should not have been envoked. \n", file, num_instance);
-		user_msg(&data, 0, HARD, msg);
+		user_msg(&data, 0, 0, HARD, msg);
 		return(rc);
 	} else if(num_instance == 1) {
 		/***********************************************************/
@@ -312,7 +314,7 @@ int main(int argc, char *argv[])
     rc = read_rf(&data, dev_info.rules_file_name, dev_info.maxblk, dev_info.blksize);
     if (rc != 0) {
         sprintf(msg, "Check HTXERR log for a listing of errors with rule file reading!\n");
-        user_msg(&data, 0, HARD, msg);
+        user_msg(&data, 0, 0, HARD, msg);
         exit(1);
     }
 
@@ -337,15 +339,15 @@ int main(int argc, char *argv[])
             rc = pthread_create(&sync_cache_th, &thread_attrs_detached, (void *(*)(void *))sync_cache_thread, (void *)(&data));
             if (rc != 0) {
                 sprintf(msg, "pthread_create failed for sync_cache threas. errno. set is: %d\n", rc);
-                user_msg(&data, rc, SYS_HARD, msg);
+                user_msg(&data, rc, 0, HARD, msg);
                 exit(1);
 		    }
         } else if (dev_info.write_cache == 0) {
             sprintf(msg, "Write cache is is not enabled. Will not run sync_cache thread.");
-            user_msg(&data, 0, INFO, msg);
+            user_msg(&data, 0, 0, INFO, msg);
         }
         sprintf(msg, "write cache is : %d\n", dev_info.write_cache);
-        user_msg(&data, 0, INFO, msg);
+        user_msg(&data, 0, 0, INFO, msg);
     }
 #endif
 
@@ -361,7 +363,7 @@ int main(int argc, char *argv[])
         if (BWRC_threads_mem == NULL) {
             err_no = errno;
             sprintf(msg, "malloc failed(with errno: %d) while allocating memory for BWRC thread context.\n", errno);
-            user_msg(&data, err_no, SYS_HARD, msg);
+            user_msg(&data, err_no, 0, HARD, msg);
             exit(1);
         }
         initialize_threads(BWRC_threads_mem, total_BWRC_threads);
@@ -381,7 +383,7 @@ int main(int argc, char *argv[])
     rc = pthread_create(&(hang_monitor_thread), &thread_attrs_detached, (void *(*)(void *))hang_monitor, (void *)(&data));
     if (rc != 0) {
         sprintf(msg, "pthread_create failed for hang_monitor thread. errno set is: %d\n", rc);
-        user_msg(&data, rc, SYS_HARD, msg);
+        user_msg(&data, rc, 0, HARD, msg);
         /* Free BWRC memory also if allocated */
         if (BWRC_threads_mem != NULL) {
             free (BWRC_threads_mem);
@@ -441,7 +443,7 @@ int main(int argc, char *argv[])
                         if (non_BWRC_threads_mem == NULL) {
                             err_no = errno;
                             sprintf(msg, "malloc failed(with errno: %d) while allocating memory for thread context.\n", errno);
-                            user_msg(&data, err_no, HARD, msg);
+                            user_msg(&data, err_no, 0, HARD, msg);
                             /* Free BWRC memory also if allocated */
                             if (BWRC_threads_mem != NULL) {
                                 free (BWRC_threads_mem);
@@ -466,7 +468,7 @@ int main(int argc, char *argv[])
                     rc = pthread_mutex_lock(&thread_create_mutex);
                     if (rc) {
                         sprintf(msg, "Mutex lock failed in MAIN, rc = %d\n", rc);
-                        user_msg(&data, rc, SYS_HARD, msg);
+                        user_msg(&data, rc, 0, HARD, msg);
                         exit(1);
                     }
                     for (i = 0; i < current_ruleptr->num_BWRC_threads; i++) {
@@ -481,13 +483,13 @@ int main(int argc, char *argv[])
                             if (rc) {
                                 sprintf(msg, "rc %d, errno %d from main(): pthread_create for BWRC threads no: %d",
                                         rc, errno, i);
-                                user_msg(&data, rc, SYS_HARD, msg);
+                                user_msg(&data, rc, 0, HARD, msg);
                                 exit(rc);
                             }
                             rc = pthread_cond_wait(&create_thread_cond_var, &thread_create_mutex);
                             if (rc) {
                                 sprintf(msg, "Cond wait failed in MAIN for BWRC thread, rc = %d\n", rc);
-                                user_msg(&data, rc, SYS_HARD, msg);
+                                user_msg(&data, rc, 0, HARD, msg);
                                 exit(rc);
                             }
                             BWRC_threads_running++;
@@ -502,13 +504,13 @@ int main(int argc, char *argv[])
                                     (void *(*)(void *)) execute_thread_context, (void *) current_tctx);
                         if (rc) {
                             sprintf(msg, "rc %d, errno %d from main(): pthread_create", rc,errno);
-                            user_msg(&data, rc, HARD, msg);
+                            user_msg(&data, rc, 0, HARD, msg);
                             exit(rc);
                         }
                         rc = pthread_cond_wait(&create_thread_cond_var, &thread_create_mutex);
                         if (rc) {
                             sprintf(msg, "Cond wait failed in MAIN, rc = %d\n", rc);
-                            user_msg(&data, rc, SYS_HARD, msg);
+                            user_msg(&data, rc, 0, HARD, msg);
                             exit(rc);
                         }
                         non_BWRC_threads_running++;
@@ -520,7 +522,7 @@ int main(int argc, char *argv[])
                     rc = pthread_cond_broadcast(&do_oper_cond_var);
                     if ( rc ) {
                         sprintf(msg,"pthread_cond_broadcast failed for do_oper_cond_var. rc = %d\n", rc);
-                        user_msg(&data, rc, SYS_HARD, msg);
+                        user_msg(&data, rc, 0, HARD, msg);
                         exit(1);
                     }
 
@@ -531,14 +533,14 @@ int main(int argc, char *argv[])
                         rc = pthread_cond_wait(&threads_finished_cond_var, &thread_create_mutex);
                         if (rc) {
                             sprintf(msg, "Cond wait failed in MAIN for threads_finished condition variable.rc = %d\n", rc);
-                            user_msg(&data, rc, SYS_HARD, msg);
+                            user_msg(&data, rc, 0, HARD, msg);
                             exit(rc);
                         }
                     }
                     rc = pthread_mutex_unlock(&thread_create_mutex);
                     if (rc) {
                         sprintf(msg, "Mutex unlock failed in MAIN, rc = %d\n", rc);
-                        user_msg(&data, rc, SYS_HARD, msg);
+                        user_msg(&data, rc, 0, HARD, msg);
                         exit(rc);
                     }
 
@@ -552,7 +554,7 @@ int main(int argc, char *argv[])
                 }
             } else {
                 sprintf(msg, "Rule %s Has Been SKIPPED......\n", current_ruleptr->rule_id);
-                user_msg(&data, 0, INFO, msg);
+                user_msg(&data, 0, 0, INFO, msg);
             }
             current_ruleptr++;
 
@@ -575,13 +577,13 @@ int main(int argc, char *argv[])
             rc = read_rf(&data, dev_info.rules_file_name, dev_info.maxblk, dev_info.blksize);
             if ( rc != 0 ) {
                 sprintf(msg, "Check the HTXERR log for error information on rule file reading.\n");
-                user_msg(&data, 0, HARD, msg);
+                user_msg(&data, 0, 0, HARD, msg);
                 return (-1);
             }
         }
         sprintf(msg, "Pass #%d, rule file %s completed.\nCollision count = %d.", read_rules_file_count,
                 dev_info.rules_file_name, collisions);
-        user_msg(&data, 0, INFO, msg);
+        user_msg(&data, 0, 0, INFO, msg);
         hxfupdate(FINISH, &data);
         read_rules_file_count++;
     } while ((strcmp(data.run_type, "REG") == 0) && (exit_flag == 'N') && (int_signal_flag == 'N'));
@@ -598,7 +600,7 @@ int main(int argc, char *argv[])
 
     if (BWRC_threads_running != 0) {
         sprintf(msg, "Going to cleanup memory. Since some BWRC threads are still running, ignore if any core is generated.");
-        user_msg(&data, 0, INFO, msg);
+        user_msg(&data, 0, 0, INFO, msg);
     }
 
     /* If enable_state_table flag is YES, SYNC the state table (i.e. update metadata on disk) */
@@ -606,7 +608,7 @@ int main(int argc, char *argv[])
         rc = sync_state_table(&data, data.sdev_id);
         if (rc) {
 			sprintf(msg, "Failed to update state table.\n");
-            user_msg(&data, 0, INFO, msg);
+            user_msg(&data, 0, 0, INFO, msg);
         }
     }
 
@@ -658,6 +660,7 @@ void initialize_threads(struct thread_context *tctx, int num_threads)
         strcpy(current_tctx->saved_dlen_var, "saved_dlen");
         strcpy(current_tctx->num_writes_var, "num_writes");
         strcpy(current_tctx->num_reads_var, "num_reads");
+        strcpy(current_tctx->num_discards_var, "num_discards");
         strcpy(current_tctx->num_writes_remaining_var, "num_writes_remaining");
         strcpy(current_tctx->compare_enabled_var, "compare_enabled");
         strcpy(current_tctx->first_blk_var, "first_blk");
@@ -695,8 +698,8 @@ void initialize_threads(struct thread_context *tctx, int num_threads)
         strcpy(current_tctx->begin_dword_var, "begin_dword");
         strcpy(current_tctx->trailing_dword_var, "trailing_dword");
 		strcpy(current_tctx->aio_req_queue_var, "aio_req_queue");
-		strcpy(current_tctx->max_outstanding_var, "max_outstanding");
-		strcpy(current_tctx->num_outstandings_var, "num_outstandings");
+		strcpy(current_tctx->num_async_io_var, "num_async_io");
+		strcpy(current_tctx->cur_async_io_var, "cur_async_io");
 		strcpy(current_tctx->force_op_var, "force_op");
 		strcpy(current_tctx->flag_var, "flag");
 #ifdef __CAPI_FLASH__
@@ -818,14 +821,14 @@ int execute_validation_test (struct htx_data *htx_ds, struct thread_context *tct
             rc = pthread_mutex_lock(&segment_mutex);
             if (rc) {
                 sprintf(msg, "mutex lock failed while initializing fencepost, rc = %d\n", rc);
-                user_msg(htx_ds, rc, SYS_HARD, msg);
+                user_msg(htx_ds, rc, 0, HARD, msg);
                 goto cleanup_pattern_buffer ;
             }
             lba_fencepost[tctx->fencepost_index].status = 'R';
             rc = pthread_mutex_unlock(&segment_mutex);
             if (rc) {
                 sprintf(msg, "mutex unlock failed while initializing fencepost, rc = %d\n", rc);
-                user_msg(htx_ds, rc, SYS_HARD, msg);
+                user_msg(htx_ds, rc, 0, HARD, msg);
                	goto cleanup_pattern_buffer;
             }
 
@@ -881,7 +884,9 @@ int execute_validation_test (struct htx_data *htx_ds, struct thread_context *tct
                 oper_loop++;
             } /* End for num_oper loop */
         } else { /* else for BWRC oper check */
-            if (tctx->num_reads == 0) {
+            if (tctx->num_discards != 0) {
+                opertn = tctx->num_discards;
+            } else if (tctx->num_reads == 0) {
                 opertn = tctx->num_writes;
             } else if (tctx->num_writes == 0) {
                 opertn = tctx->num_reads;
@@ -913,8 +918,8 @@ int execute_validation_test (struct htx_data *htx_ds, struct thread_context *tct
                 /* and compare operation is defined OR Write operation */
                 /* is not defined.                                     */
                 /*******************************************************/
-                if ((total_BWRC_threads != 0) && (tctx->num_writes == 0) && (tctx->compare_enabled == 'y')) {
-                    do_fencepost_check(htx_ds, tctx);
+                if ((total_BWRC_threads != 0) && (strcasecmp(tctx->oper, "wrc") != 0)) {
+					do_fencepost_check(htx_ds, tctx);
                 }
 
                 /*******************************************************/
@@ -944,8 +949,8 @@ int execute_validation_test (struct htx_data *htx_ds, struct thread_context *tct
                             if (i > 0) {
                                 set_blkno(htx_ds, tctx);
                                 do_boundary_check(htx_ds, tctx, oper_loop);
-                                if ((total_BWRC_threads != 0) && (tctx->num_writes == 0) && (tctx->compare_enabled == 'y')) {
-                                    do_fencepost_check(htx_ds, tctx);
+                                if ((total_BWRC_threads != 0) && (strcasecmp(tctx->oper, "wrc") != 0)) {
+									do_fencepost_check(htx_ds, tctx);
                                 }
                                 bldbuf(htx_ds, tctx, write_stamping);
                             }
@@ -1043,7 +1048,9 @@ int execute_validation_test (struct htx_data *htx_ds, struct thread_context *tct
         oper_loop = 0;
         cur_num_oper = tctx->num_oper[RANDOM];
 
-        if (tctx->num_reads == 0) {
+        if (tctx->num_discards != 0) {
+            opertn = tctx->num_discards;
+        } else if (tctx->num_reads == 0) {
             opertn = tctx->num_writes;
         } else if (tctx->num_writes == 0) {
             opertn = tctx->num_reads;
@@ -1199,7 +1206,7 @@ close_disk :
     rc = (*tctx->close_func)(htx_ds, tctx);
     if (rc) {
         sprintf(msg, "%s:%s: CLOSE call failed, rc = %d !, errno = %d \n", __FUNCTION__, tctx->id, rc, errno);
-        user_msg(htx_ds, errno, IO_HARD, msg);
+        user_msg(htx_ds, errno, 0, HARD, msg);
         exit(1);
     }
     return(rc);
@@ -1226,7 +1233,7 @@ int execute_performance_test (struct htx_data *htx_ds, struct thread_context *tc
 	tctx->fd = (*tctx->open_func)(htx_ds, tmp, tctx);
     if (tctx->fd == -1) {
         sprintf(msg, "In performace test - open for disk failed");
-        user_msg(htx_ds, errno, IO_HARD, msg);
+        user_msg(htx_ds, errno, 0, HARD, msg);
         exit(1);
     }
 
@@ -1249,28 +1256,28 @@ int execute_performance_test (struct htx_data *htx_ds, struct thread_context *tc
     }
     /***************************************************************
      * For ASYNC we need to keep track IOs inflight, user would
-     * specify max_outstanding IOs, create data structure to keep
+     * specify num_async_io , create data structure to keep
      * track of all IOs
      ***************************************************************/
     if(tctx->testcase == ASYNC) {
 
-        if(tctx->max_outstanding == 0) {
+        if(tctx->num_async_io == 0) {
             /* Assume QD, should not de done here, If we came here with 0 then hardcode  */
-            tctx->max_outstanding = 32;
+            tctx->num_async_io = 32;
         }
-        tctx->aio_req_queue =(struct aio_ops*) malloc (sizeof(struct aio_ops) * tctx->max_outstanding);
+        tctx->aio_req_queue =(struct aio_ops*) malloc (sizeof(struct aio_ops) * tctx->num_async_io);
         if(tctx->aio_req_queue == NULL) {
             sprintf(msg, "In performace test - malloc for aio_req_queue failed, errno = %d \n", errno);
-            user_msg(htx_ds, errno, SYS_HARD, msg);
+            user_msg(htx_ds, errno, 0, HARD, msg);
             rc = -1;
             goto cleanup_pattern_buffer ;
         }
-        memset(tctx->aio_req_queue, 0, (sizeof(struct aio_ops) * tctx->max_outstanding));
-        tctx->num_outstandings = 0;
+        memset(tctx->aio_req_queue, 0, (sizeof(struct aio_ops) * tctx->num_async_io));
+        tctx->cur_async_io = 0;
     } else {
         tctx->aio_req_queue = NULL;
-        tctx->num_outstandings = 1;
-		tctx->max_outstanding = 1;
+        tctx->num_async_io = 1;
+		tctx->cur_async_io = 1;
     }
 
 
@@ -1360,9 +1367,9 @@ int execute_performance_test (struct htx_data *htx_ds, struct thread_context *tc
     } /* End if check for SEQ/RQNDOM access */
 cleanup_dma_buffers :
 #ifdef __CAPI_FLASH__
-    if(tctx->num_outstandings && tctx->testcase == ASYNC) {
+    if(tctx->cur_async_io && tctx->testcase == ASYNC) {
         /* Exiting .. cleanup all the IOs issued */
-        while(tctx->num_outstandings)  {
+        while(tctx->cur_async_io)  {
             rc = cflsh_aresult_operation(htx_ds, tctx, oper_loop);
         }
     }
@@ -1383,7 +1390,7 @@ close_disk :
     rc = (*tctx->close_func)(htx_ds, tctx);
     if (rc) {
         sprintf(msg, "%s : CLOSE call failed!, rc = %d, errno = %d", __FUNCTION__, rc, errno);
-        user_msg(htx_ds, errno, IO_HARD, msg);
+        user_msg(htx_ds, errno, 0, HARD, msg);
         exit(1);
     }
     return rc;
@@ -1400,7 +1407,7 @@ void * execute_thread_context (void *th_context)
     rc = pthread_mutex_lock(&thread_create_mutex);
     if (rc) {
         sprintf(msg, "First mutex lock failed in function execute_thread_context, rc = %d\n", rc);
-        user_msg(&data, rc, SYS_HARD, msg);
+        user_msg(&data, rc, 0, HARD, msg);
         exit(rc);
     }
 
@@ -1416,7 +1423,7 @@ void * execute_thread_context (void *th_context)
     rc = pthread_cond_broadcast(&create_thread_cond_var);
     if (rc) {
         sprintf(msg, "Cond broadcast failed for create_thread_cond_var in function execute_thread_context, rc = %d\n", rc);
-        user_msg(&htx_ds, rc, SYS_HARD, msg);
+        user_msg(&htx_ds, rc, 0, HARD, msg);
         exit(rc);
     }
 
@@ -1426,14 +1433,14 @@ void * execute_thread_context (void *th_context)
     rc = pthread_cond_wait(&do_oper_cond_var, &thread_create_mutex);
     if (rc) {
         sprintf(msg, "Cond wait failed in function execute_thread_context, rc = %d\n", rc);
-        user_msg(&htx_ds, rc, SYS_HARD, msg);
+        user_msg(&htx_ds, rc, 0, HARD, msg);
         exit(rc);
     }
 
     rc = pthread_mutex_unlock(&thread_create_mutex);
     if (rc) {
         sprintf(msg, "First mutex unlock failed in function execute_thread_context, rc = %d\n", rc);
-        user_msg(&htx_ds, rc, SYS_HARD, msg);
+        user_msg(&htx_ds, rc, 0, HARD, msg);
         exit(rc);
     }
 
@@ -1450,7 +1457,7 @@ void * execute_thread_context (void *th_context)
         rc = pthread_mutex_lock(&segment_mutex);
         if (rc) {
             sprintf(msg, "mutex lock failed for segment_mutex in function execute_thread_context, rc = %d\n", rc);
-            user_msg(&htx_ds, rc, SYS_HARD, msg);
+            user_msg(&htx_ds, rc, 0, HARD, msg);
             exit(rc);
         }
 
@@ -1459,7 +1466,7 @@ void * execute_thread_context (void *th_context)
         rc = pthread_mutex_unlock(&segment_mutex);
         if (rc) {
             sprintf(msg, "mutex unlock failed for segment_mutex in function execute_thread_context, rc = %d\n", rc);
-            user_msg(&htx_ds, rc, SYS_HARD, msg);
+            user_msg(&htx_ds, rc, 0, HARD, msg);
             exit(rc);
         }
     }
@@ -1468,7 +1475,7 @@ void * execute_thread_context (void *th_context)
     rc = pthread_mutex_lock(&thread_create_mutex);
     if (rc) {
         sprintf(msg, "2nd mutex lock failed in function execute_thread_context, rc = %d\n", rc);
-        user_msg(&htx_ds, rc, SYS_HARD, msg);
+        user_msg(&htx_ds, rc, 0, HARD, msg);
         exit(rc);
     }
 
@@ -1480,7 +1487,7 @@ void * execute_thread_context (void *th_context)
             rc = pthread_cond_broadcast(&threads_finished_cond_var);
             if (rc) {
                 sprintf(msg, "Cond broadcast failed threads_finished_cond_var for in function execute_thread_context, rc = %d\n", rc);
-                user_msg(&htx_ds, rc, SYS_HARD, msg);
+                user_msg(&htx_ds, rc, 0, HARD, msg);
                 exit(rc);
             }
         }
@@ -1489,7 +1496,7 @@ void * execute_thread_context (void *th_context)
     rc = pthread_mutex_unlock(&thread_create_mutex);
     if (rc) {
         sprintf(msg, "2nd mutex unlock failed in function execute_thread_context, rc = %d\n", rc);
-        user_msg(&htx_ds, rc, SYS_HARD, msg);
+        user_msg(&htx_ds, rc, 0, HARD, msg);
         exit(rc);
     }
     pthread_exit(NULL);
@@ -1523,7 +1530,7 @@ int sync_cache_thread(struct htx_data *htx_ds)
     sync_fd = open(htx_ds->sdev_id, O_RDWR);
     if (sync_fd == -1) {
         sprintf(msg, "open for device %s failed in sync_cache_thread. errno is: %d\n", htx_ds->sdev_id, errno);
-        user_msg(htx_ds, 0, HARD, msg);
+        user_msg(htx_ds, 0, 0, HARD, msg);
         return (-1);
     }
     /* Initialize the random no. generator structure */
@@ -1564,7 +1571,7 @@ int fill_pattern_details(struct htx_data *htx_ds, struct thread_context *tctx)
     unsigned int len, j;
     char msg[128], path[100];
     unsigned int *rand_buffer;
-    char str[8];
+    char str[8], *tmp_ptr = NULL;
     int err_no, rc = 0;
 
     if (strncmp(tctx->pattern_id, "0x", 2) == 0) { /* pattern defined explicitly e.g. 0x12345678 */
@@ -1572,17 +1579,17 @@ int fill_pattern_details(struct htx_data *htx_ds, struct thread_context *tctx)
         len -= 2;
         if (len == 0) {
             sprintf(msg, "pattern can not be of zero length.");
-            user_msg(htx_ds, 0, HARD, msg);
+            user_msg(htx_ds, 0, 0, HARD, msg);
             return (-1);
         }
         if (len > MAX_PATTERN_LENGTH) { /* max. allowed length is 16 bytes. 2 characters means 1 byte */
             sprintf(msg, "max. pattern size allowed is 16 bytes.\n");
-            user_msg(htx_ds, 0, HARD, msg);
+            user_msg(htx_ds, 0, 0, HARD, msg);
             return (-1);
         }
         if (len & (len - 1)) {
             sprintf(msg, "pattern's size should be power of 2 bytes\n");
-            user_msg(htx_ds, 0, HARD, msg);
+            user_msg(htx_ds, 0, 0, HARD, msg);
             return (-1);
         }
         tctx->pattern_size = len/2;
@@ -1591,7 +1598,7 @@ int fill_pattern_details(struct htx_data *htx_ds, struct thread_context *tctx)
         if (tctx->pattern_buffer == NULL) {
             err_no = errno;
             sprintf(msg, "malloc failed for pattern_buffer with errno: %d\n", errno);
-            user_msg(htx_ds, err_no, HARD, msg);
+            user_msg(htx_ds, err_no, 0, HARD, msg);
             return (-1);
         }
         /* DPRINT("pattern buffer is: 0x%llx\n", tctx->pattern_buffer); */
@@ -1620,7 +1627,7 @@ int fill_pattern_details(struct htx_data *htx_ds, struct thread_context *tctx)
             if (tctx->pattern_buffer == NULL) {
                 err_no = errno;
                 sprintf(msg, "malloc failed for pattern_buffer with errno: %d\n", errno);
-                user_msg(htx_ds, err_no, SYS_HARD, msg);
+                user_msg(htx_ds, err_no, 0, HARD, msg);
                 return (-1);
             }
 
@@ -1635,23 +1642,26 @@ int fill_pattern_details(struct htx_data *htx_ds, struct thread_context *tctx)
         if (tctx->pattern_buffer == NULL) {
             err_no = errno;
             sprintf(msg, "malloc failed for pattern_buffer with errno: %d\n", errno);
-            user_msg(htx_ds, err_no, SYS_HARD, msg);
+            user_msg(htx_ds, err_no, 0, HARD, msg);
             return (-1);
         }
         tctx->pattern_size = tctx->transfer_sz.max_len + dev_info.blksize + 128;
-        if (strlen (strcpy (path, getenv("HTXPATTERNS"))) == 0) {
+        tmp_ptr = getenv("HTXPATTERNS");
+        if (tmp_ptr != NULL) {
+            strcpy (path, tmp_ptr);
+        } else {
             strcpy(path, "/usr/lpp/htx/pattern/");
-        }
+	    }
         strcat (path, tctx->pattern_id);
         rc = hxfpat(path, tctx->pattern_buffer, tctx->pattern_size);
         if (rc == 1) {
             sprintf(msg, "cannot open pattern file - %s\n", path);
-            user_msg(htx_ds, 0, HARD, msg);
+            user_msg(htx_ds, 0, 0, HARD, msg);
             return (-1);
         }
         if (rc == 2) {
             sprintf(msg, "cannot read pattern file - %s\n", path);
-            user_msg(htx_ds, 0, HARD, msg);
+            user_msg(htx_ds, 0, 0, HARD, msg);
             return (-1);
         }
     }
@@ -1722,6 +1732,9 @@ int populate_operations(struct thread_context *tctx)
             } else if (tctx->oper[i] == 'C' || tctx->oper[i] == 'c' || tctx->oper[i] == 'V') {
                 tctx->operations[tctx->oper_count++] = oper_list[tctx->testcase][C];
                 tctx->compare_enabled = 'y';
+            } else if (tctx->oper[i] == 'D' || tctx->oper[i] == 'd') {
+                tctx->operations[tctx->oper_count++] = oper_list[tctx->testcase][D];
+                tctx->num_discards = 1;
             } else if (tctx->oper[i] == '[') {
                 j = i + 1;
                 k = 0;
@@ -1925,7 +1938,7 @@ void update_BWRC_zone(struct htx_data *htx_ds, struct thread_context *tctx, stru
          */
         sprintf(msg, "if BWRC threads are running, for direction IN/OUT, write operation "
                     "must be defined. ");
-        user_msg(htx_ds, 0, HARD, msg);
+        user_msg(htx_ds, 0, 0, HARD, msg);
         exit(1);
     }
 
@@ -2107,7 +2120,7 @@ void apply_rule_settings (struct htx_data *htx_ds, struct thread_context *curren
             if (current_tctx->min_blkno >= current_tctx->max_blkno) {
                 sprintf(msg, "For thread with thread_id: %s, min_blkno=%llx defined is greater than OR equal to max_blk=%#llx."
                              "Will not run the test.", current_tctx->id, current_tctx->min_blkno, current_tctx->max_blkno);
-                user_msg(htx_ds, 0, HARD, msg);
+                user_msg(htx_ds, 0, 0, HARD, msg);
             }
             current_tctx->blk_hop = ruleptr->blk_hop.value[RROBIN_INDEX(th_num, ruleptr->blk_hop.num_keywds)];
 
@@ -2208,7 +2221,7 @@ void apply_rule_settings (struct htx_data *htx_ds, struct thread_context *curren
             if (current_tctx->min_blkno >= current_tctx->max_blkno) {
                 sprintf(msg, "For thread with thread_id: %s, min_blkno=%llx defined is greater than OR equal to max_blk=%#llx."
                             " Will not run the test.", current_tctx->id, current_tctx->min_blkno, current_tctx->max_blkno);
-                user_msg(htx_ds, 0, HARD, msg);
+                user_msg(htx_ds, 0, 0, HARD, msg);
 		    }
             current_tctx->blk_hop = ruleptr->blk_hop.value[SEQ_INDEX(th_num, ruleptr->blk_hop.num_keywds)];
 
@@ -2394,7 +2407,7 @@ int get_disk_info(struct htx_data *data, char *dev_name)
     filedes = open(dev_name, O_RDONLY);
     if (filedes == -1 ) {
         sprintf(msg, "Open error in get_disk_info, dev_name=%s, errno. set is: %d\n", dev_name, errno);
-        user_msg(data, errno, IO_HARD, msg);
+        user_msg(data, errno, 0, HARD, msg);
         return(-1);
     }
 
@@ -2406,10 +2419,10 @@ int get_disk_info(struct htx_data *data, char *dev_name)
 #endif
     if (rc == -1) {
         sprintf(msg, "IOCTL IOCINFO error in get_disk_info.\n");
-        user_msg(data, errno, IO_HARD, msg);
+        user_msg(data, errno, 0, HARD, msg);
         if ((close(filedes)) == -1) {
             sprintf(msg, "CLOSE call failed in get_disk_info.\n");
-            user_msg(data, errno, IO_HARD, msg);
+            user_msg(data, errno, 0, HARD, msg);
         }
         return(-1);
     }
@@ -2419,16 +2432,16 @@ int get_disk_info(struct htx_data *data, char *dev_name)
     dev_info.blksize = (unsigned int) info.un.scdk.blksize;
     sprintf(msg, "Device %s Information:  \n" "BlockSize = 0x%x,  Number of Blocks = 0x%llx\n",
             data->sdev_id, dev_info.blksize, dev_info.maxblk);
-    user_msg(data, 0, INFO, msg);
+    user_msg(data, 0, 0, INFO, msg);
 #else
     if ( info.devtype == DD_SCDISK || info.devtype == DD_SCRWOPT || info.devtype == DD_CDROM)  {
         rc = get_lun(data, dev_info.diskname);
         if (rc) {
             sprintf(msg, "Unable to retrieve SCSI ID/LUN from ODM database. rc=%d", rc);
-            user_msg(data, 0, IO_HARD, msg);
+            user_msg(data, 0, 0, HARD, msg);
             if ((close(filedes)) == -1) {
                 sprintf(msg, "CLOASE call failed!");
-                user_msg(data, errno, IO_HARD, msg);
+                user_msg(data, errno, 0, HARD, msg);
             }
             exit(1);
         } else {
@@ -2458,16 +2471,16 @@ int get_disk_info(struct htx_data *data, char *dev_name)
     }
     sprintf(msg, "Device %s Information: \n" "Type=%#x, Flag=%#x, \nBlockSize = %#x,  Number of Blocks = %#llx\n",
                 data->sdev_id, info.devtype, info.flags, dev_info.blksize, dev_info.maxblk);
-    user_msg(data, 0, INFO, msg);
+    user_msg(data, 0, 0, INFO, msg);
     /* Removed get_dev_fn fr LA trigger */
 #endif
 
     if (dev_info.maxblk == 0) {
         sprintf(msg,"Not able to detect num_blks on disk = %s, maxblk = 0x%llx \n",data->sdev_id, dev_info.maxblk);
-        user_msg(data, 0, HARD, msg);
+        user_msg(data, 0, 0, HARD, msg);
 		if ((close(filedes)) == -1) {
         	sprintf(msg, "CLOASE call failed!");
-        	user_msg(data, errno, IO_HARD, msg);
+        	user_msg(data, errno, 0, HARD, msg);
         }
 
         return(-1);
@@ -2478,7 +2491,7 @@ int get_disk_info(struct htx_data *data, char *dev_name)
 	rc = close(filedes);
 	if(rc == -1) {
 		sprintf(msg, "CLOASE call failed!");
-        user_msg(data, errno, IO_HARD, msg);
+        user_msg(data, errno, 0, HARD, msg);
     }
 
     return 0;
@@ -2534,7 +2547,7 @@ int initialize_state_table (struct htx_data *data, char *dev_name)
     if (s_tbl.blk_write_status == NULL) {
         err_no = errno;
         sprintf(msg, "malloc failed(with errno: %d) while allocating memory for state table info.\n", err_no);
-        user_msg(data, err_no, HARD, msg);
+        user_msg(data, err_no, 0, HARD, msg);
         exit(1);
     }
     DPRINT("buffer addr: 0x%llx\n", (unsigned long long)s_tbl.blk_write_status);
@@ -2544,14 +2557,14 @@ int initialize_state_table (struct htx_data *data, char *dev_name)
     fd = open(dev_name, O_RDWR);
     if (fd == -1) {
         sprintf(msg, "Open error in initialize_state_table. errno. set is: %d\n", errno);
-        user_msg(data, errno, HARD, msg);
+        user_msg(data, errno, 0, HARD, msg);
         return(-1);
     }
     addr = STATE_TABLE_INFO_BLK * dev_info.blksize;
     rc = pread(fd, buf, dev_info.blksize, (offset_t)addr);
     if (rc == -1) {
         sprintf(msg, "Read error while getting state table info in initialize_state_table. errno: %d\n", errno);
-        user_msg(data, errno, HARD, msg);
+        user_msg(data, errno, 0, HARD, msg);
         close(fd);
         return(-1);
     }
@@ -2572,7 +2585,7 @@ int initialize_state_table (struct htx_data *data, char *dev_name)
         rc = pread(fd, s_tbl.blk_write_status , size, (offset_t)addr);
         if (rc == -1) {
             sprintf(msg, "Read error for blk_write_status in initialize_state_table. errno: %d\n", errno);
-            user_msg(data, errno, HARD, msg);
+            user_msg(data, errno, 0, HARD, msg);
             close(fd);
             return (-1);
         }
@@ -2588,7 +2601,7 @@ int initialize_state_table (struct htx_data *data, char *dev_name)
         rc = pwrite (fd, buf, dev_info.blksize, (offset_t)addr);
         if (rc == -1) {
             printf(msg, "Write error in initialize_state_table while updating state table status. errno: %d\n", errno);
-            user_msg(data, errno, HARD, msg);
+            user_msg(data, errno, 0, HARD, msg);
             close(fd);
             return(-1);
         }
@@ -2619,14 +2632,14 @@ int sync_state_table(struct htx_data *data, char *dev_name)
     fd = open(dev_name, O_RDWR);
     if (fd == -1) {
         sprintf(msg, "Open error in sync_state_table. errno. set is: %d\n", errno);
-        user_msg(data, errno, HARD, msg);
+        user_msg(data, errno, 0, HARD, msg);
         return(-1);
     }
     addr = WRITE_STATUS_INFO_BLK * dev_info.blksize;
     rc = pwrite (fd, s_tbl.blk_write_status, s_tbl.size, (offset_t)addr);
     if (rc == -1) {
          sprintf(msg, "pwrite error in sync_state_table. errno. is set: %d\n", errno);
-         user_msg(data, errno, HARD, msg);
+         user_msg(data, errno, 0, HARD, msg);
          close(fd);
          return(-1);
     }
@@ -2641,7 +2654,7 @@ int sync_state_table(struct htx_data *data, char *dev_name)
     rc = pwrite(fd, buf, dev_info.blksize, (offset_t)addr);
     if (rc == -1) {
         sprintf(msg, "pwrite error in sync_state_table while updating status. errno. is set: %d\n", errno);
-        user_msg(data, errno, HARD, msg);
+        user_msg(data, errno, 0, HARD, msg);
         close(fd);
         return(-1);
     }

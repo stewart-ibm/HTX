@@ -17,8 +17,6 @@
  */
 /* IBM_PROLOG_END_TAG */
 
-/* @(#)07	1.6  src/htx/usr/lpp/htx/bin/hxestorage/io_oper.h, exer_storage, htxubuntu 2/15/16 22:54:09 */
-
 /********************************************************************/
 /* File name - io_oper.h                                            */
 /* Header file to include all the strcuture/variables/functions     */
@@ -80,6 +78,7 @@ int close_disk (struct htx_data *, struct thread_context *);
 int read_disk (struct htx_data *, struct thread_context *, int);
 int write_disk (struct htx_data *, struct thread_context *, int);
 int compare_buffers (struct htx_data *, struct thread_context *, int);
+int discard (struct htx_data *, struct thread_context *, int);
 
 /* ASYNC IO functions */
 #ifndef __CAPI_FLASH__

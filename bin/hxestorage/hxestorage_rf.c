@@ -1,3 +1,4 @@
+
 /* IBM_PROLOG_BEGIN_TAG */
 /*
  * Copyright 2003,2016 IBM International Business Machines Corp.
@@ -17,8 +18,6 @@
  */
 /* IBM_PROLOG_END_TAG */
 
-/* @(#)05	1.12  src/htx/usr/lpp/htx/bin/hxestorage/hxestorage_rf.c, exer_storage, htxubuntu 2/18/16 04:51:18 */
-
 /************************************************************/
 /* File name - hxestorage_rf.c                              */
 /* File containing all the functions definitions associated */
@@ -26,7 +25,7 @@
 /************************************************************/
 #include "hxestorage_rf.h"
 
-extern int sync_cache_flag, randomize_sync_cache, total_BWRC_threads;
+extern int sync_cache_flag, discard_enabled, randomize_sync_cache, total_BWRC_threads;
 int seeds_were_saved = 0, num_sub_blks_psect = 0;
 char fsync_flag ='N';
 struct device_info dev_info;
@@ -41,6 +40,8 @@ struct device_info dev_info;
 void set_rule_defaults(struct ruleinfo *ruleptr, unsigned long long maxblk, unsigned int blksize)
 {
     int i;
+
+    bzero(ruleptr, sizeof(struct ruleinfo));
 
     ruleptr->num_oper.num_keywds = DEFAULT_NUM_KEYWDS;
     ruleptr->seek_breakup_prcnt.num_keywds = DEFAULT_NUM_KEYWDS;
@@ -73,7 +74,7 @@ void set_rule_defaults(struct ruleinfo *ruleptr, unsigned long long maxblk, unsi
     ruleptr->repeat_neg = 0;
     ruleptr->sleep = 0;
     ruleptr->num_cache_threads = DEFAULT_CACHE_THREADS;
-    ruleptr->max_outstanding = DEFAULT_AIO_REQ_QUEUE_DEPTH;
+    ruleptr->num_async_io = DEFAULT_AIO_REQ_QUEUE_DEPTH;
 #ifdef __CAPI_FLASH__
 	ruleptr->open_flag = CBLK_SHR_LUN;
 #endif
@@ -281,7 +282,7 @@ void check_n_update_rule_params(struct htx_data *htx_ds, struct ruleinfo *curren
         if (current_stanza_ptr->num_oper_defined != 0) {
             sprintf(msg, "OPER parameter can not be defined in a rule if there is a template associated"
                         "with it. Please fix the rule with id: %s.\n", current_stanza_ptr->rule_id);
-            user_msg(htx_ds, 0, HARD, msg);
+            user_msg(htx_ds, 0, 0, HARD, msg);
             exit(1);
         }
     }
@@ -294,7 +295,7 @@ void check_n_update_rule_params(struct htx_data *htx_ds, struct ruleinfo *curren
             if (!(current_stanza_ptr->seek_breakup_prcnt.value[i] == 0 || current_stanza_ptr->seek_breakup_prcnt.value[i] == 100)) {
                 sprintf(msg, "For PERFORMANCE testcase, seek_type can either be RANDOM (i.e. seek_breakup_prcnt = 100) OR SEQ (i.e. seek_breakup_prcnt = 0).\n"
                             "Please fix the rulefile parameter.\n");
-                user_msg(htx_ds, 0, HARD, msg);
+                user_msg(htx_ds, 0, 0, HARD, msg);
                 exit(1);
             }
         }
@@ -304,7 +305,7 @@ void check_n_update_rule_params(struct htx_data *htx_ds, struct ruleinfo *curren
                 if (strchr(current_stanza_ptr->oper[i], 'C') != NULL) {
                     sprintf(msg, "For PERFORMANCE testcase, compare operation can not be defined.\n"
                     "Please fix the rulefile parameter for rule id: %s\n", current_stanza_ptr->rule_id);
-                    user_msg(htx_ds, 0, HARD, msg);
+                    user_msg(htx_ds, 0, 0, HARD, msg);
                     exit(1);
                 }
             }
@@ -313,11 +314,18 @@ void check_n_update_rule_params(struct htx_data *htx_ds, struct ruleinfo *curren
                 if (strchr(current_stanza_ptr->tmplt[i].tmplt_ptr->oper, 'C') != NULL) {
                     sprintf(msg, "Template with id: %s can not be associated with rule id: %s as the rule will be running in the PERFORMANCE mode.\n"
                                 "And compare oper is not allowed in perf mode.\n", current_stanza_ptr->tmplt[i].tmplt_ptr->template_id, current_stanza_ptr->rule_id);
-                    user_msg(htx_ds, 0, HARD, msg);
+                    user_msg(htx_ds, 0, 0, HARD, msg);
                     exit(1);
                 }
             }
         }
+    }
+
+    /* If testcase type is ASYNC, mode has to be PERFORMANCE */
+    if (current_stanza_ptr->testcase == ASYNC && current_stanza_ptr->mode != PERFORMANCE) {
+        sprintf(msg, "For ASYNC testcase, only PERFORMANCE mode is supported. Hence re-setting the mode\n");
+        user_msg(htx_ds, 0, 0, INFO, msg);
+        current_stanza_ptr->mode = PERFORMANCE;
     }
 
     /* If testcase type is CACHE, seek_prcnt can only be 0 (i.e. SEQ) */
@@ -325,14 +333,14 @@ void check_n_update_rule_params(struct htx_data *htx_ds, struct ruleinfo *curren
         for(i=0; i < current_stanza_ptr->seek_breakup_prcnt.num_keywds; i++) {
             if (current_stanza_ptr->seek_breakup_prcnt.value[i] != 0) {
                 sprintf(msg, "CACHE testcase is run only with SEQ access. Hence changing seek_prcnt to 0\n");
-                user_msg(htx_ds, 0, INFO, msg);
+                user_msg(htx_ds, 0, 0, INFO, msg);
                 current_stanza_ptr->seek_breakup_prcnt.value[i] = 0;
             }
         }
         /* For testcase type CACHE, max num_threads can be 32 */
         if (current_stanza_ptr->num_threads > MAX_NUM_CACHE_THREADS) {
             sprintf(msg, "For testcase type \"CACHE\", max num_threads can only be 32. Please fix the problem in rulefile.\n");
-            user_msg(htx_ds, 0, HARD, msg);
+            user_msg(htx_ds, 0, 0, HARD, msg);
             exit(1);
 	    }
     }
@@ -398,7 +406,7 @@ int read_rf(struct htx_data *htx_ds, char *rf_name, unsigned long long maxblk, u
     if ((fp = fopen(rf_name, "r")) == NULL ) {
         error_no = errno;
         sprintf(msg, "Error opening file %s. Error no. set is %d.\n", rf_name, error_no);
-        user_msg(htx_ds, errno, SOFT, msg);
+        user_msg(htx_ds, errno, 0, SOFT, msg);
         return -1;
     }
 
@@ -414,7 +422,7 @@ int read_rf(struct htx_data *htx_ds, char *rf_name, unsigned long long maxblk, u
         if (rc == -1) {  /* Error in reading line */
             fclose(fp);
             sprintf(msg, "Error reading rule file %s.\n", rf_name);
-            user_msg(htx_ds, errno, SOFT, msg);
+            user_msg(htx_ds, errno, 0, SOFT, msg);
             return -1;
         }
         if (rc == -2) { /* Received end of file */
@@ -442,7 +450,7 @@ int read_rf(struct htx_data *htx_ds, char *rf_name, unsigned long long maxblk, u
                     stanza_defined = TEMPLATE_STANZA;
                 } else {
                     sprintf(msg, "First line of each stanza must be either 'rule_id' OR 'template_id'.\n");
-                    user_msg(htx_ds, errno, SOFT, msg);
+                    user_msg(htx_ds, errno, 0, SOFT, msg);
                     return -1;
                 }
             }
@@ -460,7 +468,7 @@ int read_rf(struct htx_data *htx_ds, char *rf_name, unsigned long long maxblk, u
                 if (strcmp(tmplt_ptr->oper, " ") == 0) {
                     sprintf(msg, "OPER parameter is a MUST for template stanza.\nSince, it is not defined for"
                                 "template with id: %s. Please fix this in rule file.\n", tmplt_ptr->template_id);
-                    user_msg(htx_ds, 0, HARD, msg);
+                    user_msg(htx_ds, 0, 0, HARD, msg);
                     exit(1);
                 }
                 num_templates_defined++;
@@ -509,7 +517,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
         sscanf(str, "%*s %s", rule->rule_id);
         if (((strlen(rule->rule_id)) < 1) || ((strlen(rule->rule_id)) > 16)) {
             sprintf(msg, "line# %d %s = %s (Length must be 1 to 16 characters) \n", *line, keywd, rule->rule_id);
-            user_msg(ps, 0, SOFT, msg);
+            user_msg(ps, 0, 0, SOFT, msg);
             return -1;
         }
     } else if (strcasecmp(keywd, "PATTERN_ID") == 0) {
@@ -568,7 +576,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
                 }
                 if (j == num_templates_defined) {
                     sprintf(msg, "line# %d %s = %s is incorrect.\nNo such template is defined.", *line, keywd, chr_ptr[0]);
-                    user_msg(ps, 0, SOFT, msg);
+                    user_msg(ps, 0, 0, SOFT, msg);
                     return -1;
                 }
             }
@@ -579,7 +587,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
         }
         if (rule->num_threads < 0 || rule->num_threads > MAX_THREADS) {
             sprintf(msg, "line# %d %s = %u is incorrrect.\nIt must be between 0 and 4096.", *line, keywd, rule->num_threads);
-            user_msg(ps, 0, SOFT, msg);
+            user_msg(ps, 0, 0, SOFT, msg);
             return -1;
         }
     } else if (strcasecmp(keywd, "ASSOCIATIVITY") == 0) {
@@ -592,7 +600,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
             rule->associativity = RANDOM;
         } else {
             sprintf(msg, "line# %d %s = %s is incorrect.\nValid values are SEQ/RROBIN/RANDOM only.", *line, keywd, varstr);
-            user_msg(ps, 0, SOFT, msg);
+            user_msg(ps, 0, 0, SOFT, msg);
             return -1;
         }
     } else if (strcasecmp(keywd, "TESTCASE") == 0) {
@@ -607,7 +615,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
             rule->testcase = CACHE;
         } else {
             sprintf(msg, "line# %d %s = %s is incorrect.\nValid values are SYNC/ASYNC/PASSTHROUGH only.", *line, keywd, varstr);
-            user_msg(ps, 0, SOFT, msg);
+            user_msg(ps, 0, 0, SOFT, msg);
             return -1;
         }
     } else if (strcasecmp(keywd, "OPER") == 0) {
@@ -630,6 +638,8 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
                 (strcasecmp(input_rule[i], "CAWW") == 0) ||
                 (strcasecmp(input_rule[i], "CAWR") == 0) ||
                 (strcasecmp(input_rule[i], "XCMD") == 0) ||
+                (strcasecmp(input_rule[i], "D") == 0) ||
+                (strcasecmp(input_rule[i], "DRC") == 0) ||
                 (strchr (input_rule[i], '[') != NULL)) {
                 strcpy(rule->oper[i], input_rule[i]);
                 if (strcasecmp(input_rule[i], "BWRC") == 0) {
@@ -637,11 +647,14 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
                 } else {
                     rule->is_only_BWRC_stanza = 'N';
                 }
+                if ((strcasecmp(input_rule[i], "DRC") == 0) || (strcasecmp(input_rule[i], "D") == 0)) {
+                    discard_enabled = 1;
+                }
             } else {
                 sprintf(msg, "line# %d %s = %s is incorrect. Only allowed values are:\n"
                              "R,S,W,RC,RS,RW,WR,WS,WRC,BWRC,CARR,CARW,CAWR,CAWW or XCMD.\n",
                              *line, keywd, input_rule[i]);
-                user_msg(ps, 0, SOFT, msg);
+                user_msg(ps, 0, 0, SOFT, msg);
                 return -1;
             }
         }
@@ -655,7 +668,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
             rule->num_oper.value[i] = strtoull(input_rule[i], (char **) NULL, 10);
             if (rule->num_oper.value[i] < 0 ) {
                 sprintf(msg, "line# %d %s = %lld is incorrect.\nIt must be >= 0.", *line, keywd, rule->num_oper.value[i]);
-                user_msg(ps, 0, SOFT, msg);
+                user_msg(ps, 0, 0, SOFT, msg);
                 return -1;
             }
         }
@@ -665,7 +678,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
             rule->seek_breakup_prcnt.value[i] = strtoull(input_rule[i], (char **) NULL, 10);
             if (rule->seek_breakup_prcnt.value[i] < 0 || rule->seek_breakup_prcnt.value[i] > 100) {
                 sprintf(msg, "line# %d %s = %lld is incorrect.\nIt must be >= 0 and <= 100.", *line, keywd, rule->seek_breakup_prcnt.value[i]);
-                user_msg(ps, 0, SOFT, msg);
+                user_msg(ps, 0, 0, SOFT, msg);
                 return -1;
             }
         }
@@ -716,13 +729,13 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
                 rule->data_len.size[i].min_len = (len / blksize) * blksize; /* making it multiple of blksize */
                 sprintf(msg, "line# %d %s(min_len) = %lld is not multiple of block size. Setting it to %lld (multiple of block size).\n",
                             *line, keywd, len, rule->data_len.size[i].min_len);
-                user_msg(ps, 0, INFO, msg);
+                user_msg(ps, 0, 0, INFO, msg);
             }
 
             if (rule->data_len.size[i].max_len < rule->data_len.size[i].min_len) {
                 sprintf(msg, "line# %d %s(max_len) = %lld is less than min_len. Setting it equal to min_len(%lld).\n",
                               *line, keywd, rule->data_len.size[i].max_len, rule->data_len.size[i].min_len);
-                user_msg(ps, 0, INFO, msg);
+                user_msg(ps, 0, 0, INFO, msg);
                 rule->data_len.size[i].max_len = rule->data_len.size[i].min_len;
                 rule->data_len.size[i].increment = 0;
             } else if (rule->data_len.size[i].max_len % blksize != 0) {
@@ -730,7 +743,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
                 rule->data_len.size[i].max_len = (len / blksize) * blksize; /* making it multiple of blksize */
                 sprintf(msg, "line# %d %s(max_len) = %lld is not multiple of block size. Setting it to %lld (multiple of block size).\n",
                             *line, keywd, len, rule->data_len.size[i].max_len);
-                user_msg(ps, 0, INFO, msg);
+                user_msg(ps, 0, 0, INFO, msg);
             }
 
             if (rule->data_len.size[i].increment != -1 && rule->data_len.size[i].increment % blksize != 0) {
@@ -738,7 +751,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
                 rule->data_len.size[i].increment = (len / blksize) * blksize; /* making it multiple of blksize */
                 sprintf(msg, "line# %d %s(increment) = %d is not multiple of block size. Setting it to %d(multiple of block size).\n",
                             *line, keywd, (unsigned int)len, rule->data_len.size[i].increment);
-                user_msg(ps, 0, INFO, msg);
+                user_msg(ps, 0, 0, INFO, msg);
             }
         }
     } else if (strcasecmp(keywd, "STARTING_BLOCK") == 0) {
@@ -767,7 +780,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
                 rule->direction.value[i] = OUT;
             } else {
                 sprintf(msg,"line# %d %s = %s is incorrect.\nValid values are UP/DOWN/IN/OUT only", *line, keywd, input_rule[i]);
-                user_msg(ps, 0, SOFT, msg);
+                user_msg(ps, 0, 0, SOFT, msg);
                 return -1;
             }
         }
@@ -782,12 +795,12 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
             }
             if (rule->max_blkno.value[i] < 0) {
                 sprintf(msg, "line# %d %s = %lld is incorrect.\n It must be > 0.", *line, keywd, rule->max_blkno.value[i]);
-                user_msg(ps, 0, SOFT, msg);
+                user_msg(ps, 0, 0, SOFT, msg);
                 return -1;
             }
             if (rule->max_blkno.value[i] > dev_info.maxblk) {
                 sprintf(msg, "line# %d %s = %lld is > max_blkno(0x%llx). Setting it to maxblk", *line, keywd, rule->max_blkno.value[i], dev_info.maxblk);
-                user_msg(ps, 0, INFO, msg);
+                user_msg(ps, 0, 0, INFO, msg);
                 rule->max_blkno.value[i] = dev_info.maxblk;
             }
         }
@@ -802,7 +815,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
             }
             if (rule->min_blkno.value[i] < 0) {
                 sprintf(msg, "line# %d %s = %lld is incorrect.\n It must be > 0.", *line, keywd, rule->min_blkno.value[i]);
-                user_msg(ps, 0, SOFT, msg);
+                user_msg(ps, 0, 0, SOFT, msg);
                 return -1;
             }
         }
@@ -818,13 +831,13 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
         #ifdef __HTX_LINUX__
             if (rule->align.value[i] < blksize || (rule->align.value[i] % blksize) != 0) {
                 sprintf(msg, "line# %d %s = %lld is incorrect.\nLinux expects IO Buffers to be minimum block align.", *line, keywd, rule->align.value[i]);
-                user_msg(ps, 0, SOFT, msg);
+                user_msg(ps, 0, 0, SOFT, msg);
                 return -1;
             }
         #else
             if (rule->align.value[i] < 0) {
                 sprintf(msg, "line# %d %s = %lld is incorrect.\nIt must be > 0.", *line, keywd, rule->align.value[i]);
-                user_msg(ps, 0, SOFT, msg);
+                user_msg(ps, 0, 0, SOFT, msg);
                 return -1;
             }
         #endif
@@ -844,7 +857,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
             rule->num_mallocs.value[i] = strtoull(input_rule[i], (char **) NULL, 10);
             if (rule->num_mallocs.value[i] < 0 || rule->num_mallocs.value[i] > 100) {
                 sprintf(msg, "line# %d %s = %lld is incorrect.\nIt must be >=0 and <= 100.", *line, keywd, rule->num_mallocs.value[i]);
-                user_msg(ps, 0, SOFT, msg);
+                user_msg(ps, 0, 0, SOFT, msg);
                 return -1;
             }
         }
@@ -856,7 +869,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
             rule->mode = VALIDATION;
         } else {
             sprintf(msg, "line# %d %s = %s is incorrect,\n Valid values are VALIDATION/PERFORMANCE\n", *line, keywd, varstr);
-            user_msg(ps, 0, SOFT, msg);
+            user_msg(ps, 0, 0, SOFT, msg);
             return (-1);
         }
     } else if (strcasecmp(keywd, "RULE_OPTION") == 0) {
@@ -869,12 +882,12 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
             } else if (optswtch == 'R') {
                 sprintf(msg, "line #%d: Restore Seeds and Save Seeds is NOT allowed in the same stanza!\n",
                              *line);
-                user_msg(ps, 0, SOFT, msg);
+                user_msg(ps, 0, 0, SOFT, msg);
                 return(-1);
             } else {
                 sprintf(msg, "line #%d: Specify Seeds and Save Seeds is NOT allowed in the same stanza!\n",
                         *line);
-                user_msg(ps, 0, SOFT, msg);
+                user_msg(ps, 0, 0, SOFT, msg);
                 return(-1);
             }
         } else if (strcasecmp(varstr, "RESTORE_SEEDS") == 0) {
@@ -885,18 +898,18 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
                 } else {
                     sprintf(msg, "line #%d - RESTORE_SEEDS option not allowed unless saved in previous stanza.",
                             *line);
-                    user_msg(ps, 0, SOFT, msg);
+                    user_msg(ps, 0, 0, SOFT, msg);
                     return(-1);
                 }
             } else if (optswtch == 'S') {
                 sprintf(msg, "line #%d: Save Seeds and Restore Seeds is NOT allowed in the same stanza!\n",
                         *line);
-                user_msg(ps, 0, SOFT, msg);
+                user_msg(ps, 0, 0, SOFT, msg);
                 return(-1);
             } else {
                 sprintf(msg, "line #%d: Specify Seeds and Restore Seeds is NOT allowed in the same stanza!\n",
                         *line);
-                user_msg(ps, 0, SOFT, msg);
+                user_msg(ps, 0, 0, SOFT, msg);
                 return(-1);
             }
         } else if (strcasecmp(varstr, "SEEDS") == 0) {
@@ -928,18 +941,18 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
             } else if (optswtch == 'S') {
                 sprintf(msg, "line #%d: Save Seeds and Specify Seeds is NOT allowed in the same stanza!\n",
                             *line);
-                user_msg(ps, 0, SOFT, msg);
+                user_msg(ps, 0, 0, SOFT, msg);
                 return(-1);
             } else {
                 sprintf(msg, "line #%d: Restore Seeds and Specify Seeds is NOT allowed in the same stanza!\n",
                             *line);
-                user_msg(ps, 0, SOFT, msg);
+                user_msg(ps, 0, 0, SOFT, msg);
                 return(-1);
             }
         } else {
             sprintf(msg, "line #%d %s = %s (invalid option " "for RULE_OPTIONS)\n",
                         *line, keywd, varstr);
-            user_msg(ps, 0, SOFT, msg);
+            user_msg(ps, 0, 0, SOFT, msg);
             return (-1);
         }
     } else if (strcasecmp(keywd, "HOTNESS") == 0) {
@@ -948,7 +961,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
             rule->hotness.value[i] = strtoull(input_rule[i], (char **) NULL, 10);
             if (rule->hotness.value[i] < 1 || rule->hotness.value[i] > 32768) {
                 sprintf(msg, "line# %d %s = %lld is incorrect,\nIt must be >= 1 and <= 32768.", *line, keywd, rule->hotness.value[i]);
-                user_msg(ps, 0, SOFT, msg);
+                user_msg(ps, 0, 0, SOFT, msg);
                 return -1;
             }
         }
@@ -965,7 +978,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
                 rule->loop_on_offset.value[i] = 0;
             } else {
                 sprintf(msg, "line# %d %s = %s is incorrect.\nIt must be YES or NO.", *line, keywd, input_rule[i]);
-                user_msg(ps, 0, SOFT, msg);
+                user_msg(ps, 0, 0, SOFT, msg);
                 return -1;
             }
         }
@@ -1008,7 +1021,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
             dev_info.crash_on_miscom = 0;
         } else {
             sprintf(msg, "line# %d keywd = %s (invalid). Valid values are YES/NO.\n", *line, keywd);
-            user_msg(ps, 0, SOFT, msg);
+            user_msg(ps, 0, 0, SOFT, msg);
             return -1;
         }
     } else if (strcasecmp(keywd, "SYNC_CACHE") == 0) {
@@ -1019,7 +1032,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
             sync_cache_flag = 0;
         } else {
             sprintf(msg, "line# %d keywd = %s (invalid). Valid values are YES/NO.\n", *line, keywd);
-            user_msg(ps, 0, SOFT, msg);
+            user_msg(ps, 0, 0, SOFT, msg);
             return -1;
         }
     } else if (strcasecmp(keywd, "RANDOMIZE_SYNC_CACHE") == 0) {
@@ -1030,7 +1043,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
             randomize_sync_cache = 0;
         } else {
             sprintf(msg, "line# %d keywd = %s (invalid). Valid values are YES/NO.\n", *line, keywd);
-            user_msg(ps, 0, SOFT, msg);
+            user_msg(ps, 0, 0, SOFT, msg);
             return -1;
         }
 	#ifdef __CAPI_FLASH__
@@ -1042,7 +1055,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
 			if(lun_type != rule->open_flag) {
 				sprintf(msg, "line# %d keywd = %s (invalid). lun_type(=%d) shd be same as open flag(=%d) \n", *line, keywd, lun_type, rule->open_flag);
 				sprintf(msg + strlen(msg), "Check if file /tmp/test_phylun exists for enabling PLUN testing, Create file and relogin to HTX \n");
-				user_msg(ps, 0, SOFT, msg);
+				user_msg(ps, 0, 0, SOFT, msg);
 				return -1;
 			}
         } else if ( strcasecmp(varstr, "VIRTUAL_LUN") == 0) {
@@ -1050,14 +1063,14 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
 			if(lun_type != rule->open_flag) {
 				sprintf(msg, "line# %d keywd = %s (invalid). lun_type(=%d) shd be same as open flag(=%d) \n", *line, keywd, lun_type, rule->open_flag);
 				sprintf(msg + strlen(msg), "Remove file /tmp/test_phylun for enabling VLUN testing, and relogin to HTX \n");
-				user_msg(ps, 0, SOFT, msg);
+				user_msg(ps, 0, 0, SOFT, msg);
                 return -1;
             }
         } else if (strcasecmp(varstr, "CLOSE_LUN") == 0) {
         	rule->open_flag = CBLK_CLOSE_LUN;
         } else {
         	sprintf(msg, "line# %d %s = %s (must be PHYSICAL_LUN/VIRTUAL_LUN/CBLK_CLOSE_LUN ) \n", line, keywd, varstr);
-            user_msg(ps, 0, SOFT, msg);
+            user_msg(ps, 0, 0, SOFT, msg);
             return -1;
         }
 		printf("%s:lun_type = %x, open_flag = %#x\n", __FUNCTION__, lun_type, rule->open_flag);
@@ -1066,7 +1079,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
         chunk_size = atoi(varstr);
         if(chunk_size < 0) {
         	sprintf(msg, "line# %d %s = %s (must be positive integer) \n", line, keywd, chunk_size);
-            user_msg(ps, 0, SOFT, msg);
+            user_msg(ps, 0, 0, SOFT, msg);
             return -1;
         }
 	#endif
@@ -1097,15 +1110,15 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
         } else if (strcasecmp(varstr, "NO") == 0) {
             dev_info.debug_flag = NO;
         }
-	} else if (strcasecmp(keywd, "MAX_OUTSTANDING") == 0) {
+	} else if (strcasecmp(keywd, "NUM_ASYNC_IO") == 0) {
 		sscanf(str, "%*s %s", varstr);
-		rule->max_outstanding = atoi(varstr);
+		rule->num_async_io = atoi(varstr);
     } else if (strcasecmp(keywd, "NUM_CACHE_THREADS") == 0) {
         sscanf(str, "%*s %s", varstr);
         rule->num_cache_threads = atoi(varstr);
         if (rule->num_cache_threads > MAX_NUM_CACHE_THREADS) {
             sprintf(msg, "line# %d %s = %d is incorrect. Max value for it can be 32.\n", *line, keywd, rule->num_cache_threads);
-            user_msg(ps, 0, SOFT, msg);
+            user_msg(ps, 0, 0, SOFT, msg);
             return -1;
 	    }
     } else if (strcasecmp(keywd, "CONT_ON_ERR") == 0) {
@@ -1114,8 +1127,8 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
             dev_info.cont_on_err = NO;
         } else if (strcasecmp(varstr, "YES") == 0) {
             dev_info.cont_on_err = YES;
-        } else if (strcasecmp(varstr, "MISCOMPARE") == 0) {
-            dev_info.cont_on_err = MISCOMP;
+        } else if (strcasecmp(varstr, "DATACHECK") == 0) {
+            dev_info.cont_on_err = DATACHECK;
         }
     } else if (strcasecmp(keywd, "CONT_ON_MISC") == 0) {
         sscanf(str, "%*s %s", varstr);
@@ -1139,7 +1152,7 @@ int parse_rule_parameter(struct htx_data *ps, char *str, void *stanza_ptr, int *
         rule->cmd_list[j] = '\0';
     } else {
         sprintf(msg,"line# %d keywd = %s (invalid)\n", *line, keywd);
-        user_msg(ps, 0, SOFT, msg);
+        user_msg(ps, 0, 0, SOFT, msg);
         return -1;
     }
     return 0;
@@ -1168,7 +1181,7 @@ int get_queue_depth(struct htx_data *ps)
     dev_name[j] = '\0';
     if (strncmp(dev_name, "sd", 2) != 0) {
         sprintf(msg, "Setting the queue depth to default (i.e. 16)\n");
-        user_msg(ps, 0, INFO, msg);
+        user_msg(ps, 0, 0, INFO, msg);
         q_depth = DEFAULT_QUEUE_DEPTH;
         return q_depth;
    } else {
@@ -1192,12 +1205,12 @@ int get_queue_depth(struct htx_data *ps)
     fp = popen(cmd_str, "r");
     if (fp == NULL) {
         sprintf(msg, "popen failed while getting queue depth. errno: %d\n. Setting it to default value (i.e. 16)\n", errno);
-        user_msg(ps, 0, INFO, msg);
+        user_msg(ps, 0, 0, INFO, msg);
         q_depth = DEFAULT_QUEUE_DEPTH;
     } else {
         if (fgets(buf, 16, fp) == NULL) {
             sprintf(msg, "fgets failed while getting queue depth. errno: %d\nSetting queue depth to default (i.e. 16)\n", errno);
-            user_msg(ps, 0, INFO, msg);
+            user_msg(ps, 0, 0, INFO, msg);
             pclose(fp);
             q_depth = DEFAULT_QUEUE_DEPTH;
         } else {
@@ -1317,7 +1330,7 @@ int parse_template_parameter(struct htx_data *ps, char *str, void *stanza_ptr, i
             tmplt->data_len.min_len = (len / blksize) * blksize; /* making it multiple of blksize */
             sprintf(msg, "line# %d %s(min_len) = %lld is not multiple of block size. Setting it to %lld (multiple of block size).\n",
                         *line, keywd, len, tmplt->data_len.min_len);
-            user_msg(ps, 0, INFO, msg);
+            user_msg(ps, 0, 0, INFO, msg);
         }
 
         if (tmplt->data_len.max_len < tmplt->data_len.min_len) {
@@ -1328,20 +1341,20 @@ int parse_template_parameter(struct htx_data *ps, char *str, void *stanza_ptr, i
             tmplt->data_len.max_len = (len / blksize) * blksize; /* making it multiple of blksize */
             sprintf(msg, "line# %d %s(max_len) = %lld is not multiple of block size. Setting it to %lld (multiple of block size).\n",
                         *line, keywd, len, tmplt->data_len.max_len);
-            user_msg(ps, 0, INFO, msg);
+            user_msg(ps, 0, 0, INFO, msg);
         }
         if (tmplt->data_len.increment != -1 && tmplt->data_len.increment % blksize != 0) {
             len = tmplt->data_len.increment;
             tmplt->data_len.increment = (len / blksize) * blksize; /* making it multiple of blksize */
             sprintf(msg, "line# %d %s(increment) = %d is not multiple of block size. Setting it to %d(multiple of block size).\n",
                         *line, keywd, (unsigned int)len, tmplt->data_len.increment);
-            user_msg(ps, 0, INFO, msg);
+            user_msg(ps, 0, 0, INFO, msg);
         }
     } else if (strcasecmp(keywd, "SEEK_BREAKUP_PRCNT") == 0) {
         sscanf(str, "%*s %hu", &(tmplt->seek_breakup_prcnt));
         if (tmplt->seek_breakup_prcnt < 0 || tmplt->seek_breakup_prcnt > 100) {
             sprintf(msg, "line# %d %s = %u is incorrect.\nIt must be >= 0 and <= 100.", *line, keywd, tmplt->seek_breakup_prcnt);
-            user_msg(ps, 0, SOFT, msg);
+            user_msg(ps, 0, 0, SOFT, msg);
             return -1;
         }
     } else if (strcasecmp(keywd, "OPER") == 0) {
