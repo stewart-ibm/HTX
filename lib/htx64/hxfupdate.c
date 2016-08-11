@@ -435,6 +435,7 @@ int hxfupdate_tunsafe(char call, struct htx_data *data)
         p_shm_HE->err_ack = 0;
 
 		htx_update(data);  
+		htx_get_msg(data, msg_send);
 		htx_error(data,msg_send);
 
 		if (!((strcmp (data->run_type, "REG") != 0) && (strcmp (data->run_type, "EMC") != 0))) {

@@ -7,10 +7,28 @@
 ($?) $USERNAME @ $HOST: $PWD
 # '
   export TERM=vt100
-#  export HOME=/usr/lpp/htx/
+  export HOME=/usr/lpp/htx/
   export HTX_HOME_DIR=$HOME
   export HTX_LOG_DIR=/tmp/
   export LESS="-CdeiM"
+
+  PATH=$PATH:$HOME
+  PATH=$PATH:$HOME/etc/scripts
+  PATH=$PATH:$HOME/etc
+  PATH=$PATH:$HOME/etc/methods
+  PATH=$PATH:$HOME/bin
+  PATH=$PATH:/bin
+  PATH=$PATH:/sbin
+  PATH=$PATH:/usr/bin
+  PATH=$PATH:/usr/sbin
+  PATH=$PATH:/usr/ucb
+  PATH=$PATH:/usr/bin/X11
+  PATH=$PATH:/etc
+  PATH=$PATH:/test/tools
+  PATH=$PATH:/usr/local/bin
+  PATH=$PATH:$HOME/test/tools
+  PATH=$PATH:.
+  export PATH
 
   export HTXLPP=$HTX_HOME_DIR
   export HTXPATH=$HTX_HOME_DIR
