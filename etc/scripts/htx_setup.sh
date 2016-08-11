@@ -151,29 +151,11 @@ function ttyis
      exit 1
   }
 
-  export HOME=/usr/lpp/htx/
-  PATH=$HOME
-  PATH=$PATH:$HOME/etc/scripts
-  PATH=$PATH:$HOME/etc
-  PATH=$PATH:$HOME/etc/methods
-  PATH=$PATH:$HOME/bin
-  PATH=$PATH:/bin
-  PATH=$PATH:/sbin
-  PATH=$PATH:/usr/bin
-  PATH=$PATH:/usr/sbin
-  PATH=$PATH:/usr/ucb
-  PATH=$PATH:/usr/bin/X11
-  PATH=$PATH:/etc
-  PATH=$PATH:/test/tools
-  PATH=$PATH:/usr/local/bin
-  PATH=$PATH:$HOME/test/tools
-  PATH=$PATH:.
-  export PATH
-
-  print_htx_log "exporting PATH=$PATH"
 
 # Source htx_env.sh so that all exports and alias become available.
   . htx_env.sh
+
+  print_htx_log "exporting PATH=$PATH"
 
 # Setting HTX environment specific alias
   alias logout=". ${HTXSCRIPTS}/htxlogout"
