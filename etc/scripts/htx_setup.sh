@@ -57,7 +57,7 @@ print_htx_log_only()
 	fi
 }
 	
-function xe 
+xe() 
 {
      SAVDISP=$DISPLAY
      DISPLAY=""; export DISPLAY
@@ -69,7 +69,7 @@ function xe
      DISPLAY=$SAVDISP; export DISPLAY
 }
 
-function ez 
+ez() 
 {
      if [ $# -ne 0 ]
      then arg1=$1
@@ -87,7 +87,7 @@ function ez
      e /tmp/$arg1.list; rm -f /tmp/$arg1.list
 }
 
-function pz
+pz()
 {    CCFLAG=
      for i in $*
      do [ "$i" != "-cc" ] || { CCFLAG=-cc; shift; continue; }
@@ -97,17 +97,17 @@ function pz
      done
 }
 
-function pl
+pl()
 {
     printlist $* | print -nb -plot
 }
 
-function prt3800
+prt3800()
 {
     pr -l60 -f -n $* | /bin/print rpe
 }
 
-function t
+t()
 {
     a=`pwd | grep com`
     b=`pwd | grep R2`
@@ -124,7 +124,7 @@ function t
     fi
 }
 
-function ttyis
+ttyis()
 {     echo $* > /.ttytype
       TERM="$*"
       export TERM
@@ -153,7 +153,7 @@ function ttyis
 
 
 # Source htx_env.sh so that all exports and alias become available.
-  . htx_env.sh
+  . /usr/lpp/htx/etc/scripts/htx_env.sh
 
   print_htx_log "exporting PATH=$PATH"
 
@@ -229,7 +229,7 @@ function ttyis
 #sleep 5
 
 # Execute HTX setup scripts 
-  [ -f /usr/lpp/htx/etc/scripts/htxtmpwatch ] && cp /usr/lpp/htx/etc/scripts/htxtmpwatch /etc/cron.d/htxtmpwatch 2>/dev/null
+  [ -f ${HTXSCRIPTS}/htxtmpwatch ] && cp ${HTXSCRIPTS}/htxtmpwatch /etc/cron.d/htxtmpwatch 2>/dev/null
 
 
   if [[ "$HTXD_STARTUP_MODE" = "ON" ]] ; then
