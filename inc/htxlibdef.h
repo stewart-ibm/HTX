@@ -158,11 +158,12 @@ void  htx_free(void * ptr);
 }
 
 /*
- * Internal HTX localtime function.
+ * Internal HTX localtime(_r) functions.
  *
  */
 extern "C" {
 struct tm * htx_localtime(const time_t *p_time);
+struct tm * htx_localtime_r (const time_t *timep, struct tm *result);
 }
 
 /*
@@ -271,6 +272,7 @@ void  htx_free(void * ptr);
  * Internal HTX localtime function.
  */
 struct tm * htx_localtime(const time_t *p_time);
+struct tm * htx_localtime_r (const time_t *timep, struct tm *result);
 
 /*
  * Internal HTX ctime function.

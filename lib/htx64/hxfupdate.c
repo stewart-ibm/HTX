@@ -90,6 +90,7 @@
 #include <htxlibdef.h>
 #include <scr_info64.h>
 #include "hxihtxmp_vars_new.h"
+#include <htxlibdef.h>
 #ifdef _DR_HTX_
 #include <sys/dr.h> /* DR reconfig changes */
 #include <sys/procfs.h>
@@ -128,6 +129,8 @@ int rem_shm_id;
 #include <sys/socket.h>
 
 void set_misc_htx_data(struct htx_data *);
+static int htx_get_msg(struct htx_data *data, char *msg_send);
+void htx_message(struct htx_data *data, char* msg_send);
 
 int hxfadd(char *server_ip, struct htxshm_HE add_HE, char *ecg)
 {
@@ -1168,7 +1171,7 @@ void htx_update(struct htx_data *data)
 
 } /* htx_update() */
 
-int htx_get_msg(struct htx_data *data, char *msg_send)
+static int htx_get_msg(struct htx_data *data, char *msg_send)
 {
   char    disp_time[30], disp_time1[30];
 /*  char    msg_send[MSG_TEXT_SIZE];*/
