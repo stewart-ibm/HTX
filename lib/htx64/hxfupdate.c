@@ -173,7 +173,7 @@ int hxfadd(char *server_ip, struct htxshm_HE add_HE, char *ecg)
   indx = 0;
   sprintf(str_msg,"%4x %4x %4x %s", cmd,subcmd,indx,ecg);
   tmp_str = (char*)htx_malloc( (strlen(str_msg)+9));
-  sprintf(tmp_str,"%8x",strlen(str_msg));
+  sprintf(tmp_str,"%8zx",strlen(str_msg));
   strcat(tmp_str,str_msg);
   tmp_str[strlen(str_msg)+8] = '\0';
   if ((numbytes=send(sockfd, tmp_str, strlen(tmp_str), 0)) == -1) {
