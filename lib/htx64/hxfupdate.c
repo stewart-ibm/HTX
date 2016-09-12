@@ -130,7 +130,7 @@ int rem_shm_id;
 
 void set_misc_htx_data(struct htx_data *);
 static int htx_get_msg(struct htx_data *data, char *msg_send);
-void htx_message(struct htx_data *data, char* msg_send);
+int htx_message(struct htx_data *data, char* msg_send);
 
 int hxfadd(char *server_ip, struct htxshm_HE add_HE, char *ecg)
 {
@@ -1363,7 +1363,7 @@ static int htx_get_msg(struct htx_data *data, char *msg_send)
 	return(0);
 }
 
-void htx_message(struct htx_data *data, char* msg_send){
+int htx_message(struct htx_data *data, char* msg_send){
 
 	/* htx_message for sending messages to the message queue for normal messages or error messages*/
 
