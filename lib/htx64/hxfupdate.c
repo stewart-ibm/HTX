@@ -476,7 +476,7 @@ int hxfupdate_tunsafe(char call, struct htx_data *data)
           data->severity_code = (enum sev_code )7;
           (void) sprintf(data->msg_text,
                      "%-18s%-20s err=%-8.8x sev=%-1.1u %-14s\n\
-Stopped - cycles run (%d) = max_cycles (%d).\n\n",
+Stopped - cycles run (%ull) = max_cycles (%ull).\n\n",
                      data->sdev_id,
                      &disp_time[4],
                      data->error_code,
